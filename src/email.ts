@@ -1,8 +1,6 @@
 import nodemailer from 'nodemailer';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from "./lib/prisma.js";
 import { pool } from "./lib/db.js";
-
-const prisma = new PrismaClient();
 
 let transporter: nodemailer.Transporter | null = null;
 

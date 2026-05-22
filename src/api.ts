@@ -1,13 +1,11 @@
 import express from "express";
 import Stripe from 'stripe';
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./lib/prisma.js";
 import { query, pool } from "./lib/db.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import multer from "multer";
 import { uploadToStorage } from "./lib/storage.js";
-
-const prisma = new PrismaClient();
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || "supersecretjwt";
 
