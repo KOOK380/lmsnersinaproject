@@ -1,0 +1,1 @@
+fetch('http://127.0.0.1:3000/api/courses/db1c1699-82a6-4cfa-aec3-72e173505c19').then(r=>r.text()).then(t=>{ try { JSON.parse(t); console.log("OK"); } catch(e) { console.error("FAILED", t.slice(0, 50)); } })

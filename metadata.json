@@ -1,0 +1,8 @@
+{
+  "name": "LMS Platform",
+  "description": "Full-stack LMS platform with courses, memberships, and seat booking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
