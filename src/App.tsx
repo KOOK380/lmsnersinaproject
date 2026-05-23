@@ -1254,7 +1254,7 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
       {!isAdminRoute && <Navbar />}
       <AuthModal />
       {!isAdminRoute && <WebsitePopup />}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-w-0">
         {children}
       </main>
       {!isAdminRoute && <Footer />}

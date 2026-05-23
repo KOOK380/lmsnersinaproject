@@ -61,7 +61,7 @@ export function Courses() {
   const tCourses = getTranslated(courses, language) || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12 overflow-hidden md:overflow-visible">
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('courses.all_courses')}</h1>
@@ -69,7 +69,7 @@ export function Courses() {
          </div>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit max-w-full">
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-full">
         <button
           onClick={() => setActiveCategory(null)}
           className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
@@ -411,25 +411,76 @@ export function Courses() {
             dangerouslySetInnerHTML={{ __html: course.description }}
           />
 
-          {/* Mobile Enrollment Options */}
-          {courseRaw?.memberships && courseRaw.memberships.length > 0 && (
-            <div className="xl:hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-8">
-              <p className="text-sm font-bold text-gray-900 mb-4">Available with Memberships</p>
-              <div className="space-y-3">
-                {courseRaw.memberships.map((m: any) => (
-                   <div key={m.id} onClick={(e) => { e.preventDefault(); navigate(`/memberships/${m.id}`); }} className="block border p-4 rounded-xl cursor-pointer transition-all border-slate-200 hover:border-slate-300">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-sm text-slate-800 leading-tight pr-2">{m.contents?.find((c:any) => c.language === language)?.title || m.contents?.[0]?.title || m.label || m.type}</span>
-                          <span className="font-bold text-primary whitespace-nowrap">{formatCurrency(m.offerPrice, currency)}</span>
-                        </div>
-                        <span className="text-xs text-indigo-600 hover:underline text-left mt-1 inline-block">View Details →</span>
+          {/* Mobile Direct Purchase or Enrollment Block */}
+          <div className="xl:hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm mt-8">
+             <div className="flex items-center justify-between mb-4">
+               <div>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t('courses.price', 'Price')}</p>
+                  <p className="text-3xl font-black text-gray-950 mt-1">
+                     {selectedOption === 'course' ? (
+                       <>
+                         {course.realPrice && course.realPrice > course.price && (
+                             <span className="text-sm text-slate-400 line-through mr-2 font-medium">{formatCurrency(course.realPrice, currency)}</span>
+                         )}
+                         {formatCurrency(course.price, currency)}
+                       </>
+                     ) : (
+                       <>
+                         {formatCurrency(courseRaw.memberships?.find((m:any) => m.id === selectedOption)?.offerPrice || 0, currency)}
+                       </>
+                     )}
+                  </p>
+               </div>
+               
+               <div className="text-right text-xs text-slate-500 font-medium">
+                  <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull; {course.duration || '21 days'}</p>
+                  <p className="text-emerald-600 font-bold mt-1">✓ Instant Access</p>
+               </div>
+             </div>
+
+             {courseRaw?.memberships && courseRaw.memberships.length > 0 && (
+               <div className="mb-5 space-y-3">
+                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Enrollment Options</p>
+                 
+                 {course.price > 0 && (
+                   <label className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === 'course' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                      <input type="radio" checked={selectedOption === 'course'} onChange={() => setSelectedOption('course')} className="hidden" />
+                      <div className="flex justify-between items-center">
+                         <span className="font-bold text-sm text-slate-800 leading-tight">Course Only</span>
+                         <span className="font-bold text-primary">{formatCurrency(course.price, currency)}</span>
                       </div>
-                   </div>
-                ))}
-              </div>
-            </div>
-          )}
+                   </label>
+                 )}
+
+                 {courseRaw.memberships.map((m: any) => (
+                    <label key={m.id} className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === m.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                       <input type="radio" checked={selectedOption === m.id} onChange={() => setSelectedOption(m.id)} className="hidden" />
+                       <div className="flex flex-col gap-1">
+                         <div className="flex justify-between items-center">
+                           <span className="font-bold text-sm text-slate-800 leading-tight pr-2">{m.contents?.find((c:any) => c.language === language)?.title || m.contents?.[0]?.title || m.label || m.type}</span>
+                           <span className="font-bold text-primary whitespace-nowrap">{formatCurrency(m.offerPrice, currency)}</span>
+                         </div>
+                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/memberships/${m.id}`); }} className="text-xs text-indigo-600 hover:underline text-left mt-1 inline-block">View Details →</button>
+                       </div>
+                    </label>
+                 ))}
+               </div>
+             )}
+
+             <button onClick={handleBuy} disabled={addingToCart} className="w-full bg-primary text-white py-4 rounded-full font-bold shadow-sm hover:bg-opacity-90 transition disabled:opacity-70 flex justify-center items-center gap-2 text-base">
+                {addingToCart ? (
+                    <>
+                       <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                       Adding...
+                    </>
+                ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Course"}
+             </button>
+
+             <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition text-gray-700 mt-3">
+               <svg className={`w-4 h-4 transition ${isFavored ? "fill-red-500 stroke-red-500" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+               {isFavored ? "Remove from favorites" : "Add to favorites"}
+             </button>
+          </div>
 
           {/* Course Content */}
           {course.lessons?.length > 0 && (
@@ -531,7 +582,7 @@ export function Courses() {
         </div>
 
         {/* Right Column / Sidebar */}
-        <div className="xl:col-span-1 xl:row-span-2 w-full">
+        <div className="hidden xl:block xl:col-span-1 xl:row-span-2 w-full">
            <div className="sticky top-24 border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden flex flex-col">
               <div className="p-8 bg-primary text-white">
                  <div className="text-4xl font-black">
@@ -884,7 +935,7 @@ export function Memberships() {
   const getContent = (m: any) => m.contents?.find((c: any) => c.language === language) || m.contents?.[0] || { title: 'Untitled' };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12 overflow-hidden md:overflow-visible">
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('memberships.title')}</h1>
@@ -892,7 +943,7 @@ export function Memberships() {
          </div>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit max-w-full">
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-full">
         <button
           onClick={() => setActiveCategory(null)}
           className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
@@ -1442,7 +1493,7 @@ export function Events() {
   const tEvents = getTranslated(events, language) || [];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-4 lg:px-8 py-8 md:py-12 overflow-hidden md:overflow-visible">
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('events.title')}</h1>
@@ -1708,7 +1759,7 @@ export function BlogList() {
   const navigate = useNavigate();
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-12">
+    <div className="w-full min-w-0 max-w-7xl mx-auto px-6 py-12 overflow-hidden md:overflow-visible">
       <div className="mb-12">
         <h1 className="text-4xl font-serif italic font-bold text-primary mb-4">Content by Nesrina</h1>
         <p className="text-slate-500">Read the latest articles and stories.</p>

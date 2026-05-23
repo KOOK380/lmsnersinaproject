@@ -100,7 +100,7 @@ export function CourseManager() {
     language: 'Arabic',
     level: 'Beginner Level',
     duration: '21 Days',
-    meetingLink: '', meetingDate: '', meetingNotes: '',
+    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false,
     translations: [] as any[]
   });
 
@@ -151,6 +151,7 @@ export function CourseManager() {
       meetingLink: fullCourse.meetingLink || '',
       meetingDate: fullCourse.meetingDate ? new Date(fullCourse.meetingDate).toISOString().slice(0,16) : '',
       meetingNotes: fullCourse.meetingNotes || '',
+      notifyEnrolled: false,
       labels: fullCourse.labels || [],
       translations: mergedContents,
       lessons: fullCourse.lessons?.map((l:any) => ({
@@ -218,7 +219,7 @@ export function CourseManager() {
       language: 'Arabic',
       level: 'Beginner Level',
       duration: '21 Days',
-      meetingLink: '', meetingDate: '', meetingNotes: '',
+      meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false,
       translations: initialContents
     });
   };
@@ -568,6 +569,10 @@ export function CourseManager() {
                   <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
                </div>
             </div>
+            <label className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-800">
+              <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              Send email notification with meeting details to enrolled members
+            </label>
             <button onClick={handleAdd} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold w-full mt-8 hover:bg-indigo-700 transition text-lg">Save Course</button>
         </div>
       )}
@@ -1081,7 +1086,7 @@ export function MembershipManager() {
     categoryId: '',
     contents: [] as any[],
     editions: [] as any[],
-    meetingLink: '', meetingDate: '', meetingNotes: ''
+    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false
   });
 
   useEffect(() => {
@@ -1114,6 +1119,7 @@ export function MembershipManager() {
       meetingLink: membership.meetingLink || '',
       meetingDate: membership.meetingDate ? new Date(membership.meetingDate).toISOString().slice(0,16) : '',
       meetingNotes: membership.meetingNotes || '',
+      notifyEnrolled: false,
       contents: mergedContents,
       editions: membership.editions || []
     });
@@ -1125,7 +1131,7 @@ export function MembershipManager() {
       language: lang.code, title: '', description: '', whoIsFor: '', benefits: '', entryCondition: '', keyDetails: ''
     }));
 
-    setFormData({ type: 'STANDARD', label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], meetingLink: '', meetingDate: '', meetingNotes: '' });
+    setFormData({ type: 'STANDARD', label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false });
     setEditId(null);
     setShowAdd(false);
   };
@@ -1297,6 +1303,10 @@ export function MembershipManager() {
                   <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
                </div>
             </div>
+            <label className="flex items-center gap-2 mt-4 mb-4 text-sm font-medium text-slate-800">
+              <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+              Send email notification with meeting details to enrolled members
+            </label>
             <button onClick={handleAdd} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold w-full">Save Changes</button>
            <button onClick={resetForm} className="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg font-bold w-full mt-2">Cancel</button>
         </div>
@@ -1667,7 +1677,7 @@ export function EmailTemplatesManager() {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('');
 
-  const types = ["COURSE_PURCHASE", "MEMBERSHIP_PURCHASE", "EVENT_BOOKING", "FORGOT_PASSWORD"];
+  const types = ["COURSE_PURCHASE", "MEMBERSHIP_PURCHASE", "EVENT_BOOKING", "FORGOT_PASSWORD", "MEETING_SCHEDULED"];
 
   useEffect(() => {
     fetch("/api/admin/email-templates", { headers: { 'Authorization': `Bearer ${token}` } })
@@ -1759,6 +1769,24 @@ export function EmailTemplatesManager() {
     <p style="margin-top: 30px; font-size: 13px; color: #6b7280;">If you did not request a password reset, please ignore this email or contact support if you have concerns.</p>
   </div>
 </div>`);
+        } else if (selectedType === 'MEETING_SCHEDULED') {
+          setSubject('New Meeting Scheduled: {{item_name}}');
+          setContent(`<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Meeting Details Updated</h2>
+  </div>
+  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>We have updated the meeting details for <strong>{{item_name}}</strong>. Please find the details below:</p>
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>Meeting Details:</strong></p>
+      <p style="margin: 5px 0;">Date & Time: <strong>{{meetingDate}}</strong></p>
+      <p style="margin: 5px 0;">Meeting Link: <strong><a href="{{meetingLink}}" style="color: #371C3B;">Join Meeting</a></strong></p>
+      <p style="margin: 5px 0;">Notes: <strong>{{meetingNotes}}</strong></p>
+    </div>
+    <p>Looking forward to seeing you there.</p>
+  </div>
+</div>`);
         } else {
           setSubject('');
           setContent('');
@@ -1810,9 +1838,9 @@ export function EmailTemplatesManager() {
             <textarea rows={16} value={content} onChange={e=>setContent(e.target.value)} className="w-full border border-slate-200 rounded-lg p-4 text-sm font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition bg-slate-900 text-teal-300 shadow-inner leading-relaxed" placeholder="<html>...</html>"></textarea>
             <div className="mt-2 text-xs text-slate-500 space-y-1">
                <p className="font-bold">Available Dynamic Variables:</p>
-               <p className="bg-slate-50 p-2 rounded border border-slate-100 flex gap-4">
+               <p className="bg-slate-50 p-2 rounded border border-slate-100 flex gap-4 flex-wrap">
                  <span><code>{'{'}{'{'}name{'}'}{'}'}</code> - User's name</span>
-                  {selectedType !== 'FORGOT_PASSWORD' && <>
+                  {(selectedType === 'COURSE_PURCHASE' || selectedType === 'MEMBERSHIP_PURCHASE' || selectedType === 'EVENT_BOOKING') && <>
                  <span><code>{'{'}{'{'}price{'}'}{'}'}</code> - Amount paid</span>
                  <span><code>{'{'}{'{'}date{'}'}{'}'}</code> - Order date</span>
                   </>}
@@ -1820,6 +1848,12 @@ export function EmailTemplatesManager() {
                  {selectedType === 'MEMBERSHIP_PURCHASE' && <span><code>{'{'}{'{'}membership_name{'}'}{'}'}</code></span>}
                  {selectedType === 'EVENT_BOOKING' && <span><code>{'{'}{'{'}event_name{'}'}{'}'}</code></span>}
                   {selectedType === 'FORGOT_PASSWORD' && <span><code>{'{'}{'{'}resetLink{'}'}{'}'}</code> - Password Reset Link</span>}
+                  {selectedType === 'MEETING_SCHEDULED' && <>
+                    <span><code>{'{'}{'{'}item_name{'}'}{'}'}</code></span>
+                    <span><code>{'{'}{'{'}meetingDate{'}'}{'}'}</code></span>
+                    <span><code>{'{'}{'{'}meetingLink{'}'}{'}'}</code></span>
+                    <span><code>{'{'}{'{'}meetingNotes{'}'}{'}'}</code></span>
+                  </>}
                </p>
             </div>
          </div>
@@ -2873,7 +2907,7 @@ export function EventManager() {
   const [activeLangTab, setActiveLangTab] = useState((languages || []).find((l:any) => l.isDefault)?.code || (languages || []).find((l:any) => l.isActive)?.code || 'en');
 
   const [formData, setFormData] = useState({
-    title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', translations: [] as any[]
+    title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, translations: [] as any[]
   });
 
   useEffect(() => {
@@ -2902,7 +2936,7 @@ export function EventManager() {
       languageCode: lang.code, title: '', description: ''
     }));
     setFormData({
-      title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', translations: initialContents
+      title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, translations: initialContents
     });
     setEditingEvent(null);
     setFormOpen(false);
@@ -2931,6 +2965,7 @@ export function EventManager() {
       meetingLink: evt.meetingLink || '',
       meetingDate: evt.meetingDate ? new Date(evt.meetingDate).toISOString().slice(0, 16) : '',
       meetingNotes: evt.meetingNotes || '',
+      notifyEnrolled: false,
       translations: mergedContents
     });
     setFormOpen(true);
@@ -3165,6 +3200,10 @@ export function EventManager() {
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Meeting Notes / Instructions</label>
                     <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
                  </div>
+                 <label className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-800">
+                   <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                   Send email notification with meeting details to enrolled members
+                 </label>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">

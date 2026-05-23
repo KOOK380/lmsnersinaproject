@@ -572,9 +572,9 @@ export function CoursePlayer() {
    if (!course) return <div className="p-12 text-center text-slate-500">Loading course player...</div>;
 
    return (
-      <div className="flex flex-col md:flex-row h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
-         <div className="flex-1 bg-black flex flex-col relative overflow-y-auto w-full max-h-full">
-            <div className="w-full bg-black relative flex items-center justify-center shrink-0 border-b border-slate-800" style={{ aspectRatio: '16/9' }}>
+      <div className="flex flex-col md:flex-row md:h-[calc(100vh-64px)] md:overflow-hidden bg-slate-50">
+         <div className="flex-1 bg-white flex flex-col relative md:overflow-y-auto w-full md:max-h-full">
+            <div className="w-full bg-black relative flex items-center justify-center shrink-0 border-b border-slate-200" style={{ aspectRatio: '16/9' }}>
                {activeLesson?.videoUrl ? (
                  <UniversalVideo url={activeLesson.videoUrl} />
                ) : (
@@ -619,7 +619,7 @@ export function CoursePlayer() {
             </div>
          </div>
          
-         <div className="w-full md:w-[350px] lg:w-[400px] shrink-0 bg-white border-l border-slate-200 overflow-y-auto flex flex-col h-[40vh] md:h-auto">
+         <div className="w-full md:w-[350px] lg:w-[400px] shrink-0 bg-white border-t md:border-t-0 md:border-l border-slate-200 md:overflow-y-auto flex flex-col md:h-auto pb-8 md:pb-0">
             <div className="p-5 bg-white border-b border-slate-200 font-bold text-lg sticky top-0 z-10 shadow-sm flex items-center justify-between">
               <span>{t('courses.course_content')}</span>
               <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{course?.lessons?.length || 0} {t('courses.lessons')}</span>

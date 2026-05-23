@@ -15,7 +15,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100
 
 import { sendEmail } from "./email.js";
 
-async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE', data: Record<string, string>) {
+async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE' | 'MEETING_SCHEDULED', data: Record<string, string>) {
   try {
      let template = await prisma.emailTemplate.findUnique({ where: { type } });
      if (!template) {
@@ -71,6 +71,24 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
       <p style="margin: 0 0 10px 0;"><strong>Booking Details:</strong></p>
       <p style="margin: 5px 0;">Amount Paid: <strong>{{price}}</strong></p>
       <p style="margin: 5px 0;">Date: <strong>{{date}}</strong></p>
+    </div>
+    <p>Looking forward to seeing you there.</p>
+  </div>
+</div>`;
+        } else if (type === 'MEETING_SCHEDULED') {
+          defaultSubject = "New Meeting Scheduled: {{item_name}}";
+          defaultContent = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Meeting Details Updated</h2>
+  </div>
+  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>We have updated the meeting details for <strong>{{item_name}}</strong>. Please find the details below:</p>
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>Meeting Details:</strong></p>
+      <p style="margin: 5px 0;">Date & Time: <strong>{{meetingDate}}</strong></p>
+      <p style="margin: 5px 0;">Meeting Link: <strong><a href="{{meetingLink}}" style="color: #371C3B;">Join Meeting</a></strong></p>
+      <p style="margin: 5px 0;">Notes: <strong>{{meetingNotes}}</strong></p>
     </div>
     <p>Looking forward to seeing you there.</p>
   </div>
@@ -508,7 +526,7 @@ router.get("/events/:id", async (req, res) => {
 
 router.post("/admin/events", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes } = req.body;
+  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled } = req.body;
   const event = await prisma.event.create({
     data: {
       title, description, date: new Date(date), 
@@ -528,12 +546,24 @@ router.post("/admin/events", authMiddleware, async (req, res) => {
     });
   }
   
+  if (notifyEnrolled && meetingLink) {
+     const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
+     for (const b of bookings) {
+        await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
+           item_name: event.title,
+           meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
+           meetingLink: event.meetingLink || '',
+           meetingNotes: event.meetingNotes || ''
+        });
+     }
+  }
+
   res.json(event);
 });
 
 router.put("/admin/events/:id", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes } = req.body;
+  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled } = req.body;
   const event = await prisma.event.update({
     where: { id: req.params.id },
     data: {
@@ -556,6 +586,18 @@ router.put("/admin/events/:id", authMiddleware, async (req, res) => {
         data: translations.map((t: any) => ({ ...t, eventId: event.id }))
       });
     }
+  }
+
+  if (notifyEnrolled && meetingLink) {
+     const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
+     for (const b of bookings) {
+        await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
+           item_name: event.title,
+           meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
+           meetingLink: event.meetingLink || '',
+           meetingNotes: event.meetingNotes || ''
+        });
+     }
   }
 
   res.json(event);
@@ -2112,7 +2154,7 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, 
       instructorId, categoryId, membershipIds, isFeatured, isUpcoming, isActive, 
-      language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate
+      language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled
     } = req.body;
     
     let parsedInstructorId = instructorId === '' ? null : instructorId;
@@ -2184,6 +2226,19 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
         });
       }
     }
+
+    if (notifyEnrolled && meetingLink) {
+       const userCourses = await prisma.userCourse.findMany({ where: { courseId: course.id } });
+       for (const uc of userCourses) {
+          await sendAutomatedEmail(uc.userId, 'MEETING_SCHEDULED', {
+             item_name: course.title,
+             meetingDate: course.meetingDate ? new Date(course.meetingDate).toLocaleString() : '',
+             meetingLink: course.meetingLink || '',
+             meetingNotes: course.meetingNotes || ''
+          });
+       }
+    }
+
     res.json(course);
   } catch (err: any) {
     console.error("Error creating course:", err);
@@ -2197,7 +2252,7 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, instructorId, categoryId, membershipIds,
-      isFeatured, isUpcoming, isActive, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate
+      isFeatured, isUpcoming, isActive, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled
     } = req.body;
     
     let parsedInstructorId = instructorId === '' ? null : instructorId;
@@ -2297,6 +2352,18 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
           });
         }
       }
+    }
+
+    if (notifyEnrolled && updateData.meetingLink) {
+       const userCourses = await prisma.userCourse.findMany({ where: { courseId: course.id } });
+       for (const uc of userCourses) {
+          await sendAutomatedEmail(uc.userId, 'MEETING_SCHEDULED', {
+             item_name: course.title,
+             meetingDate: course.meetingDate ? new Date(course.meetingDate).toLocaleString() : '',
+             meetingLink: course.meetingLink || '',
+             meetingNotes: course.meetingNotes || ''
+          });
+       }
     }
 
     console.log("Update success. Course:", course.id);
@@ -2537,7 +2604,7 @@ router.delete("/admin/users/:id", authMiddleware, async (req, res) => {
 router.post("/admin/memberships", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate } = req.body;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled } = req.body;
     let parsedCategoryId = categoryId === '' ? null : categoryId;
     const membership = await prisma.membership.create({
       data: { 
@@ -2557,6 +2624,19 @@ router.post("/admin/memberships", authMiddleware, async (req, res) => {
       });
     }
     const full = await prisma.membership.findUnique({ where: { id: membership.id }, include: { contents: true, editions: true }});
+
+    if (notifyEnrolled && meetingLink) {
+       const membershipOrders = await prisma.membershipOrder.findMany({ where: { membershipId: membership.id } });
+       for (const mo of membershipOrders) {
+          await sendAutomatedEmail(mo.userId, 'MEETING_SCHEDULED', {
+             item_name: full?.contents?.[0]?.title || full?.label || 'Membership',
+             meetingDate: full?.meetingDate ? new Date(full.meetingDate).toLocaleString() : '',
+             meetingLink: full?.meetingLink || '',
+             meetingNotes: full?.meetingNotes || ''
+          });
+       }
+    }
+
     res.json(full);
   } catch (err: any) {
     console.error("Error creating membership:", err);
@@ -2566,7 +2646,7 @@ router.post("/admin/memberships", authMiddleware, async (req, res) => {
 router.put("/admin/memberships/:id", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate } = req.body;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled } = req.body;
     let parsedCategoryId = categoryId === '' ? null : categoryId;
     const membership = await prisma.membership.update({ 
       where: { id: req.params.id }, 
@@ -2591,6 +2671,19 @@ router.put("/admin/memberships/:id", authMiddleware, async (req, res) => {
     }
     
     const full = await prisma.membership.findUnique({ where: { id: membership.id }, include: { contents: true, editions: true }});
+
+    if (notifyEnrolled && meetingLink) {
+       const membershipOrders = await prisma.membershipOrder.findMany({ where: { membershipId: membership.id } });
+       for (const mo of membershipOrders) {
+          await sendAutomatedEmail(mo.userId, 'MEETING_SCHEDULED', {
+             item_name: full?.contents?.[0]?.title || full?.label || 'Membership',
+             meetingDate: full?.meetingDate ? new Date(full.meetingDate).toLocaleString() : '',
+             meetingLink: full?.meetingLink || '',
+             meetingNotes: full?.meetingNotes || ''
+          });
+       }
+    }
+
     res.json(full);
   } catch (err: any) {
     console.error("Error updating membership:", err);
