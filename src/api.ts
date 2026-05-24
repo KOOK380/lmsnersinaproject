@@ -936,7 +936,7 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
      return res.status(400).json({ error: 'Stripe is disabled or missing keys' });
   }
 
-  const stripe = new Stripe(stripeConfig.secretKey);
+  const stripe = new Stripe(stripeConfig.secretKey.replace(/[^a-zA-Z0-9_]/g, ''));
   
   const currencySetting = await prisma.setting.findUnique({ where: { key: 'CURRENCY' } });
   const currency = currencySetting ? JSON.parse(currencySetting.value) : 'USD';
@@ -985,7 +985,7 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
        return res.status(400).json({ error: 'Stripe is disabled' });
     }
 
-    const stripe = new Stripe(stripeConfig.secretKey);
+    const stripe = new Stripe(stripeConfig.secretKey.replace(/[^a-zA-Z0-9_]/g, ''));
     const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (session.payment_status !== 'paid') {
@@ -1086,7 +1086,7 @@ router.post("/orders", authMiddleware, async (req, res) => {
           if (!sessionId) {
              return res.status(400).json({ error: 'Payment session ID is required' });
           }
-          const stripe = new Stripe(stripeConfig.secretKey);
+          const stripe = new Stripe(stripeConfig.secretKey.replace(/[^a-zA-Z0-9_]/g, ''));
           const session = await stripe.checkout.sessions.retrieve(sessionId);
           if (session.payment_status !== 'paid') {
              return res.status(400).json({ error: 'Payment has not been completed' });
