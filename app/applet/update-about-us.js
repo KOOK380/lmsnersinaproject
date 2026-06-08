@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
+import { prisma } from './src/lib/prisma.js';
 
-export const defaultAboutUsHtml = `
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+const html = `<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
   <div class="text-left mb-16 relative">
     <h1 class="text-5xl font-bold font-serif italic text-[#0f172a] mb-4">About Us</h1>
     <p class="text-gray-500 text-lg sm:text-xl">Inspiring discovery through creativity.</p>
@@ -15,39 +14,33 @@ export const defaultAboutUsHtml = `
   </div>
 
   <div class="flex flex-col md:flex-row items-center gap-16 mb-24">
-    <div class="flex-1">
-      <p class="text-[10px] font-bold uppercase tracking-widest text-[#d7b068] mb-6">ABOUT NESRINA</p>
-      <div class="text-gray-600 space-y-6 leading-relaxed text-lg">
-        <p>
-          Most people are waiting for the right moment. The right strategy. The right opportunity. You are not most people. 
-          You feel it &mdash; that pull toward something bigger. That quiet certainty that you were built for more. 
-          You just haven&apos;t found the key yet. <span class="font-medium text-ink">I am here because I found it.</span>
-        </p>
-        <p>
-          <strong class="text-xl font-serif italic text-ink block mb-2">I am Nesrina. Not just a coach. A living proof.</strong>
-          I came from Tunisia with a vision and no safety net. I built my financial freedom at 28 &mdash; from scratch, on my own terms. 
-          I scaled businesses by 10x. I studied money, mind, and reality for 8 years straight &mdash; not in theory. In life. 
-          <span class="font-medium text-ink">And what I discovered changed everything.</span>
-        </p>
+    <div class="flex-1 text-lg">
+      <p class="text-[10px] font-bold uppercase tracking-widest text-primary/60 mb-8">ABOUT NESRINA</p>
+      
+      <div class="text-gray-600 space-y-6 leading-relaxed">
+        <p>Most people are waiting for the right moment. The right strategy. The right opportunity. You are not most people.</p>
+        <p>You feel it &mdash; that pull toward something bigger. That quiet certainty that you were built for more. You just haven&apos;t found the key yet.</p>
+        <p class="text-2xl font-serif italic text-[#0f172a]">I am here because I found it.</p>
+        <p><strong>I am Nesrina. Not just a coach. A living proof.</strong></p>
+        <p>I came from Tunisia with a vision and no safety net. I built my financial freedom at 28 &mdash; from scratch, on my own terms. I scaled businesses by 10x. I studied money, mind, and reality for 8 years straight &mdash; not in theory. In life.</p>
+        <p>And what I discovered changed everything.</p>
+        
         <div class="pl-6 border-l-4 border-[#d7b068] my-8 py-2">
             <p class="font-bold text-xl text-ink">Success is not a strategy.</p>
             <p class="font-bold text-xl text-ink">Money is not a method.</p>
             <p class="font-bold text-xl text-ink">Business is not a system.</p>
             <p class="font-bold text-2xl text-primary mt-4">They are all frequencies First.</p>
         </div>
-        <p>
-          And when you learn to become &mdash; not just to do &mdash; everything you&apos;ve been reaching for starts reaching back. 
-          This is what I teach. This is what I live. <strong class="text-ink">This is Nesrina 369.</strong>
-        </p>
-        <p class="text-xl font-medium mt-6 text-black border-b border-gray-200 pb-6 inline-block">
-          Your freedom is not a dream. It is a frequency away.
-          <span class="font-bold block pt-4 text-2xl text-primary font-serif italic">Are you ready to find it?</span>
-        </p>
+
+        <p>And when you learn to become &mdash; not just to do &mdash; everything you&apos;ve been reaching for starts reaching back.</p>
+        <p>This is what I teach. This is what I live. <strong>This is Nesrina 369.</strong></p>
+        <p class="text-xl font-medium mt-6 text-black">Your freedom is not a dream. It is a frequency away.</p>
+        <p class="font-bold pt-2 text-2xl text-primary font-serif italic">Are you ready to find it?</p>
       </div>
     </div>
     <div class="flex-1 w-full flex justify-center md:justify-end">
       <div class="w-full md:w-[80%] bg-white pb-8">
-         <img src="https://kesaqpisyoljqacpnezk.storage.supabase.co/storage/v1/object/public/uploads/1777980905649_w4ut7m_about_us_.png" alt="Nesrina" class="w-full h-auto object-cover rounded shadow-lg" />
+         <img src="https://kesaqpisyoljqacpnezk.storage.supabase.co/storage/v1/object/public/uploads/1777980905649_w4ut7m_about_us_.png" alt="Nesrina" class="w-full h-auto object-cover rounded-xl shadow-lg" />
       </div>
     </div>
   </div>
@@ -93,45 +86,14 @@ export const defaultAboutUsHtml = `
       </div>
     </div>
   </div>
-</div>
-`;
+</div>`;
 
-export function AboutUs() {
-  const [htmlContent, setHtmlContent] = useState("");
-
-  useEffect(() => {
-    fetch("/api/settings") // ensure there is an endpoint for public settings
-      .then(res => res.json())
-      .then(settings => {
-         const aboutUsSetting = settings.find((s: any) => s.key === "ABOUT_US_PAGE");
-         let content = defaultAboutUsHtml;
-         if (aboutUsSetting && aboutUsSetting.value) {
-           content = aboutUsSetting.value;
-         }
-
-         const siteImagesSetting = settings.find((s: any) => s.key === "SITE_IMAGES");
-         if (siteImagesSetting && siteImagesSetting.value) {
-           try {
-             const siteImages = JSON.parse(siteImagesSetting.value);
-             if (siteImages.aboutUsImage) {
-               // Replace the hardcoded Unsplash image or inject it.
-               content = content.replace(/https:\/\/images\.unsplash\.com\/photo-1573496359142-b8d87734a5a2\?auto=format&fit=crop&q=80&w=800/g, siteImages.aboutUsImage);
-               // Also generic replace if they somehow modified the html but kept the img structure
-               // A slightly safer approach if the user hasn't edited the image src.
-             }
-           } catch (e) {}
-         }
-         
-         setHtmlContent(content);
-      })
-      .catch(() => {
-         setHtmlContent(defaultAboutUsHtml);
-      });
-  }, []);
-
-  return (
-    <div className="bg-white min-h-screen">
-      <div dangerouslySetInnerHTML={{ __html: htmlContent }} />
-    </div>
-  );
+async function run() {
+  await prisma.setting.upsert({
+    where: { key: 'ABOUT_US_PAGE' },
+    update: { value: html },
+    create: { key: 'ABOUT_US_PAGE', value: html }
+  });
+  console.log('Updated db');
 }
+run();

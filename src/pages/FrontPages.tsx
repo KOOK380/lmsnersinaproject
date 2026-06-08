@@ -65,7 +65,7 @@ export function Courses() {
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('courses.all_courses')}</h1>
-            <p className="text-slate-600 max-w-xl text-lg font-medium">Explore our exclusive courses to master new skills and elevate your career.</p>
+            <p className="text-slate-600 max-w-xl text-lg font-medium">These are not just courses. They are frequencies you step into.</p>
          </div>
       </div>
 
