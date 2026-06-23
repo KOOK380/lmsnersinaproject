@@ -1,0 +1,409 @@
+./src/App.tsx:7:import { Courses, CourseDetails, Memberships, Events, 
+./src/App.tsx:8:import { Cart, Dashboard, CoursePlayer, Wishlist } from "./pag
+./src/App.tsx:147:              <Link to="/courses" className="text-[15px] font
+./src/App.tsx:147:t-primary transition">{t('nav.courses')}</Link>
+./src/App.tsx:189:          <Link to="/courses" className="block py-3 borde
+./src/App.tsx:189:obileMenuOpen(false)}>{t('nav.courses')}</Link>
+./src/App.tsx:629:  const [courses, setCourses] = useState<any[]>([]);
+./src/App.tsx:630:  const [courseBundles, setCourseBundles] = useState<any[]>([])
+./src/App.tsx:651:      fetch("/api/courses/active").then(r => r.json())
+./src/App.tsx:651:.then(setCourses).catch(() => {}),
+./src/App.tsx:652:      fetch("/api/public/course-bundles").then(r => r.json())
+./src/App.tsx:652:.then(setCourseBundles).catch(() => {}),
+./src/App.tsx:686:  const tCourses = getTranslated(courses, lan
+./src/App.tsx:804:                  <Link to="/courses" className="bg-white text-pr
+./src/App.tsx:826:                 {t('courses.all_courses')}
+./src/App.tsx:840:         {/* Filtered Courses */}
+./src/App.tsx:844:                    ? tCourses.filter((c: any) => c.categor
+./src/App.tsx:845:                    : tCourses.filter(c => !c.isUpcoming &&
+./src/App.tsx:846:                ).map(course => {
+./src/App.tsx:847:t isEnrolled = enrolledItems?.courses.some((c: any) => c.courseId 
+./src/App.tsx:847:=== course.id);
+./src/App.tsx:849:                  <Link to={`/courses/${course.id}`} key={course.i
+./src/App.tsx:850:                    <img src={course.imageUrl || undefined} alt={c
+./src/App.tsx:851:ing-tight mb-2 line-clamp-2">{course.title}</h3>
+./src/App.tsx:854:                        {course.price > 0 ? (
+./src/App.tsx:856:                             {course.realPrice && course.realPrice
+./src/App.tsx:856: > course.price && (
+./src/App.tsx:857: font-medium">{formatCurrency(course.realPrice, currency)}</span>
+./src/App.tsx:859:              {formatCurrency(course.price, currency)}
+./src/App.tsx:861:                        ) : course.memberships && course.members
+./src/App.tsx:863:uppercase tracking-wider">{t('courses.starting_from', 'Starting fr
+./src/App.tsx:864:  {formatCurrency(Math.min(...course.memberships.map((m: any) => m
+./src/App.tsx:881:         {/* Course Bundles */}
+./src/App.tsx:882:         {getTranslated(courseBundles, language) && getTrans
+./src/App.tsx:882:lated(courseBundles, language).length > 0 
+./src/App.tsx:888:               {getTranslated(courseBundles, language).map((bundle
+./src/App.tsx:949:         {/* Coming Soon Course */}
+./src/App.tsx:950:         {tCourses && tCourses.filter(c => c.isUpcoming).le
+./src/App.tsx:954:                <Link to="/courses" className="text-xs font-bol
+./src/App.tsx:958:                {tCourses.filter(c => c.isUpcoming).ma
+./src/App.tsx:958:p(course => {
+./src/App.tsx:959:t isEnrolled = enrolledItems?.courses.some((c: any) => c.courseId 
+./src/App.tsx:959:=== course.id);
+./src/App.tsx:961:                  <Link to={`/courses/${course.id}`} key={course.i
+./src/App.tsx:962:                    <img src={course.imageUrl || undefined} alt={c
+./src/App.tsx:964:ing-tight mb-2 line-clamp-2">{course.title} (Coming Soon)</h3>
+./src/App.tsx:1102:ne, anywhere access to online courses and degrees from world-class
+./src/App.tsx:1126:            <Link to="/courses" className="text-slate-500 h
+./src/App.tsx:1236:            const courses = Array.isArray(data.courses
+./src/App.tsx:1236:) ? data.courses : [];
+./src/App.tsx:1239:getState().setEnrolledItems({ courses, memberships, bookings });
+./src/App.tsx:1436:          <Route path="/courses" element={<Courses />} />
+./src/App.tsx:1437:          <Route path="/courses/:id" element={<CourseDetails
+./src/App.tsx:1439:          <Route path="/courses/:id/player" element={<Course
+./src/pages/FrontPages.tsx:51:export function Courses() {
+./src/pages/FrontPages.tsx:52:  const [courses, setCourses] = useState<any[]>([]);
+./src/pages/FrontPages.tsx:58:    fetch("/api/courses/active").then(r => r.json())
+./src/pages/FrontPages.tsx:58:.then(setCourses);
+./src/pages/FrontPages.tsx:61:  const tCourses = getTranslated(courses, lan
+./src/pages/FrontPages.tsx:67:t-primary font-bold mb-4">{t('courses.all_courses')}</h1>
+./src/pages/FrontPages.tsx:68:nt-medium">These are not just courses. They are frequencies you st
+./src/pages/FrontPages.tsx:79:r((cat: any) => cat.type === 'COURSE').map(cat => (
+./src/pages/FrontPages.tsx:91:        {tCourses.filter((c: any) => !activeCa
+./src/pages/FrontPages.tsx:92:l border border-slate-100">No courses available in this category.<
+./src/pages/FrontPages.tsx:93:        ) : tCourses.filter((c: any) => !activeCa
+./src/pages/FrontPages.tsx:93:ryId === activeCategory).map((course: any) => {
+./src/pages/FrontPages.tsx:94:e((c: any) => c.itemType === "COURSE" && c.itemId === course.id);
+./src/pages/FrontPages.tsx:96:            <Link to={`/courses/${course.id}`} key={course.i
+./src/pages/FrontPages.tsx:97:              {course.imageUrl ? (
+./src/pages/FrontPages.tsx:99:                  <img src={course.imageUrl || undefined} alt={c
+./src/pages/FrontPages.tsx:104:ext-white/40 drop-shadow-sm">{course.title?.charAt(0) || 'C'}</spa
+./src/pages/FrontPages.tsx:107:              {course.level && <span className="inl
+./src/pages/FrontPages.tsx:107:rcase rounded-md mb-2 w-max">{course.level}</span>}
+./src/pages/FrontPages.tsx:109:0 uppercase tracking-widest">{course.category?.name || 'Uncategori
+./src/pages/FrontPages.tsx:110:                 {course.labels?.map((label: string, i
+./src/pages/FrontPages.tsx:114:g leading-tight mb-2 flex-1">{course.title}</h3>
+./src/pages/FrontPages.tsx:117:                  {course.price > 0 ? (
+./src/pages/FrontPages.tsx:119:                      {course.realPrice && course.realPrice
+./src/pages/FrontPages.tsx:119: > course.price && <span className="tex
+./src/pages/FrontPages.tsx:119:line-through">{formatCurrency(course.realPrice, currency)}</span>}
+./src/pages/FrontPages.tsx:120:mary text-xl">{formatCurrency(course.price, currency)}</span>
+./src/pages/FrontPages.tsx:122:                  ) : course.memberships && course.members
+./src/pages/FrontPages.tsx:124:xt-slate-500 font-medium">{t('courses.starting_from', 'Starting fr
+./src/pages/FrontPages.tsx:125:">{formatCurrency(Math.min(...course.memberships.map((m: any) => m
+./src/pages/FrontPages.tsx:134:transition tracking-wide">{t('courses.details')}</span>
+./src/pages/FrontPages.tsx:145:  export function CourseDetails() {
+./src/pages/FrontPages.tsx:147:    const [courseRaw, setCourse] = useState<any>(null);
+./src/pages/FrontPages.tsx:154:edOption] = useState<string>('course');
+./src/pages/FrontPages.tsx:161:      if (selectedOption === 'course') {
+./src/pages/FrontPages.tsx:162:            const courseUser = dashboardData.courses?.
+./src/pages/FrontPages.tsx:162:find((c: any) => c.courseId === courseRaw?.id);
+./src/pages/FrontPages.tsx:163:            if (courseUser) return !(courseUser.expi
+./src/pages/FrontPages.tsx:163:resAt && new Date(courseUser.expiresAt) < new Date());
+./src/pages/FrontPages.tsx:170:ashboardData, selectedOption, courseRaw?.id]);
+./src/pages/FrontPages.tsx:172:    const baseCourse = getTranslated(courseRaw, la
+./src/pages/FrontPages.tsx:173:    const course = React.useMemo(() => {
+./src/pages/FrontPages.tsx:174:      if (selectedOption === 'course' || !courseRaw?.memberships) 
+./src/pages/FrontPages.tsx:174:return baseCourse;
+./src/pages/FrontPages.tsx:176:        const mem = courseRaw.memberships.find((m:any) =
+./src/pages/FrontPages.tsx:177:        if (!mem) return baseCourse;
+./src/pages/FrontPages.tsx:181:            ...baseCourse,
+./src/pages/FrontPages.tsx:182: mem.label || mem.type || baseCourse.title,
+./src/pages/FrontPages.tsx:183:: memTrans.description || baseCourse.description,
+./src/pages/FrontPages.tsx:184:imageUrl: mem.imageUrl || baseCourse.imageUrl,
+./src/pages/FrontPages.tsx:187:    }, [baseCourse, courseRaw?.memberships, selectedOpti
+./src/pages/FrontPages.tsx:193:      fetch(`/api/reviews?courseId=${id}`).then(r => r.json())
+./src/pages/FrontPages.tsx:197:      fetch(`/api/courses/${id}`).then(r => r.json()).
+./src/pages/FrontPages.tsx:198:         setCourse(res);
+./src/pages/FrontPages.tsx:208:      if (user && course && localToken) {
+./src/pages/FrontPages.tsx:215:    }, [user, course, token]);
+./src/pages/FrontPages.tsx:227:SON.stringify({ ...newReview, courseId: id })
+./src/pages/FrontPages.tsx:238:    if (!course) return <div className="p-12 
+./src/pages/FrontPages.tsx:238:00 italic font-serif">Loading course details...</div>;
+./src/pages/FrontPages.tsx:241:       selectedOption === 'course' ? (i.itemType === "COURSE" &
+./src/pages/FrontPages.tsx:241:& i.itemId === course?.id) 
+./src/pages/FrontPages.tsx:259:      if (selectedOption !== 'course' && courseRaw?.memberships) {
+./src/pages/FrontPages.tsx:260:         const membership = courseRaw.memberships.find((m:any) =
+./src/pages/FrontPages.tsx:278:      const edition = course.editions?.find((e: any) => e.
+./src/pages/FrontPages.tsx:279:      if (course.editions?.length > 0 && !edit
+./src/pages/FrontPages.tsx:288:      let finalTitle = course.title;
+./src/pages/FrontPages.tsx:300:           itemType: "COURSE", 
+./src/pages/FrontPages.tsx:301:           itemId: course.id, 
+./src/pages/FrontPages.tsx:304:           price: course.price 
+./src/pages/FrontPages.tsx:317:      await toggleFavorite("COURSE", course.id, localToken);
+./src/pages/FrontPages.tsx:320:e((f: any) => f.itemType === "COURSE" && f.itemId === course.id);
+./src/pages/FrontPages.tsx:322:  const totalLessons = course.lessons?.length || 0;
+./src/pages/FrontPages.tsx:326:      <SeoTags entityType="COURSE" entityId={course.id} fallbac
+./src/pages/FrontPages.tsx:326:kTitle={course.title} />
+./src/pages/FrontPages.tsx:331:        <Link to="/courses" className="hover:text-prima
+./src/pages/FrontPages.tsx:331:ry">{t('nav.courses')}</Link>
+./src/pages/FrontPages.tsx:333:"font-medium text-slate-800">{course.title}</span>
+./src/pages/FrontPages.tsx:343:                 {course.category?.name && (
+./src/pages/FrontPages.tsx:345:                         {course.category.name}
+./src/pages/FrontPages.tsx:348:                 {course.labels?.map((label: string, i
+./src/pages/FrontPages.tsx:354:text-gray-900 leading-tight">{course.title}</h1>
+./src/pages/FrontPages.tsx:362:span className="font-medium">{course.level || 'Beginner Level'}</s
+./src/pages/FrontPages.tsx:365:             {course.instructor && (
+./src/pages/FrontPages.tsx:367:                 {course.instructor.imageUrl ? (
+./src/pages/FrontPages.tsx:368:                   <img src={course.instructor.imageUrl} alt={cou
+./src/pages/FrontPages.tsx:370:nter text-primary font-bold">{course.instructor.name.charAt(0)}</d
+./src/pages/FrontPages.tsx:373:me="font-bold text-gray-900">{course.instructor.name}</span></p>
+./src/pages/FrontPages.tsx:381:          {(course.bannerVideoUrl || course.imag
+./src/pages/FrontPages.tsx:383:              {course.bannerVideoUrl && isPlayingVi
+./src/pages/FrontPages.tsx:384:         <UniversalVideo url={course.bannerVideoUrl} autoPlay={tru
+./src/pages/FrontPages.tsx:387:                  {course.imageUrl ? (
+./src/pages/FrontPages.tsx:388:                    <img src={course.imageUrl || undefined} alt="C
+./src/pages/FrontPages.tsx:394:                  {course.bannerVideoUrl && (
+./src/pages/FrontPages.tsx:411:rouslySetInnerHTML={{ __html: course.description }}
+./src/pages/FrontPages.tsx:418:uppercase tracking-wider">{t('courses.price', 'Price')}</p>
+./src/pages/FrontPages.tsx:420:         {selectedOption === 'course' ? (
+./src/pages/FrontPages.tsx:422:                         {course.realPrice && course.realPrice
+./src/pages/FrontPages.tsx:422: > course.price && (
+./src/pages/FrontPages.tsx:423: font-medium">{formatCurrency(course.realPrice, currency)}</span>
+./src/pages/FrontPages.tsx:425:              {formatCurrency(course.price, currency)}
+./src/pages/FrontPages.tsx:429:              {formatCurrency(courseRaw.memberships?.find((m:any) 
+./src/pages/FrontPages.tsx:436:        <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull;
+./src/pages/FrontPages.tsx:436: {course.duration || '21 days'}</p>
+./src/pages/FrontPages.tsx:441:             {courseRaw?.memberships && courseRaw.
+./src/pages/FrontPages.tsx:445:                 {course.price > 0 && (
+./src/pages/FrontPages.tsx:446:ion-all ${selectedOption === 'course' ? 'border-primary bg-primary
+./src/pages/FrontPages.tsx:447: checked={selectedOption === 'course'} onChange={() => setSelected
+./src/pages/FrontPages.tsx:447:Option('course')} className="hidden" />
+./src/pages/FrontPages.tsx:450:text-primary">{formatCurrency(course.price, currency)}</span>
+./src/pages/FrontPages.tsx:455:                 {courseRaw.memberships.map((m: any) =
+./src/pages/FrontPages.tsx:476:rt (Go to Cart)" : "Take This Course"}
+./src/pages/FrontPages.tsx:485:          {/* Course Content */}
+./src/pages/FrontPages.tsx:486:          {course.lessons?.length > 0 && (
+./src/pages/FrontPages.tsx:488: font-bold text-gray-900">{t('courses.course_content')}</h2>
+./src/pages/FrontPages.tsx:490:               {course.lessons?.sort((a: any, b: any
+./src/pages/FrontPages.tsx:512:          {course.editions?.length > 0 && (
+./src/pages/FrontPages.tsx:522:                 {course.editions.map((ed: any, i: num
+./src/pages/FrontPages.tsx:560:          {course.instructor && (
+./src/pages/FrontPages.tsx:562: font-bold text-gray-900">{t('courses.meet_instructor')}</h2>
+./src/pages/FrontPages.tsx:565:                   {course.instructor.imageUrl ? (
+./src/pages/FrontPages.tsx:566:                    <img src={course.instructor.imageUrl} alt={cou
+./src/pages/FrontPages.tsx:568:ont-bold text-3xl shadow-sm">{course.instructor.name.charAt(0)}</d
+./src/pages/FrontPages.tsx:573:me="font-bold text-2xl mb-1">{course.instructor.name}</h3>
+./src/pages/FrontPages.tsx:574:text-sm text-slate-500 mb-4">{course.instructor.courses?.length ||
+./src/pages/FrontPages.tsx:575:t-slate-600 leading-relaxed">{course.instructor.bio}</p>
+./src/pages/FrontPages.tsx:589:         {selectedOption === 'course' ? (
+./src/pages/FrontPages.tsx:591:                       {course.realPrice && course.realPrice
+./src/pages/FrontPages.tsx:591: > course.price && (
+./src/pages/FrontPages.tsx:592: font-medium">{formatCurrency(course.realPrice, currency)}</span>
+./src/pages/FrontPages.tsx:594:              {formatCurrency(course.price, currency)}
+./src/pages/FrontPages.tsx:598:              {formatCurrency(courseRaw.memberships.find((m:any) =
+./src/pages/FrontPages.tsx:604:                 {courseRaw?.memberships && courseRaw.
+./src/pages/FrontPages.tsx:608:                     {course.price > 0 && (
+./src/pages/FrontPages.tsx:609:ion-all ${selectedOption === 'course' ? 'border-primary bg-primary
+./src/pages/FrontPages.tsx:610: checked={selectedOption === 'course'} onChange={() => setSelected
+./src/pages/FrontPages.tsx:610:Option('course')} className="hidden" />
+./src/pages/FrontPages.tsx:613:text-primary">{formatCurrency(course.price, currency)}</span>
+./src/pages/FrontPages.tsx:618:                     {courseRaw.memberships.map((m: any) =
+./src/pages/FrontPages.tsx:639:rt (Go to Cart)" : "Take This Course"}
+./src/pages/FrontPages.tsx:648:5 text-sm text-gray-800">This course includes:</p>
+./src/pages/FrontPages.tsx:660:                       <span>{course.duration || '21 Days'}</span>
+./src/pages/FrontPages.tsx:664:                       <span>{course.language || 'Arabic'}</span>
+./src/pages/FrontPages.tsx:764:      {!(course.price === 0 && courseRaw?.mem
+./src/pages/FrontPages.tsx:769:         {selectedOption === 'course' ? (
+./src/pages/FrontPages.tsx:771:                    {course.realPrice && course.realPrice
+./src/pages/FrontPages.tsx:771: > course.price && (
+./src/pages/FrontPages.tsx:772: font-medium">{formatCurrency(course.realPrice, currency)}</span>
+./src/pages/FrontPages.tsx:774:              {formatCurrency(course.price, currency)}
+./src/pages/FrontPages.tsx:778:              {formatCurrency(courseRaw?.memberships?.find((m:any)
+./src/pages/FrontPages.tsx:785:Cart ? "In Cart" : "Take This Course"}
+./src/pages/FrontPages.tsx:806:    fetch(`/api/public/course-bundles`).then(r => r.json())
+./src/pages/FrontPages.tsx:876:          {bundle.courses?.length > 0 && (
+./src/pages/FrontPages.tsx:880:               {bundle.courses.map((item: any) => {
+./src/pages/FrontPages.tsx:881:                 const course = item.course;
+./src/pages/FrontPages.tsx:883:                   <div key={course.id} className="border border-
+./src/pages/FrontPages.tsx:885:                        {course.imageUrl && <img src={course.
+./src/pages/FrontPages.tsx:885:imageUrl || undefined} alt={course.title} className="w-20 h-20 o
+./src/pages/FrontPages.tsx:887:t-primary transition-colors">{course.title}</h3>
+./src/pages/FrontPages.tsx:888:mt-1 line-clamp-2">{stripHtml(course.description)}</p>
+./src/pages/FrontPages.tsx:915:                 (inCart ? t('courses.in_cart') : 'Claim This Bund
+./src/pages/Admin.tsx:10:  CourseManager, CourseBundlesManager, InstructorMana
+./src/pages/Admin.tsx:82:    coursePurchases: 0,
+./src/pages/Admin.tsx:86:    topCourses: [],
+./src/pages/Admin.tsx:101:                topCourses: data.topCourses || [],
+./src/pages/Admin.tsx:203:             {title: t('admin.course_purchases'), value: stats.cou
+./src/pages/Admin.tsx:203:rsePurchases, label: "Total courses sold"},
+./src/pages/Admin.tsx:223:Top Programs', data: stats.topCourses, key: 'title' },
+./src/pages/Admin.tsx:247:{activeTab === "PROGRAMS" && <CourseManager />}
+./src/pages/Admin.tsx:248:Tab === "PROGRAM BUNDLES" && <CourseBundlesManager />}
+./src/pages/AdminManagerComponents.tsx:73:export function CourseManager() {
+./src/pages/AdminManagerComponents.tsx:74:  const [courses, setCourses] = useState<any[]>([]);
+./src/pages/AdminManagerComponents.tsx:108:    fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:108:etCourses).catch(()=>{});
+./src/pages/AdminManagerComponents.tsx:115:    await fetch(`/api/admin/courses/${id}`, { method: 'DELETE', 
+./src/pages/AdminManagerComponents.tsx:116:    setCourses(courses.filter(c => c.id !== id));
+./src/pages/AdminManagerComponents.tsx:119:  const handleEdit = async (courseId: string) => {
+./src/pages/AdminManagerComponents.tsx:120:    const courseToEdit = courses.find(c => c.id === courseId)
+./src/pages/AdminManagerComponents.tsx:121:    if (!courseToEdit) return;
+./src/pages/AdminManagerComponents.tsx:123:    // fetch full course details to get lessons
+./src/pages/AdminManagerComponents.tsx:124:const res = await fetch(`/api/courses/${courseId}`);
+./src/pages/AdminManagerComponents.tsx:125:    const fullCourse = await res.json();
+./src/pages/AdminManagerComponents.tsx:128:      const existing = (fullCourse.translations || []).find((c: 
+./src/pages/AdminManagerComponents.tsx:133:    setEditId(courseId);
+./src/pages/AdminManagerComponents.tsx:135:      title: fullCourse.title || '',
+./src/pages/AdminManagerComponents.tsx:136:      description: fullCourse.description || '',
+./src/pages/AdminManagerComponents.tsx:137:      price: fullCourse.price || 0,
+./src/pages/AdminManagerComponents.tsx:138:      realPrice: fullCourse.realPrice || 0,
+./src/pages/AdminManagerComponents.tsx:139:      expiryDate: fullCourse.expiryDate ? new Date(fullCou
+./src/pages/AdminManagerComponents.tsx:140:      imageUrl: fullCourse.imageUrl || '',
+./src/pages/AdminManagerComponents.tsx:141:      bannerVideoUrl: fullCourse.bannerVideoUrl || '',
+./src/pages/AdminManagerComponents.tsx:142:      instructorId: fullCourse.instructorId || '',
+./src/pages/AdminManagerComponents.tsx:143:      categoryId: fullCourse.categoryId || '',
+./src/pages/AdminManagerComponents.tsx:144:      membershipIds: fullCourse.memberships?.map((m:any) => m
+./src/pages/AdminManagerComponents.tsx:145:      isFeatured: fullCourse.isFeatured || false,
+./src/pages/AdminManagerComponents.tsx:146:      isUpcoming: fullCourse.isUpcoming || false,
+./src/pages/AdminManagerComponents.tsx:147:      isActive: fullCourse.isActive ?? true,
+./src/pages/AdminManagerComponents.tsx:148:      language: fullCourse.language || 'Arabic',
+./src/pages/AdminManagerComponents.tsx:149:      level: fullCourse.level || 'Beginner Level',
+./src/pages/AdminManagerComponents.tsx:150:      duration: fullCourse.duration || '21 Days',
+./src/pages/AdminManagerComponents.tsx:151:      meetingLink: fullCourse.meetingLink || '',
+./src/pages/AdminManagerComponents.tsx:152:      meetingDate: fullCourse.meetingDate ? new Date(fullCo
+./src/pages/AdminManagerComponents.tsx:153:      meetingNotes: fullCourse.meetingNotes || '',
+./src/pages/AdminManagerComponents.tsx:155:      labels: fullCourse.labels || [],
+./src/pages/AdminManagerComponents.tsx:157:      lessons: fullCourse.lessons?.map((l:any) => ({
+./src/pages/AdminManagerComponents.tsx:163:         showAboutCourse: l.showAboutCourse !== undefi
+./src/pages/AdminManagerComponents.tsx:163:ned ? l.showAboutCourse : true,
+./src/pages/AdminManagerComponents.tsx:170:      editions: fullCourse.editions?.map((e:any) => ({
+./src/pages/AdminManagerComponents.tsx:235:    let url = "/api/admin/courses";
+./src/pages/AdminManagerComponents.tsx:238:      url = `/api/admin/courses/${editId}`;
+./src/pages/AdminManagerComponents.tsx:242:      console.log("Saving course...", url, formData);
+./src/pages/AdminManagerComponents.tsx:258:      fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:258:etCourses).catch(()=>{});
+./src/pages/AdminManagerComponents.tsx:297:ate-800 mb-6">{editId ? 'Edit Course' : 'Add New Course'}</h3>    
+./src/pages/AdminManagerComponents.tsx:376:ilter((c: any) => c.type === 'COURSE').map((cat: any) => <option k
+./src/pages/AdminManagerComponents.tsx:440:n: '', duration: '', showAboutCourse: true, order: formData.lesson
+./src/pages/AdminManagerComponents.tsx:554:ll enrolled students for this course.</p>
+./src/pages/AdminManagerComponents.tsx:597:              {courses.length === 0 ? (
+./src/pages/AdminManagerComponents.tsx:598:ext-center text-slate-400">No courses found.</td></tr>
+./src/pages/AdminManagerComponents.tsx:599:              ) : courses.map(course => (
+./src/pages/AdminManagerComponents.tsx:600:                <tr key={course.id} className="hover:bg-slate
+./src/pages/AdminManagerComponents.tsx:601:me="flex items-center gap-2">{course.title}{course.isFeatured && <
+./src/pages/AdminManagerComponents.tsx:602:00 font-bold">{formatCurrency(course.price, currency)}</td>
+./src/pages/AdminManagerComponents.tsx:603:assName="p-4 text-slate-600">{course.category?.name || 'Uncategori
+./src/pages/AdminManagerComponents.tsx:604:assName="p-4 text-slate-600">{course.instructor?.name || 'Unassign
+./src/pages/AdminManagerComponents.tsx:607:res = await fetch(`/api/admin/courses/${course.id}`, {
+./src/pages/AdminManagerComponents.tsx:610:: JSON.stringify({ isActive: !course.isActive })
+./src/pages/AdminManagerComponents.tsx:612:       if(res.ok) fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:612:etCourses).catch(()=>{});
+./src/pages/AdminManagerComponents.tsx:613:font-bold transition-colors ${course.isActive ? 'bg-emerald-50 tex
+./src/pages/AdminManagerComponents.tsx:614:                       {course.isActive ? 'Active' : 'Disabl
+./src/pages/AdminManagerComponents.tsx:617:res = await fetch(`/api/admin/courses/${course.id}`, {
+./src/pages/AdminManagerComponents.tsx:620:JSON.stringify({ isFeatured: !course.isFeatured })
+./src/pages/AdminManagerComponents.tsx:622:       if(res.ok) fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:622:etCourses).catch(()=>{});
+./src/pages/AdminManagerComponents.tsx:623:font-bold transition-colors ${course.isFeatured ? 'bg-amber-50 tex
+./src/pages/AdminManagerComponents.tsx:624:                       {course.isFeatured ? 'Featured' : 'No
+./src/pages/AdminManagerComponents.tsx:627:res = await fetch(`/api/admin/courses/${course.id}`, {
+./src/pages/AdminManagerComponents.tsx:630:JSON.stringify({ isUpcoming: !course.isUpcoming })
+./src/pages/AdminManagerComponents.tsx:632:       if(res.ok) fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:632:etCourses).catch(()=>{});
+./src/pages/AdminManagerComponents.tsx:633:font-bold transition-colors ${course.isUpcoming ? 'bg-indigo-50 te
+./src/pages/AdminManagerComponents.tsx:634:                       {course.isUpcoming ? 'Coming Soon' : 
+./src/pages/AdminManagerComponents.tsx:638:ton onClick={() => handleEdit(course.id)} className="text-indigo-6
+./src/pages/AdminManagerComponents.tsx:639: onDelete={() => handleDelete(course.id)} className="text-red-600 
+./src/pages/AdminManagerComponents.tsx:650:export function CourseBundlesManager() {
+./src/pages/AdminManagerComponents.tsx:652:  const [courses, setCourses] = useState<any[]>([]);
+./src/pages/AdminManagerComponents.tsx:661:    courses: [] as string[],
+./src/pages/AdminManagerComponents.tsx:668:    fetch("/api/admin/course-bundles", { headers: { 'Autho
+./src/pages/AdminManagerComponents.tsx:670:    fetch("/api/courses", { headers: { 'Authorizatio
+./src/pages/AdminManagerComponents.tsx:671: .then(r => r.json()).then(setCourses).catch(console.error);
+./src/pages/AdminManagerComponents.tsx:681:st url = editId ? `/api/admin/course-bundles/${editId}` : `/api/ad
+./src/pages/AdminManagerComponents.tsx:681:min/course-bundles`;
+./src/pages/AdminManagerComponents.tsx:721:      courses: fullBundle.courses?.map((c: any) => c.courseId)
+./src/pages/AdminManagerComponents.tsx:728:res = await fetch(`/api/admin/course-bundles/${id}`, {
+./src/pages/AdminManagerComponents.tsx:816:                 {courses.map(course => (
+./src/pages/AdminManagerComponents.tsx:817:                  <label key={course.id} className={`flex items-ce
+./src/pages/AdminManagerComponents.tsx:817: transition-colors ${formData.courses.includes(course.id) ? 'bg-in
+./src/pages/AdminManagerComponents.tsx:820:            checked={formData.courses.includes(course.id)} 
+./src/pages/AdminManagerComponents.tsx:822:d) setFormData({ ...formData, courses: [...formData.courses, cours
+./src/pages/AdminManagerComponents.tsx:823:se setFormData({ ...formData, courses: formData.courses.filter(id 
+./src/pages/AdminManagerComponents.tsx:823:=> id !== course.id) });
+./src/pages/AdminManagerComponents.tsx:827:ium text-slate-700 truncate">{course.title}</span>
+./src/pages/AdminManagerComponents.tsx:853:            courses: [],
+./src/pages/AdminManagerComponents.tsx:890:                      {bundle.courses?.length || 0} courses
+./src/pages/AdminManagerComponents.tsx:898:res = await fetch(`/api/admin/course-bundles/${bundle.id}`, {
+./src/pages/AdminManagerComponents.tsx:908:res = await fetch(`/api/admin/course-bundles/${bundle.id}`, {
+./src/pages/AdminManagerComponents.tsx:1288:ll enrolled students for this course.</p>
+./src/pages/AdminManagerComponents.tsx:1486:  const [courseId, setCourseId] = useState("");
+./src/pages/AdminManagerComponents.tsx:1493:  const [courses, setCourses] = useState<any[]>([]);
+./src/pages/AdminManagerComponents.tsx:1510:    fetch("/api/courses")
+./src/pages/AdminManagerComponents.tsx:1512:      .then(data => setCourses(Array.isArray(data) ? data :
+./src/pages/AdminManagerComponents.tsx:1513:      .catch(() => setCourses([]));
+./src/pages/AdminManagerComponents.tsx:1532:        targetId: type === 'COURSE' ? courseId : type === 'MEMBE
+./src/pages/AdminManagerComponents.tsx:1574:   <input type="radio" value="COURSE" checked={type === 'COURSE'} 
+./src/pages/AdminManagerComponents.tsx:1574:onChange={() => setType('COURSE')} className="accent-primary"
+./src/pages/AdminManagerComponents.tsx:1575:                Course Users
+./src/pages/AdminManagerComponents.tsx:1588:          {type === 'COURSE' && (
+./src/pages/AdminManagerComponents.tsx:1591:              <select value={courseId} onChange={e => setCourseId
+./src/pages/AdminManagerComponents.tsx:1593:                {courses.map(c => <option key={c.id} 
+./src/pages/AdminManagerComponents.tsx:1644:ect || !message || (type === 'COURSE' && !courseId) || (type === '
+./src/pages/AdminManagerComponents.tsx:1658:1">To: {c.type} {(c.type === 'COURSE' || c.type === 'MEMBERSHIP') 
+./src/pages/AdminManagerComponents.tsx:1679: setSelectedType] = useState('COURSE_PURCHASE');
+./src/pages/AdminManagerComponents.tsx:1684:  const types = ["COURSE_PURCHASE", "MEMBERSHIP_PURCHA
+./src/pages/AdminManagerComponents.tsx:1708:        if (selectedType === 'COURSE_PURCHASE') {
+./src/pages/AdminManagerComponents.tsx:1709:'Thank you for enrolling in {{course_name}}!');
+./src/pages/AdminManagerComponents.tsx:1716:ou for enrolling in <strong>{{course_name}}</strong>! We are excit
+./src/pages/AdminManagerComponents.tsx:1722:    <p>Enjoy your course and happy learning!</p>
+./src/pages/AdminManagerComponents.tsx:1847:          {(selectedType === 'COURSE_PURCHASE' || selectedType ===
+./src/pages/AdminManagerComponents.tsx:1851:           {selectedType === 'COURSE_PURCHASE' && <span><code>{'{'
+./src/pages/AdminManagerComponents.tsx:1851:}{'{'}course_name{'}'}{'}'}</code></span>}
+./src/pages/AdminManagerComponents.tsx:2484:: '', description: '', type: 'COURSE', translations: [] as any[] }
+./src/pages/AdminManagerComponents.tsx:2517:: '', description: '', type: 'COURSE', translations: [] });
+./src/pages/AdminManagerComponents.tsx:2538:: '', description: '', type: 'COURSE', translations: initialConten
+./src/pages/AdminManagerComponents.tsx:2556:               <option value="COURSE">Program</option>
+./src/pages/AdminManagerComponents.tsx:2612:ion || '', type: cat.type || 'COURSE', translations: mergedContent
+./src/pages/AdminManagerComponents.tsx:3186:ll enrolled students for this course.</p>
+./src/pages/AdminManagerComponents.tsx:3513:                      {r.course?.title ? `Program: ${r.course
+./src/pages/AdminManagerComponents.tsx:3926: [data, setData] = useState<{ courses: any[], orders: any[], users
+./src/pages/AdminManagerComponents.tsx:3926:: any[], leads: any[] }>({ courses: [], orders: [], users: [], 
+./src/pages/AdminManagerComponents.tsx:3933:        const [coursesRes, ordersRes, usersRes, lea
+./src/pages/AdminManagerComponents.tsx:3934:            fetch('/api/courses'),
+./src/pages/AdminManagerComponents.tsx:3940:            courses: await coursesRes.json(),
+./src/pages/AdminManagerComponents.tsx:4005:filter((o:any)=>o.itemType==='COURSE' && o.status === 'COMPLETED')
+./src/pages/AdminManagerComponents.tsx:4038:               <option value="COURSE">Programs</option>
+./src/pages/AdminManagerComponents.tsx:4092:  const [courses, setCourses] = useState<any[]>([]);
+./src/pages/AdminManagerComponents.tsx:4100:    fetch("/api/courses").then(r => r.json()).then(s
+./src/pages/AdminManagerComponents.tsx:4100:etCourses);
+./src/pages/AdminManagerComponents.tsx:4159:der="e.g. react, programming, course, web development" />
+./src/pages/AdminManagerComponents.tsx:4172:                 {courses.map(c => (
+./src/pages/AdminManagerComponents.tsx:4173:d} onClick={() => loadSeo(c, 'COURSE', c.title)} className="w-full
+./src/pages/AdminManagerComponents.tsx:4177:                 {courses.length === 0 && <span classN
+./src/pages/AdminManagerComponents.tsx:4177:ate-400 italic font-serif">No courses available.</span>}
+./src/pages/AdminManagerComponents.tsx:4738:.target.value)} placeholder="/courses" className="w-full border bo
+./src/pages/AdminManagerComponents.tsx:4906:ion!, Let's try our brand new course builder!" />
+./src/pages/AdminManagerComponents.tsx:4912:shadow-sm" placeholder="e.g. /courses, /memberships, https://..." 
+./src/pages/UserPages.tsx:257: {t('cart.empty')} <Link to="/courses" className="text-primary hov
+./src/pages/UserPages.tsx:305:t [data, setData] = useState<{courses: any[], memberships: any[], 
+./src/pages/UserPages.tsx:305:], rejectedOrders?: any[]}>({ courses: [], memberships: [], bookin
+./src/pages/UserPages.tsx:408: { label: t('dashboard.active_courses'), value: data.courses.lengt
+./src/pages/UserPages.tsx:454:        {/* Courses */}
+./src/pages/UserPages.tsx:457:           {data.courses.length === 0 ? <p className=
+./src/pages/UserPages.tsx:457:erif italic">{t('dashboard.no_courses')}</p> : (
+./src/pages/UserPages.tsx:459:               {data.courses.map((c, i) => {
+./src/pages/UserPages.tsx:464:b-3 line-clamp-2 text-ink">{c.course.title}</div>
+./src/pages/UserPages.tsx:480:<Link to={isExpired ? "#" : `/courses/${c.course.id}/player`} clas
+./src/pages/UserPages.tsx:554:export function CoursePlayer() {
+./src/pages/UserPages.tsx:556:   const [courseRaw, setCourse] = useState<any>(null);
+./src/pages/UserPages.tsx:562:     fetch(`/api/courses/${id}`).then(r => r.json()).
+./src/pages/UserPages.tsx:563:       setCourse(data);
+./src/pages/UserPages.tsx:570:   const course = getTranslated(courseRaw, la
+./src/pages/UserPages.tsx:572:   if (!course) return <div className="p-12 
+./src/pages/UserPages.tsx:572:enter text-slate-500">Loading course player...</div>;
+./src/pages/UserPages.tsx:582:                    <p>{t('courses.no_content')}</p>
+./src/pages/UserPages.tsx:588:-900">{activeLesson?.title || course.title}</h2>
+./src/pages/UserPages.tsx:592:      {activeLesson?.showAboutCourse !== false && (
+./src/pages/UserPages.tsx:594:bold mb-4 text-slate-900">{t('courses.about_lesson')}</h3>
+./src/pages/UserPages.tsx:597: activeLesson?.description || course.description }} 
+./src/pages/UserPages.tsx:601:                      {course.instructor && (
+./src/pages/UserPages.tsx:603:                           {course.instructor.imageUrl ? (
+./src/pages/UserPages.tsx:604:                    <img src={course.instructor.imageUrl} alt={cou
+./src/pages/UserPages.tsx:607:                             {course.instructor.name.charAt(0)}
+./src/pages/UserPages.tsx:611: uppercase tracking-wide">{t('courses.instructor')}</p>
+./src/pages/UserPages.tsx:612:te-900 text-sm line-clamp-1">{course.instructor.name}</p>
+./src/pages/UserPages.tsx:624:              <span>{t('courses.course_content')}</span>
+./src/pages/UserPages.tsx:625:-600 px-2 py-1 rounded-full">{course?.lessons?.length || 0} {t('co
+./src/pages/UserPages.tsx:628:                {course.lessons?.map((lesson: any, i:
+./src/pages/UserPages.tsx:645:                {(!course.lessons || course.lessons.len
+./src/pages/UserPages.tsx:647:    No lessons found for this course.
+./src/pages/UserPages.tsx:664:const res = await fetch("/api/courses/active");
+./src/pages/UserPages.tsx:665:       const courses = await res.json();
+./src/pages/UserPages.tsx:670:         if (f.itemType === 'COURSE') {
+./src/pages/UserPages.tsx:671:            const item = courses.find((c: any) => c.id === f.
+./src/pages/UserPages.tsx:694:'wishlist.empty')} <Link to="/courses" className="text-primary hov
+./src/pages/UserPages.tsx:705:percase font-medium mr-1">{t('courses.starting_from', 'Starting fr
+./src/pages/UserPages.tsx:710:Membership ? 'memberships' : 'courses'}/${fav.itemId}`} className=

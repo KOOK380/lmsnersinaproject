@@ -15,7 +15,7 @@ async function startServer() {
     console.error("Failed to seed dummy data at startup. You may need to provide a valid DATABASE_URL in your environment variables.", e);
   }
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
 
   app.use(cors());
   app.use(express.json({ limit: '50mb' }));

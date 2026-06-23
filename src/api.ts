@@ -451,6 +451,7 @@ router.get("/courses", async (req, res) => {
 router.get("/courses/active", async (req, res) => {
   const courses = await prisma.course.findMany({
     where: { isActive: true },
+    orderBy: { createdAt: 'desc' },
     include: {
       instructor: true,
       category: true,
@@ -526,7 +527,7 @@ router.get("/events/:id", async (req, res) => {
 
 router.post("/admin/events", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled } = req.body;
+  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isSubscription, subscriptionInterval } = req.body;
   const event = await prisma.event.create({
     data: {
       title, description, date: new Date(date), 
@@ -743,7 +744,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
   
   const userCourses = await prisma.userCourse.findMany({
     where: { userId },
-    include: { course: true }
+    include: { course: { include: { _count: { select: { lessons: true } } } } }
   });
   
   const memberships = await prisma.membershipOrder.findMany({
@@ -754,7 +755,8 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
   const validMembershipIds = memberships.map(m => m.membershipId);
   if (validMembershipIds.length > 0) {
     const membershipCourses = await prisma.course.findMany({
-      where: { memberships: { some: { id: { in: validMembershipIds } } } }
+      where: { memberships: { some: { id: { in: validMembershipIds } } } },
+      include: { _count: { select: { lessons: true } } }
     });
     
     membershipCourses.forEach(mc => {
@@ -787,7 +789,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
   for (const order of pendingOrders) {
     for (const item of order.items) {
       if (item.itemType === 'COURSE') {
-        const c = await prisma.course.findUnique({ where: { id: item.itemId } });
+        const c = await prisma.course.findUnique({ where: { id: item.itemId }, include: { _count: { select: { lessons: true } } } });
         if (c && !userCourses.some(uc => uc.courseId === c.id) && !pendingCourses.some(pc => pc.courseId === c.id)) {
           pendingCourses.push({
             id: `pending-${item.id}`,
@@ -803,7 +805,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
       } else if (item.itemType === 'BUNDLE') {
         const bundle = await prisma.courseBundle.findUnique({
           where: { id: item.itemId },
-          include: { courses: { include: { course: true } } }
+          include: { courses: { include: { course: { include: { _count: { select: { lessons: true } } } } } } }
         });
         if (bundle) {
           for (const bundleItem of bundle.courses) {
@@ -885,7 +887,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
         itemName = e?.title || "Event";
       } else if (item.itemType === 'BUNDLE') {
         const b = await prisma.courseBundle.findUnique({ where: { id: item.itemId } });
-        itemName = b?.title || "Course Bundle";
+        itemName = b?.title || "Program Bundle";
       }
       itemsList.push({
         id: item.id,
@@ -949,6 +951,11 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
           name: it.title || 'Item',
         },
         unit_amount: Math.round(it.price * 100),
+        ...(it.isSubscription ? {
+           recurring: {
+             interval: it.subscriptionInterval || 'month'
+           }
+        } : {})
       },
       quantity: 1,
     }));
@@ -956,7 +963,7 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,
-      mode: 'payment',
+      mode: items.some((it: any) => it.isSubscription) ? 'subscription' : 'payment',
       success_url: successUrl,
       cancel_url: cancelUrl,
       metadata: {
@@ -1038,13 +1045,13 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
         });
         if (!existing) {
           const c = await prisma.course.findUnique({ where: { id: item.itemId } });
-          await prisma.userCourse.create({ data: { userId, courseId: item.itemId, expiresAt: c?.expiryDate || null } });
+          await prisma.userCourse.create({ data: { userId, courseId: item.itemId, expiresAt: c?.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
           if (c) sendAutomatedEmail(userId, 'COURSE_PURCHASE', { course_name: c.title, price: String(item.price), date: todayDate });
         }
       } else if (item.itemType === "MEMBERSHIP") {
         const membership = await prisma.membership.findUnique({ where: { id: item.itemId } });
         if (membership) {
-          await prisma.membershipOrder.create({ data: { userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt: membership.expiryDate || null } });
+          await prisma.membershipOrder.create({ data: { userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt: membership.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
           if (item.editionId) await prisma.membershipEdition.update({ where: { id: item.editionId }, data: { availableSeats: { decrement: 1 } } });
           sendAutomatedEmail(userId, 'MEMBERSHIP_PURCHASE', { membership_name: membership.label || membership.type, price: String(item.price), date: todayDate });
         }
@@ -1059,7 +1066,7 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
           for (const bundleItem of bundle.courses) {
             const existing = await prisma.userCourse.findUnique({ where: { userId_courseId: { userId, courseId: bundleItem.courseId } } });
             if (!existing) {
-              await prisma.userCourse.create({ data: { userId, courseId: bundleItem.courseId, expiresAt: bundleItem.course?.expiryDate || null } });
+              await prisma.userCourse.create({ data: { userId, courseId: bundleItem.courseId, expiresAt: bundleItem.course?.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
             }
           }
         }
@@ -1071,6 +1078,47 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+
+router.post("/stripe/cancel-subscription", authMiddleware, async (req, res) => {
+  const { subscriptionId } = req.body;
+  if (!subscriptionId) return res.status(400).json({ error: 'Subscription ID is required' });
+
+  try {
+    const stripeSetting = await prisma.setting.findUnique({ where: { key: 'STRIPE_CONFIG' } });
+    if (!stripeSetting) return res.status(400).json({ error: 'Stripe is not configured' });
+    const stripeConfig = JSON.parse(stripeSetting.value);
+
+    if (!stripeConfig.enabled || !stripeConfig.secretKey) {
+       return res.status(400).json({ error: 'Stripe is disabled' });
+    }
+
+    const stripe = new Stripe(stripeConfig.secretKey.replace(/[^a-zA-Z0-9_]/g, ''));
+    
+    // Cancel the subscription
+    await stripe.subscriptions.cancel(subscriptionId);
+
+    // We can just unset stripeSubscriptionId or let the user access it normally, 
+    // it will just not renew. We don't remove access immediately unless we want to end it now.
+    // By default, stripe.subscriptions.cancel cancels it immediately and changes status to 'canceled'.
+    // Let's remove stripeSubscriptionId to show it is cancelled in UI.
+    
+    await prisma.userCourse.updateMany({
+       where: { stripeSubscriptionId: subscriptionId },
+       data: { stripeSubscriptionId: null } // We keep the user enrolled, but autopayment is cancelled
+    });
+    
+    await prisma.membershipOrder.updateMany({
+       where: { stripeSubscriptionId: subscriptionId },
+       data: { stripeSubscriptionId: null }
+    });
+
+    res.json({ success: true, message: 'Subscription cancelled successfully.' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 
 // --- ORDERS (PURCHASE) ---
 router.post("/orders", authMiddleware, async (req, res) => {
@@ -1122,6 +1170,16 @@ router.post("/orders", authMiddleware, async (req, res) => {
     }
 
     // Process items immediately if COMPLETED
+    let stripeSubscriptionId = null;
+    if (sessionId) {
+        const stripeSetting = await prisma.setting.findUnique({ where: { key: 'STRIPE_CONFIG' } });
+        if (stripeSetting) {
+             const sc = JSON.parse(stripeSetting.value);
+             const stripe = new Stripe(sc.secretKey);
+             const session = await stripe.checkout.sessions.retrieve(sessionId);
+             if (session.subscription) stripeSubscriptionId = session.subscription;
+        }
+    }
     for (const item of order.items) {
       const todayDate = new Date().toLocaleDateString();
       if (item.itemType === "COURSE") {
@@ -1140,7 +1198,7 @@ router.post("/orders", authMiddleware, async (req, res) => {
             expiresAt = c.expiryDate;
           }
           await prisma.userCourse.create({
-            data: { userId, courseId: item.itemId, expiresAt }
+            data: { userId, courseId: item.itemId, expiresAt, stripeSubscriptionId }
           });
           if (c) {
              sendAutomatedEmail(userId, 'COURSE_PURCHASE', {
@@ -1158,7 +1216,7 @@ router.post("/orders", authMiddleware, async (req, res) => {
             expiresAt = membership.expiryDate;
           }
           await prisma.membershipOrder.create({
-            data: { userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt }
+            data: { userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt, stripeSubscriptionId }
           });
           if (item.editionId) {
              await prisma.membershipEdition.update({
@@ -1350,7 +1408,7 @@ router.get("/languages", async (req, res) => {
     const enTrans = JSON.stringify({
       "nav": {
         "home": "Home",
-        "courses": "Courses",
+        "courses": "Programs",
         "memberships": "Memberships",
         "contact": "Contact",
         "dashboard": "Dashboard",
@@ -1361,7 +1419,7 @@ router.get("/languages", async (req, res) => {
         "logout": "Logout"
       },
       "footer": {
-         "about": "An educational platform offering the best courses.",
+         "about": "An educational platform offering the best programs.",
          "links": "Quick Links",
          "contact": "Contact Us",
          "rights": "All rights reserved",
@@ -1371,15 +1429,15 @@ router.get("/languages", async (req, res) => {
          "hero_title": "Learn and grow",
          "hero_subtitle": "The best educational platforms to elevate your level.",
          "get_started": "Get Started",
-         "view_courses": "View Courses",
+         "view_courses": "View Programs",
          "top_categories": "Top Categories",
-         "featured_courses": "Featured Courses",
+         "featured_courses": "Featured Programs",
          "upcoming_events": "Events"
       },
       "courses": {
-         "all_courses": "All Courses",
+         "all_courses": "All Programs",
          "details": "Details",
-         "course_content": "Course Content",
+         "course_content": "Program Content",
          "about_lesson": "About this lesson",
          "meet_instructor": "Meet Your Instructor",
          "feedback": "Feedback & Reviews",
@@ -1387,10 +1445,10 @@ router.get("/languages", async (req, res) => {
          "submit_review": "Submit",
          "no_reviews": "There are no reviews yet.",
          "add_to_cart": "Add to Cart",
-         "go_to_course": "Go to Course",
+         "go_to_course": "Go to Program",
          "add_favorite": "Add to favorite",
          "remove_favorite": "Remove from favorites",
-         "course_includes": "This course includes:",
+         "course_includes": "This program includes:",
          "learners": "Learners",
          "students": "Students",
          "lessons": "Lessons",
@@ -1441,7 +1499,7 @@ router.get("/languages", async (req, res) => {
          "active": "Active",
          "purchased": "Purchased",
          "learning_path": "My Learning Path",
-         "no_courses": "No courses purchased yet.",
+         "no_courses": "No programs purchased yet.",
          "progress": "Complete",
          "continue": "Continue",
          "upcoming_events": "Events",
@@ -1460,7 +1518,7 @@ router.get("/languages", async (req, res) => {
          "total_revenue": "Total Revenue",
          "total_users": "Total Users",
          "leads": "Interested Users / Leads",
-         "course_purchases": "Course Purchases",
+         "course_purchases": "Program Purchases",
          "membership_sales": "Membership Sales",
          "event_bookings": "Event Bookings",
          "chart_area": "Chart Visualization Area",
@@ -1480,7 +1538,7 @@ router.get("/languages", async (req, res) => {
     const arTrans = JSON.stringify({
       "nav": {
         "home": "الرئيسية",
-        "courses": "الدورات",
+        "courses": "البرامج",
         "memberships": "العضويات",
         "contact": "تواصل معنا",
         "dashboard": "لوحة التحكم",
@@ -1501,15 +1559,15 @@ router.get("/languages", async (req, res) => {
          "hero_title": "تعلم وطور مهاراتك",
          "hero_subtitle": "أفضل المنصات التعليمية للارتقاء بمستواك.",
          "get_started": "ابدأ الآن",
-         "view_courses": "تصفح الدورات",
+         "view_courses": "تصفح البرامج",
          "top_categories": "أهم التصنيفات",
-         "featured_courses": "دورات مميزة",
+         "featured_courses": "برامج مميزة",
          "upcoming_events": "الفعاليات"
       },
       "courses": {
-         "all_courses": "جميع الدورات",
+         "all_courses": "جميع البرامج",
          "details": "التفاصيل",
-         "course_content": "محتوى الدورة",
+         "course_content": "محتوى البرنامج",
          "about_lesson": "عن هذا الدرس",
          "meet_instructor": "تعرف على المدرب",
          "feedback": "التقييمات والمراجعات",
@@ -1517,10 +1575,10 @@ router.get("/languages", async (req, res) => {
          "submit_review": "إرسال التقييم",
          "no_reviews": "لا توجد تقييمات بعد.",
          "add_to_cart": "أضف للسلة",
-         "go_to_course": "اذهب للدورة",
+         "go_to_course": "اذهب للبرنامج",
          "add_favorite": "أضف للمفضلة",
          "remove_favorite": "إزالة من المفضلة",
-         "course_includes": "هذه الدورة تشمل:",
+         "course_includes": "هذا البرنامج يشمل:",
          "learners": "المتعلمين",
          "students": "طلاب",
          "lessons": "دروس",
@@ -1571,7 +1629,7 @@ router.get("/languages", async (req, res) => {
          "active": "نشط",
          "purchased": "تاريخ الشراء",
          "learning_path": "مسارك التعليمي",
-         "no_courses": "لم تقم بشراء دورات.",
+         "no_courses": "لم تقم بشراء برامج.",
          "progress": "مكتمل",
          "continue": "متابعة",
          "upcoming_events": "الفعاليات",
@@ -1590,7 +1648,7 @@ router.get("/languages", async (req, res) => {
          "total_revenue": "إجمالي الإيرادات",
          "total_users": "إجمالي المستخدمين",
          "leads": "المهتمين / العملاء المحتملين",
-         "course_purchases": "مبيعات الدورات",
+         "course_purchases": "مبيعات البرامج",
          "membership_sales": "مبيعات العضويات",
          "event_bookings": "حجوزات الفعاليات",
          "chart_area": "منطقة الرسم البياني",
@@ -1610,7 +1668,7 @@ router.get("/languages", async (req, res) => {
     const frTrans = JSON.stringify({
       "nav": {
         "home": "Accueil",
-        "courses": "Cours",
+        "courses": "Programmes",
         "memberships": "Adhésions",
         "contact": "Contact",
         "dashboard": "Tableau de Bord",
@@ -1631,15 +1689,15 @@ router.get("/languages", async (req, res) => {
          "hero_title": "Apprenez et grandissez",
          "hero_subtitle": "Les meilleures plateformes éducatives pour élever votre niveau.",
          "get_started": "Commencer",
-         "view_courses": "Voir les cours",
+         "view_courses": "Voir les programmes",
          "top_categories": "Top Catégories",
-         "featured_courses": "Cours Vedettes",
+         "featured_courses": "Programmes Vedettes",
          "upcoming_events": "Événements"
       },
       "courses": {
-         "all_courses": "Tous les Cours",
+         "all_courses": "Tous les Programmes",
          "details": "Détails",
-         "course_content": "Contenu du cours",
+         "course_content": "Contenu du programme",
          "about_lesson": "À propos de cette leçon",
          "meet_instructor": "Rencontrez votre instructeur",
          "feedback": "Commentaires et avis",
@@ -1647,10 +1705,10 @@ router.get("/languages", async (req, res) => {
          "submit_review": "Soumettre",
          "no_reviews": "Il n'y a pas encore d'avis.",
          "add_to_cart": "Ajouter au panier",
-         "go_to_course": "Aller au cours",
+         "go_to_course": "Aller au programme",
          "add_favorite": "Ajouter aux favoris",
          "remove_favorite": "Retirer des favoris",
-         "course_includes": "Ce cours comprend :",
+         "course_includes": "Ce programme comprend :",
          "learners": "Apprenants",
          "students": "Étudiants",
          "lessons": "Leçons",
@@ -1701,7 +1759,7 @@ router.get("/languages", async (req, res) => {
          "active": "Actif",
          "purchased": "Acheté le",
          "learning_path": "Mon parcours d'apprentissage",
-         "no_courses": "Aucun cours acheté pour le moment.",
+         "no_courses": "Aucun programme acheté pour le moment.",
          "progress": "Terminé",
          "continue": "Continuer",
          "upcoming_events": "Événements",
@@ -1720,7 +1778,7 @@ router.get("/languages", async (req, res) => {
          "total_revenue": "Revenu Total",
          "total_users": "Utilisateurs Totaux",
          "leads": "Utilisateurs Intéressés",
-         "course_purchases": "Achats de Cours",
+         "course_purchases": "Achats de Programmes",
          "membership_sales": "Ventes d'Adhésions",
          "event_bookings": "Réservations d'Événements",
          "chart_area": "Zone de Graphique",
@@ -2154,7 +2212,7 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, 
       instructorId, categoryId, membershipIds, isFeatured, isUpcoming, isActive, 
-      language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled
+      language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, isSubscription, subscriptionInterval, enablePlatformContent, telegramLink, whatsappLink, customExternalLink
     } = req.body;
     
     let parsedInstructorId = instructorId === '' ? null : instructorId;
@@ -2168,9 +2226,9 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
         categoryId: parsedCategoryId,
         memberships: { connect: membershipConnections },
         labels: labels || [],
-        isFeatured, isUpcoming, isActive, language, level, duration,
+        isFeatured, isUpcoming, isActive, isSubscription: isSubscription || false, subscriptionInterval: subscriptionInterval || 'month', language, level, duration,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
-        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes
+        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes, enablePlatformContent: enablePlatformContent ?? true, telegramLink, whatsappLink, customExternalLink
       }
     });
     if (lessons && lessons.length > 0) {
@@ -2252,7 +2310,7 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, instructorId, categoryId, membershipIds,
-      isFeatured, isUpcoming, isActive, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled
+      isFeatured, isUpcoming, isActive, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, isSubscription, subscriptionInterval, enablePlatformContent, telegramLink, whatsappLink, customExternalLink
     } = req.body;
     
     let parsedInstructorId = instructorId === '' ? null : instructorId;
@@ -2277,10 +2335,16 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
     if (language !== undefined) updateData.language = language;
     if (level !== undefined) updateData.level = level;
     if (duration !== undefined) updateData.duration = duration;
+    if (isSubscription !== undefined) updateData.isSubscription = isSubscription;
+    if (subscriptionInterval !== undefined) updateData.subscriptionInterval = subscriptionInterval;
     if (expiryDate !== undefined) updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
     if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
     if (meetingDate !== undefined) updateData.meetingDate = meetingDate ? new Date(meetingDate) : null;
     if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
+    if (enablePlatformContent !== undefined) updateData.enablePlatformContent = enablePlatformContent;
+    if (telegramLink !== undefined) updateData.telegramLink = telegramLink;
+    if (whatsappLink !== undefined) updateData.whatsappLink = whatsappLink;
+    if (customExternalLink !== undefined) updateData.customExternalLink = customExternalLink;
 
     const course = await prisma.course.update({ 
       where: { id: req.params.id }, 
@@ -2604,13 +2668,13 @@ router.delete("/admin/users/:id", authMiddleware, async (req, res) => {
 router.post("/admin/memberships", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled } = req.body;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink } = req.body;
     let parsedCategoryId = categoryId === '' ? null : categoryId;
     const membership = await prisma.membership.create({
       data: { 
         type, label, offerPrice, realPrice, imageUrl, categoryId: parsedCategoryId,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
-        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes
+        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes, enablePlatformContent: enablePlatformContent ?? true, telegramLink, whatsappLink, customExternalLink
       }
     });
     if (contents && contents.length) {
@@ -2646,14 +2710,14 @@ router.post("/admin/memberships", authMiddleware, async (req, res) => {
 router.put("/admin/memberships/:id", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled } = req.body;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink } = req.body;
     let parsedCategoryId = categoryId === '' ? null : categoryId;
     const membership = await prisma.membership.update({ 
       where: { id: req.params.id }, 
       data: { 
         type, label, offerPrice, realPrice, imageUrl, categoryId: parsedCategoryId,
         expiryDate: expiryDate ? new Date(expiryDate) : null,
-        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes
+        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes, enablePlatformContent: enablePlatformContent ?? true, telegramLink, whatsappLink, customExternalLink
       }
     });
     
@@ -2732,7 +2796,7 @@ router.post("/reviews", authMiddleware, async (req, res) => {
           where: { userId, courseId: cid }
       });
       if (!enrollment) {
-          return res.status(403).json({ error: `You must purchase the course to review it.` });
+          return res.status(403).json({ error: `You must purchase the program to review it.` });
       }
     } else if (membershipId) {
       const mid = String(membershipId);
@@ -2922,7 +2986,7 @@ router.get("/admin/orders", authMiddleware, async (req, res) => {
         itemName = e?.title || "Event";
       } else if (oi.itemType === 'BUNDLE') {
         const b = await prisma.courseBundle.findUnique({ where: { id: oi.itemId } });
-        itemName = b?.title || "Course Bundle";
+        itemName = b?.title || "Program Bundle";
       }
       return {
         id: oi.id,
@@ -2983,7 +3047,7 @@ router.get("/admin/orders/pending", authMiddleware, async (req, res) => {
         itemName = e?.title || "Event";
       } else if (oi.itemType === 'BUNDLE') {
         const b = await prisma.courseBundle.findUnique({ where: { id: oi.itemId } });
-        itemName = b?.title || "Course Bundle";
+        itemName = b?.title || "Program Bundle";
       }
       return {
         id: oi.id,

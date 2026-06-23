@@ -637,6 +637,9 @@ function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const sliderRef = useRef<HTMLDivElement>(null);
   const blogRef = useRef<HTMLDivElement>(null);
+  const coursesRef = useRef<HTMLDivElement>(null);
+  const bundlesRef = useRef<HTMLDivElement>(null);
+  const comingSoonRef = useRef<HTMLDivElement>(null);
 
   const heroSettingStr = settings.find((s:any) => s.key === 'FRONTEND_HERO')?.value;
   const heroData = heroSettingStr ? JSON.parse(heroSettingStr) : null;
@@ -801,7 +804,7 @@ function Home() {
                 <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">Master Your Mindset.<br/>Build Your Legacy.</h1>
                 <p className="text-lg md:text-xl font-sans not-italic text-white/90 mb-8 max-w-2xl mx-auto font-medium">Join thousands of ambitious individuals transforming their careers and wealth through our proven frameworks.</p>
                 <div className="flex justify-center gap-4">
-                  <Link to="/courses" className="bg-white text-primary font-sans not-italic font-bold px-8 py-3.5 rounded-full shadow-[0_4px_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform">Explore Courses</Link>
+                  <Link to="/courses" className="bg-white text-primary font-sans not-italic font-bold px-8 py-3.5 rounded-full shadow-[0_4px_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform">Explore Programs</Link>
                 </div>
              </div>
            </div>
@@ -814,32 +817,40 @@ function Home() {
 
          <div>
             {/* Title and Category Filter */}
-            <div className="text-center mb-6 md:mb-8 mt-2 md:mt-10">
+            <div className="text-center mb-6 md:mb-8 mt-2 md:mt-10 relative">
                <div dangerouslySetInnerHTML={{ __html: dynamicHeroHTML }}></div>
             </div>
 
-            <DragScrollContainer className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit mx-auto max-w-full px-4">
-               <button
-                 onClick={() => setActiveCategory(null)}
-                 className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-slate-50'}`}
-               >
-                 {t('courses.all_courses')}
-               </button>
-               {tCategories.filter((cat: any) => cat.name.toLowerCase() !== 'membership' && cat.name.toLowerCase() !== 'memberships').map((cat: any) => (
-                 <button
-                   key={cat.id}
-                   onClick={() => setActiveCategory(cat.id)}
-                   className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-slate-50'}`}
-                 >
-                   {cat.name}
-                 </button>
-               ))}
-            </DragScrollContainer>
+            <div className="relative flex items-center justify-center w-full mb-4">
+              <div className="w-full md:px-24">
+                <DragScrollContainer className="flex gap-3 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit mx-auto max-w-full px-4">
+                   <button
+                     onClick={() => setActiveCategory(null)}
+                     className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-slate-50'}`}
+                   >
+                     {t('courses.all_courses')}
+                   </button>
+                   {tCategories.filter((cat: any) => cat.name.toLowerCase() !== 'membership' && cat.name.toLowerCase() !== 'memberships').map((cat: any) => (
+                     <button
+                       key={cat.id}
+                       onClick={() => setActiveCategory(cat.id)}
+                       className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white' : 'border border-primary text-primary hover:bg-slate-50'}`}
+                     >
+                       {cat.name}
+                     </button>
+                   ))}
+                </DragScrollContainer>
+              </div>
+              <div className="hidden md:flex gap-2 absolute right-0 top-0">
+                  <button onClick={() => { if(coursesRef.current) coursesRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10"><ChevronLeft size={16} /></button>
+                  <button onClick={() => { if(coursesRef.current) coursesRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10"><ChevronRight size={16} /></button>
+              </div>
+            </div>
          </div>
 
          {/* Filtered Courses */}
          <section>
-             <DragScrollContainer className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
+             <DragScrollContainer ref={coursesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
                 {(activeCategory 
                     ? tCourses.filter((c: any) => c.categoryId === activeCategory && !c.isUpcoming) 
                     : tCourses.filter(c => !c.isUpcoming && c.category?.name?.toLowerCase() !== 'membership' && c.category?.name?.toLowerCase() !== 'memberships')
@@ -864,7 +875,7 @@ function Home() {
                               {formatCurrency(Math.min(...course.memberships.map((m: any) => m.offerPrice || 0)), currency)}
                            </>
                         ) : (
-                           <>{formatCurrency(0, currency)}</>
+                           <><span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span></>
                         )}
                       </span>
                       {isEnrolled ? (
@@ -878,13 +889,17 @@ function Home() {
              </DragScrollContainer>
          </section>
 
-         {/* Course Bundles */}
+         {/* Program Bundles */}
          {getTranslated(courseBundles, language) && getTranslated(courseBundles, language).length > 0 && (
            <section>
              <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
-                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>Course Bundles</h2>
+                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>Program Bundles</h2>
+                <div className="hidden md:flex gap-2">
+                   <button onClick={() => { if(bundlesRef.current) bundlesRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronLeft size={16} /></button>
+                   <button onClick={() => { if(bundlesRef.current) bundlesRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
+                </div>
              </div>
-             <DragScrollContainer className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+             <DragScrollContainer ref={bundlesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {getTranslated(courseBundles, language).map((bundle: any) => {
                   return (
                     <Link to={`/bundles/${bundle.id}`} key={bundle.id} className="min-w-[280px] md:min-w-[320px] w-[280px] md:w-[320px] snap-start bg-white rounded-2xl p-5 border border-slate-100 card-hover shadow-sm flex flex-col group">
@@ -896,7 +911,7 @@ function Home() {
                            {bundle.realPrice && bundle.realPrice > bundle.price && (
                              <span className="text-sm text-slate-400 line-through mr-2 font-medium">{formatCurrency(bundle.realPrice, currency)}</span>
                            )}
-                           {formatCurrency(bundle.price, currency)}
+                           {bundle.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span> : formatCurrency(bundle.price, currency)}
                          </span>
                          <span className="px-3 py-1 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold transition">View Bundle</span>
                        </div>
@@ -933,7 +948,7 @@ function Home() {
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {evt.location || "Online Room"}</p>
                     
                     <div className="flex justify-between items-center border-t border-slate-100 pt-3 mt-auto">
-                       <span className="font-bold text-primary flex-1 text-sm">{evt.price > 0 ? formatCurrency(evt.price, currency) : 'Free'}</span>
+                       <span className="font-bold text-primary flex-1 text-sm">{evt.price > 0 ? formatCurrency(evt.price, currency) : <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs uppercase tracking-widest">Free</span>}</span>
   {isBooked ? (
     <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1"><Check className="w-3 h-3" /> Booked</span>
   ) : (
@@ -951,10 +966,16 @@ function Home() {
            <section>
              <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
                 <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold">Coming Soon</h2>
-                <Link to="/courses" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">View Catalog &rarr;</Link>
+                <div className="flex items-center gap-4">
+                  <div className="hidden md:flex gap-2">
+                     <button onClick={() => { if(comingSoonRef.current) comingSoonRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronLeft size={16} /></button>
+                     <button onClick={() => { if(comingSoonRef.current) comingSoonRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
+                  </div>
+                  <Link to="/courses" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">View Catalog &rarr;</Link>
+                </div>
              </div>
              
-             <DragScrollContainer className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+             <DragScrollContainer ref={comingSoonRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {tCourses.filter(c => c.isUpcoming).map(course => {
                   const isEnrolled = enrolledItems?.courses.some((c: any) => c.courseId === course.id);
                   return (
@@ -1099,7 +1120,7 @@ function Footer() {
                {logoUrl ? <img src={logoUrl} alt="Logo" className="max-h-12 object-contain" /> : 'Nesrina'}
             </Link>
             <p className="text-slate-500 text-[15px] leading-relaxed">
-              The global online learning platform that offers anyone, anywhere access to online courses and degrees from world-class universities and companies.
+              The global online learning platform that offers anyone, anywhere access to online programs and degrees from world-class universities and companies.
             </p>
             <div className="flex gap-3 mt-2">
               <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition">
@@ -1123,7 +1144,7 @@ function Footer() {
           <div className="flex flex-col gap-4">
             <h3 className="font-bold text-lg text-slate-900 mb-2">Important Link</h3>
             <Link to="/about" className="text-slate-500 hover:text-primary transition font-medium">About Nesrina</Link>
-            <Link to="/courses" className="text-slate-500 hover:text-primary transition font-medium">Courses</Link>
+            <Link to="/courses" className="text-slate-500 hover:text-primary transition font-medium">Programs</Link>
             <Link to="/events" className="text-slate-500 hover:text-primary transition font-medium">{t('nav.events', 'Events')}</Link>
           </div>
 

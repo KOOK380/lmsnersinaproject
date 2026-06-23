@@ -100,8 +100,10 @@ export function CourseManager() {
     language: 'Arabic',
     level: 'Beginner Level',
     duration: '21 Days',
-    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false,
-    translations: [] as any[]
+    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '',
+    translations: [] as any[],
+    isSubscription: false,
+    subscriptionInterval: 'month'
   });
 
   useEffect(() => {
@@ -148,9 +150,15 @@ export function CourseManager() {
       language: fullCourse.language || 'Arabic',
       level: fullCourse.level || 'Beginner Level',
       duration: fullCourse.duration || '21 Days',
+      isSubscription: fullCourse.isSubscription || false,
+      subscriptionInterval: fullCourse.subscriptionInterval || 'month',
       meetingLink: fullCourse.meetingLink || '',
       meetingDate: fullCourse.meetingDate ? new Date(fullCourse.meetingDate).toISOString().slice(0,16) : '',
       meetingNotes: fullCourse.meetingNotes || '',
+      enablePlatformContent: fullCourse.enablePlatformContent ?? true,
+      telegramLink: fullCourse.telegramLink || '',
+      whatsappLink: fullCourse.whatsappLink || '',
+      customExternalLink: fullCourse.customExternalLink || '',
       notifyEnrolled: false,
       labels: fullCourse.labels || [],
       translations: mergedContents,
@@ -219,8 +227,10 @@ export function CourseManager() {
       language: 'Arabic',
       level: 'Beginner Level',
       duration: '21 Days',
-      meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false,
-      translations: initialContents
+      meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '',
+      translations: initialContents,
+      isSubscription: false,
+      subscriptionInterval: 'month'
     });
   };
 
@@ -279,7 +289,7 @@ export function CourseManager() {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8">
       <div className="flex justify-between items-center mb-8 pb-6 border-b border-slate-100">
-          <h2 className="text-xl font-bold text-slate-800">Manage Courses</h2>
+          <h2 className="text-xl font-bold text-slate-800">Manage Programs</h2>
           <button onClick={()=>{
              if (showAdd) {
                setShowAdd(false);
@@ -289,12 +299,12 @@ export function CourseManager() {
                resetForm();
                setShowAdd(true);
              }
-          }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">{showAdd ? "Cancel" : "+ New Course"}</button>
+          }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">{showAdd ? "Cancel" : "+ New Program"}</button>
       </div>
 
       {showAdd && (
         <div className="mb-10 p-8 border border-slate-200 rounded-2xl bg-slate-50 shadow-inner">
-           <h3 className="text-lg font-bold text-slate-800 mb-6">{editId ? 'Edit Course' : 'Add New Course'}</h3>                
+           <h3 className="text-lg font-bold text-slate-800 mb-6">{editId ? 'Edit Program' : 'Add New Program'}</h3>                
 
            {/* Central Tabs navigation */}
            <div className="flex bg-slate-100/50 p-1 rounded-lg mb-6 gap-1 w-full max-w-full overflow-x-auto hidden-scrollbar">
@@ -313,14 +323,14 @@ export function CourseManager() {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">System Title</label>
-                 <input type="text" placeholder="Course Title (Internal)" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+                 <input type="text" placeholder="Program Title (Internal)" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
               </div>
               <div className="space-y-2">
                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Translated Title ({languages?.find((l:any) => l.code === activeLangTab)?.name || activeLangTab})</label>
                  {formData.translations.map((c, i) => {
                      if (c.languageCode !== activeLangTab) return null;
                      return (
-                         <input key={i} type="text" placeholder="Translated Course Title" value={c.title || ''} onChange={e=>handleTranslationChange(i, 'title', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+                         <input key={i} type="text" placeholder="Translated Program Title" value={c.title || ''} onChange={e=>handleTranslationChange(i, 'title', e.target.value)} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
                      );
                  })}
               </div>
@@ -343,21 +353,51 @@ export function CourseManager() {
                      if (c.languageCode !== activeLangTab) return null;
                      return (
                      <div key={i}>
-                       <HtmlEditor placeholder="Course Description" rows={6} value={c.description || ''} onChange={val => handleTranslationChange(i, 'description', val)} />
+                       <HtmlEditor placeholder="Program Description" rows={6} value={c.description || ''} onChange={val => handleTranslationChange(i, 'description', val)} />
                      </div>
                      );
                  })}
            </div>
 
            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mt-4">
-             <div className="space-y-2">
-                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Price</label>
-                 <input type="number" value={formData.price} onChange={e=>setFormData({...formData, price: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+                          <div className="space-y-4 col-span-full md:col-span-2 bg-indigo-50/50 p-5 rounded-xl border border-indigo-100/50">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                     <input type="checkbox" className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 text-indigo-600 focus:ring-indigo-600" checked={formData.isSubscription || false} onChange={e=>setFormData({...formData, isSubscription: e.target.checked})} />
+                     <span className="text-sm font-bold text-indigo-900 tracking-wide">Enable Stripe Autopayment (Subscription)</span>
+                  </label>
+                  {formData.isSubscription && (
+                     <div className="space-y-2 mt-3 pl-7">
+                        <label className="block text-xs font-bold text-indigo-800/70 uppercase tracking-wider mb-1.5">Billing Interval</label>
+                        <select value={formData.subscriptionInterval || 'month'} onChange={e=>setFormData({...formData, subscriptionInterval: e.target.value})} className="w-full max-w-xs px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm text-indigo-900 font-medium">
+                           <option value="day">Daily</option>
+                           <option value="week">Weekly</option>
+                           <option value="month">Monthly</option>
+                           <option value="year">Yearly</option>
+                        </select>
+                     </div>
+                  )}
              </div>
-             <div className="space-y-2">
-                 <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Real Price</label>
-                 <input type="number" value={formData.realPrice || ''} onChange={e=>setFormData({...formData, realPrice: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+             <div className="md:col-span-2">
+                 <label className="flex items-center gap-2 text-sm font-medium text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
+                   <input type="checkbox" checked={formData.price === 0} onChange={e=>{
+                       if (e.target.checked) setFormData({...formData, price: 0, realPrice: 0});
+                       else setFormData({...formData, price: 10});
+                   }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                   Make this Program Free
+                 </label>
              </div>
+             {formData.price !== 0 && (
+                 <>
+                     <div className="space-y-2">
+                          <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Price</label>
+                         <input type="number" value={formData.price} onChange={e=>setFormData({...formData, price: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+                     </div>
+                     <div className="space-y-2">
+                         <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Real Price</label>
+                         <input type="number" value={formData.realPrice || ''} onChange={e=>setFormData({...formData, realPrice: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
+                     </div>
+                 </>
+             )}
              <div className="space-y-2">
                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Expiry Date</label>
                  <input type="datetime-local" value={formData.expiryDate} onChange={e=>setFormData({...formData, expiryDate: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" />
@@ -551,7 +591,7 @@ export function CourseManager() {
                        <div className="border border-slate-200 p-6 rounded-2xl bg-white mt-4 space-y-4">
                <div>
                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><span className="w-1.5 h-4 bg-indigo-500 rounded-full inline-block"></span>Live Class Details / Google Meet (Optional)</h3>
-                 <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this course.</p>
+                 <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this program.</p>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="space-y-2">
@@ -561,7 +601,7 @@ export function CourseManager() {
                          <button type="button" onClick={() => generateMeetLink(formData, setFormData)} className="text-xs text-indigo-600 font-bold hover:underline">Auto Generate</button>
                        )}
                     </div>
-                    <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx"/>
+                    <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/... or https://t.me/..."/>
                  </div>
                  <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Date & Time</label>
@@ -573,11 +613,32 @@ export function CourseManager() {
                   <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
                </div>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+               <div className="md:col-span-2">
+                 <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                   <input type="checkbox" checked={formData.enablePlatformContent !== false} onChange={e=>setFormData({...formData, enablePlatformContent: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                   Enable Lessons Module (Continue Learning)
+                 </label>
+                 <p className="text-xs text-slate-500 mt-1 ml-6">If unchecked, users will not see the "Continue Learning" button or the lesson player for this program.</p>
+               </div>
+               <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Telegram Group Link</label>
+                  <input type="text" value={formData.telegramLink || ''} onChange={e=>setFormData({...formData, telegramLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://t.me/..."/>
+               </div>
+               <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">WhatsApp Group Link</label>
+                  <input type="text" value={formData.whatsappLink || ''} onChange={e=>setFormData({...formData, whatsappLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://chat.whatsapp.com/..."/>
+               </div>
+               <div className="md:col-span-2 space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Other Community/External Link</label>
+                  <input type="text" value={formData.customExternalLink || ''} onChange={e=>setFormData({...formData, customExternalLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://discord.gg/... or https://your-site.com"/>
+               </div>
+            </div>
             <label className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-800">
               <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
               Send email notification with meeting details to enrolled members
             </label>
-            <button onClick={handleAdd} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold w-full mt-8 hover:bg-indigo-700 transition text-lg">Save Course</button>
+            <button onClick={handleAdd} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold w-full mt-8 hover:bg-indigo-700 transition text-lg">Save Program</button>
         </div>
       )}
 
@@ -595,7 +656,7 @@ export function CourseManager() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {courses.length === 0 ? (
-                 <tr><td colSpan={6} className="py-12 text-center text-slate-400">No courses found.</td></tr>
+                 <tr><td colSpan={6} className="py-12 text-center text-slate-400">No programs found.</td></tr>
               ) : courses.map(course => (
                 <tr key={course.id} className="hover:bg-slate-50 transition">
                   <td className="p-4 font-semibold text-slate-800"><div className="flex items-center gap-2">{course.title}{course.isFeatured && <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-widest">Featured</span>}</div></td>
@@ -743,7 +804,7 @@ export function CourseBundlesManager() {
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="border-b border-slate-100 p-6 flex justify-between items-center bg-slate-50/50">
-          <h2 className="text-xl font-bold text-slate-800">{editId ? 'Edit Course Bundle' : 'Create New Bundle'}</h2>
+          <h2 className="text-xl font-bold text-slate-800">{editId ? 'Edit Program Bundle' : 'Create New Bundle'}</h2>
           <button onClick={() => { setShowAdd(false); setEditId(null); }} className="text-slate-400 hover:text-slate-600 transition-colors">
             <X size={24} />
           </button>
@@ -773,6 +834,16 @@ export function CourseBundlesManager() {
                  </div>
                </div>
                <div className="space-y-4 lg:col-span-1">
+                 <div className="md:col-span-2 mb-4">
+                     <label className="flex items-center gap-2 text-sm font-medium text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
+                       <input type="checkbox" checked={formData.price === 0} onChange={e=>{
+                           if (e.target.checked) setFormData({...formData, price: 0, realPrice: 0});
+                           else setFormData({...formData, price: 10});
+                       }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                       Make this Bundle Free
+                     </label>
+                 </div>
+                 {formData.price !== 0 && (
                  <div className="grid grid-cols-2 gap-4">
                    <div>
                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Offer Price ({currency}) *</label>
@@ -783,6 +854,7 @@ export function CourseBundlesManager() {
                      <input type="number" step="0.01" value={formData.realPrice || ''} onChange={e => setFormData({ ...formData, realPrice: parseFloat(e.target.value) })} className="w-full border border-slate-200 p-3 rounded-xl focus:ring-2 focus:ring-slate-100 focus:border-slate-400 transition-all text-slate-500 line-through" />
                    </div>
                  </div>
+                 )}
 
                  <MediaInput label="Banner Image" type="image" value={formData.imageUrl} onChange={val => setFormData({ ...formData, imageUrl: val })} className="mt-4" />
                  <MediaInput label="Banner Video (Optional)" type="video" value={formData.bannerVideoUrl} onChange={val => setFormData({ ...formData, bannerVideoUrl: val })} className="mt-4" />
@@ -811,7 +883,7 @@ export function CourseBundlesManager() {
            )}
 
            <div className="mt-8 border-t border-slate-100 pt-6">
-              <h3 className="text-sm font-bold text-slate-800 mb-4">Included Courses</h3>
+              <h3 className="text-sm font-bold text-slate-800 mb-4">Included Programs</h3>
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                  {courses.map(course => (
                    <label key={course.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${formData.courses.includes(course.id) ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
@@ -844,7 +916,7 @@ export function CourseBundlesManager() {
   return (
     <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="border-b border-slate-100 p-6 flex justify-between items-center bg-slate-50/50">
-        <h2 className="text-xl font-bold text-slate-800">Course Bundles ({bundles.length})</h2>
+        <h2 className="text-xl font-bold text-slate-800">Program Bundles ({bundles.length})</h2>
         <button onClick={() => {
           setEditId(null);
           setFormData({
@@ -1090,7 +1162,9 @@ export function MembershipManager() {
     categoryId: '',
     contents: [] as any[],
     editions: [] as any[],
-    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false
+    isSubscription: false,
+    subscriptionInterval: 'month',
+    meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: ''
   });
 
   useEffect(() => {
@@ -1117,12 +1191,18 @@ export function MembershipManager() {
       label: membership.label || '',
       offerPrice: membership.offerPrice || 0,
       realPrice: membership.realPrice || 0,
+      isSubscription: membership.isSubscription || false,
+      subscriptionInterval: membership.subscriptionInterval || 'month',
       expiryDate: membership.expiryDate ? new Date(membership.expiryDate).toISOString().slice(0, 16) : '',
       imageUrl: membership.imageUrl || '',
       categoryId: membership.categoryId || '',
       meetingLink: membership.meetingLink || '',
       meetingDate: membership.meetingDate ? new Date(membership.meetingDate).toISOString().slice(0,16) : '',
       meetingNotes: membership.meetingNotes || '',
+      enablePlatformContent: membership.enablePlatformContent ?? true,
+      telegramLink: membership.telegramLink || '',
+      whatsappLink: membership.whatsappLink || '',
+      customExternalLink: membership.customExternalLink || '',
       notifyEnrolled: false,
       contents: mergedContents,
       editions: membership.editions || []
@@ -1135,7 +1215,7 @@ export function MembershipManager() {
       language: lang.code, title: '', description: '', whoIsFor: '', benefits: '', entryCondition: '', keyDetails: ''
     }));
 
-    setFormData({ type: 'STANDARD', label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false });
+    setFormData({ type: 'STANDARD', label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], isSubscription: false, subscriptionInterval: 'month', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '' });
     setEditId(null);
     setShowAdd(false);
   };
@@ -1215,7 +1295,24 @@ export function MembershipManager() {
               <input type="text" placeholder="Label (e.g. Signature Program)" value={formData.label} onChange={e=>setFormData({...formData, label: e.target.value})} className="p-2 border rounded" />
               <input type="number" placeholder="Offer Price" value={formData.offerPrice} onChange={e=>setFormData({...formData, offerPrice: Number(e.target.value)})} className="p-2 border rounded" />
               <input type="number" placeholder="Real Price (Value)" value={formData.realPrice} onChange={e=>setFormData({...formData, realPrice: Number(e.target.value)})} className="p-2 border rounded" />
-              <div className="flex flex-col gap-1"><span className="text-xs text-slate-500">Expiry Date</span>
+                           <div className="space-y-4 col-span-full md:col-span-2 bg-indigo-50/50 p-5 rounded-xl border border-indigo-100/50 mt-4">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                     <input type="checkbox" className="w-4 h-4 accent-indigo-600 rounded bg-white border-slate-300 text-indigo-600 focus:ring-indigo-600" checked={formData.isSubscription || false} onChange={e=>setFormData({...formData, isSubscription: e.target.checked})} />
+                     <span className="text-sm font-bold text-indigo-900 tracking-wide">Enable Stripe Autopayment (Subscription)</span>
+                  </label>
+                  {formData.isSubscription && (
+                     <div className="space-y-2 mt-3 pl-7">
+                        <label className="block text-xs font-bold text-indigo-800/70 uppercase tracking-wider mb-1.5">Billing Interval</label>
+                        <select value={formData.subscriptionInterval || 'month'} onChange={e=>setFormData({...formData, subscriptionInterval: e.target.value})} className="w-full max-w-xs px-3 py-2 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm text-indigo-900 font-medium">
+                           <option value="day">Daily</option>
+                           <option value="week">Weekly</option>
+                           <option value="month">Monthly</option>
+                           <option value="year">Yearly</option>
+                        </select>
+                     </div>
+                  )}
+             </div>
+             <div className="flex flex-col gap-1"><span className="text-xs text-slate-500">Expiry Date</span>
               <input type="datetime-local" placeholder="Expiry Date" value={formData.expiryDate} onChange={e=>setFormData({...formData, expiryDate: e.target.value})} className="p-2 border rounded" /></div>
            </div>
            
@@ -1285,7 +1382,7 @@ export function MembershipManager() {
                        <div className="border border-slate-200 p-6 rounded-2xl bg-white space-y-4">
                <div>
                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><span className="w-1.5 h-4 bg-indigo-500 rounded-full inline-block"></span>Live Class Details / Google Meet (Optional)</h3>
-                 <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this course.</p>
+                 <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this program.</p>
                </div>
                <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                  <div className="space-y-2">
@@ -1295,7 +1392,7 @@ export function MembershipManager() {
                          <button type="button" onClick={() => generateMeetLink(formData, setFormData)} className="text-xs text-indigo-600 font-bold hover:underline">Auto Generate</button>
                        )}
                     </div>
-                    <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx"/>
+                    <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/... or https://t.me/..."/>
                  </div>
                  <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Date & Time</label>
@@ -1307,7 +1404,28 @@ export function MembershipManager() {
                   <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
                </div>
             </div>
-            <label className="flex items-center gap-2 mt-4 mb-4 text-sm font-medium text-slate-800">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+               <div className="md:col-span-2">
+                 <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                   <input type="checkbox" checked={formData.enablePlatformContent !== false} onChange={e=>setFormData({...formData, enablePlatformContent: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                   Enable Lessons Module (Continue Learning)
+                 </label>
+                 <p className="text-xs text-slate-500 mt-1 ml-6">If unchecked, users will not see the "Continue Learning" button or the lesson player for this program.</p>
+               </div>
+               <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Telegram Group Link</label>
+                  <input type="text" value={formData.telegramLink || ''} onChange={e=>setFormData({...formData, telegramLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://t.me/..."/>
+               </div>
+               <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">WhatsApp Group Link</label>
+                  <input type="text" value={formData.whatsappLink || ''} onChange={e=>setFormData({...formData, whatsappLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://chat.whatsapp.com/..."/>
+               </div>
+               <div className="md:col-span-2 space-y-2">
+                  <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Other Community/External Link</label>
+                  <input type="text" value={formData.customExternalLink || ''} onChange={e=>setFormData({...formData, customExternalLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://discord.gg/... or https://your-site.com"/>
+               </div>
+            </div>
+            <label className="flex items-center gap-2 mb-4 text-sm font-medium text-slate-800">
               <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
               Send email notification with meeting details to enrolled members
             </label>
@@ -1572,7 +1690,7 @@ export function EmailCampaignManager() {
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" value="COURSE" checked={type === 'COURSE'} onChange={() => setType('COURSE')} className="accent-primary" />
-                Course Users
+                Program Users
               </label>
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="radio" value="MEMBERSHIP" checked={type === 'MEMBERSHIP'} onChange={() => setType('MEMBERSHIP')} className="accent-primary" />
@@ -1587,9 +1705,9 @@ export function EmailCampaignManager() {
 
           {type === 'COURSE' && (
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-indigo-600/60 mb-2">Select Course</label>
+              <label className="block text-[10px] font-bold uppercase tracking-widest text-indigo-600/60 mb-2">Select Program</label>
               <select value={courseId} onChange={e => setCourseId(e.target.value)} className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:outline-none focus:border-primary bg-white">
-                <option value="">-- Choose Course --</option>
+                <option value="">-- Choose Program --</option>
                 {courses.map(c => <option key={c.id} value={c.id} className="bg-white">{c.title}</option>)}
               </select>
             </div>
@@ -1719,7 +1837,7 @@ export function EmailTemplatesManager() {
       <p style="margin: 5px 0;">Amount Paid: <strong>{{price}}</strong></p>
       <p style="margin: 5px 0;">Date: <strong>{{date}}</strong></p>
     </div>
-    <p>Enjoy your course and happy learning!</p>
+    <p>Enjoy your program and happy learning!</p>
   </div>
 </div>`);
         } else if (selectedType === 'MEMBERSHIP_PURCHASE') {
@@ -2553,7 +2671,7 @@ export function CategoryManager() {
                <div className="flex-1 min-w-[150px]">
                  <label className="text-xs font-bold text-slate-500 uppercase">Category Type</label>
                  <select value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})} className="w-full p-2 border rounded">
-                   <option value="COURSE">Course</option>
+                   <option value="COURSE">Program</option>
                    <option value="MEMBERSHIP">Membership</option>
                  </select>
                </div>
@@ -2911,7 +3029,7 @@ export function EventManager() {
   const [activeLangTab, setActiveLangTab] = useState((languages || []).find((l:any) => l.isDefault)?.code || (languages || []).find((l:any) => l.isActive)?.code || 'en');
 
   const [formData, setFormData] = useState({
-    title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, translations: [] as any[]
+    title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: [] as any[]
   });
 
   useEffect(() => {
@@ -2940,7 +3058,7 @@ export function EventManager() {
       languageCode: lang.code, title: '', description: ''
     }));
     setFormData({
-      title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, translations: initialContents
+      title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: initialContents
     });
     setEditingEvent(null);
     setFormOpen(false);
@@ -2969,6 +3087,10 @@ export function EventManager() {
       meetingLink: evt.meetingLink || '',
       meetingDate: evt.meetingDate ? new Date(evt.meetingDate).toISOString().slice(0, 16) : '',
       meetingNotes: evt.meetingNotes || '',
+      enablePlatformContent: evt.enablePlatformContent ?? true,
+      telegramLink: evt.telegramLink || '',
+      whatsappLink: evt.whatsappLink || '',
+      customExternalLink: evt.customExternalLink || '',
       notifyEnrolled: false,
       translations: mergedContents
     });
@@ -3128,6 +3250,17 @@ export function EventManager() {
                   <label className="block text-sm font-bold text-slate-700 mb-1">Expiry Date (Auto Hide)</label>
                   <input type="datetime-local" value={formData.expiryDate} onChange={e => setFormData({...formData, expiryDate: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition" />
                 </div>
+                <div className="col-span-2">
+                   <label className="flex items-center gap-2 text-sm font-medium text-slate-800 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
+                     <input type="checkbox" checked={formData.price === 0} onChange={e=>{
+                         if (e.target.checked) setFormData({...formData, price: 0, realPrice: 0});
+                         else setFormData({...formData, price: 10});
+                     }} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                     Make this Event Free
+                   </label>
+                </div>
+                {formData.price !== 0 && (
+                <>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Price</label>
                   <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition" />
@@ -3136,6 +3269,8 @@ export function EventManager() {
                   <label className="block text-sm font-bold text-slate-700 mb-1">Pricing Scheme (Original Price)</label>
                   <input type="number" placeholder="Optional" value={formData.realPrice} onChange={e => setFormData({...formData, realPrice: Number(e.target.value)})} className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition" />
                 </div>
+                </>
+                )}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Location</label>
                   <input value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition" />
@@ -3183,7 +3318,7 @@ export function EventManager() {
               <div className="border border-slate-200 p-6 rounded-2xl bg-white space-y-4 mb-4">
                  <div>
                    <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2"><span className="w-1.5 h-4 bg-indigo-500 rounded-full inline-block"></span>Live Class Details / Google Meet (Optional)</h3>
-                   <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this course.</p>
+                   <p className="text-xs text-slate-500">Provide meet link and schedules that will be available to all enrolled students for this program.</p>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-1 sm:grid-cols-2 gap-4">
                    <div className="space-y-2">
@@ -3193,7 +3328,7 @@ export function EventManager() {
                            <button type="button" onClick={() => generateMeetLink(formData, setFormData)} className="text-xs text-indigo-600 font-bold hover:underline">Auto Generate</button>
                          )}
                       </div>
-                      <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/xxx-xxxx-xxx"/>
+                      <input type="text" value={formData.meetingLink || ''} onChange={e=>setFormData({...formData, meetingLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://meet.google.com/... or https://t.me/..."/>
                    </div>
                    <div className="space-y-2">
                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Date & Time</label>
@@ -3203,6 +3338,27 @@ export function EventManager() {
                  <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Meeting Notes / Instructions</label>
                     <textarea value={formData.meetingNotes || ''} onChange={e=>setFormData({...formData, meetingNotes: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" rows={2} placeholder="E.g., Please read chapter 1 before joining..."></textarea>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 p-4 bg-slate-50 border border-slate-200 rounded-xl mb-4">
+                    <div className="md:col-span-2">
+                      <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
+                        <input type="checkbox" checked={formData.enablePlatformContent !== false} onChange={e=>setFormData({...formData, enablePlatformContent: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                        Enable Lessons Module (Continue Learning)
+                      </label>
+                      <p className="text-xs text-slate-500 mt-1 ml-6">If unchecked, users will not see the "Continue Learning" button or the lesson player for this program.</p>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Telegram Group Link</label>
+                       <input type="text" value={formData.telegramLink || ''} onChange={e=>setFormData({...formData, telegramLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://t.me/..."/>
+                    </div>
+                    <div className="space-y-2">
+                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">WhatsApp Group Link</label>
+                       <input type="text" value={formData.whatsappLink || ''} onChange={e=>setFormData({...formData, whatsappLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://chat.whatsapp.com/..."/>
+                    </div>
+                    <div className="md:col-span-2 space-y-2">
+                       <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5">Other Community/External Link</label>
+                       <input type="text" value={formData.customExternalLink || ''} onChange={e=>setFormData({...formData, customExternalLink: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm bg-white transition-all shadow-sm" placeholder="https://discord.gg/... or https://your-site.com"/>
+                    </div>
                  </div>
                  <label className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-800">
                    <input type="checkbox" checked={formData.notifyEnrolled || false} onChange={e=>setFormData({...formData, notifyEnrolled: e.target.checked})} className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
@@ -3510,7 +3666,7 @@ export function ReviewManager() {
                   <div>
                     <div className="font-bold text-sm text-gray-900">{r.user?.name || 'Unknown User'} <span className="text-slate-400 font-normal">({r.rating} Stars)</span></div>
                     <div className="text-xs text-slate-500 mt-1">
-                      {r.course?.title ? `Course: ${r.course.title}` : ''}
+                      {r.course?.title ? `Program: ${r.course.title}` : ''}
                       {r.membership?.label ? `Membership: ${r.membership.label} (${r.membership.type})` : ''}
                     </div>
                   </div>
@@ -4001,7 +4157,7 @@ export function ReportManager() {
             <p className="text-3xl font-black text-indigo-950">{data.orders.filter((o:any)=>o.status === 'COMPLETED').length}</p>
         </div>
         <div className="p-6 bg-emerald-50 rounded-2xl border border-emerald-100">
-            <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-2">Courses Sold (Completed)</h4>
+            <h4 className="text-xs font-bold text-emerald-500 uppercase tracking-wider mb-2">Programs Sold (Completed)</h4>
             <p className="text-3xl font-black text-emerald-950">{data.orders.filter((o:any)=>o.itemType==='COURSE' && o.status === 'COMPLETED').length}</p>
         </div>
         <div className="p-6 bg-cyan-50 rounded-2xl border border-cyan-100">
@@ -4035,7 +4191,7 @@ export function ReportManager() {
                  </select>
                  <select value={filter.type} onChange={e => setFilter({...filter, type: e.target.value})} className="border border-slate-200 rounded-lg p-2 text-sm">
                      <option value="all">All Types</option>
-                     <option value="COURSE">Courses</option>
+                     <option value="COURSE">Programs</option>
                      <option value="MEMBERSHIP">Memberships</option>
                      <option value="BOOKING">Events/Booking</option>
                  </select>
@@ -4146,7 +4302,7 @@ export function SeoManager() {
            <div className="space-y-4">
               <div>
                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Meta Title</label>
-                 <input type="text" value={seoData.title} onChange={e => setSeoData({...seoData, title: e.target.value})} className="w-full border border-slate-200 rounded p-2" placeholder="e.g. Master React in 21 Days - Complete Course" />
+                 <input type="text" value={seoData.title} onChange={e => setSeoData({...seoData, title: e.target.value})} className="w-full border border-slate-200 rounded p-2" placeholder="e.g. Master React in 21 Days - Complete Program" />
                  <p className="text-[10px] text-slate-400 mt-1">Recommended: 50-60 characters</p>
               </div>
               <div>
@@ -4156,7 +4312,7 @@ export function SeoManager() {
               </div>
               <div>
                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Keywords (Meta Tags)</label>
-                 <input type="text" value={seoData.keywords} onChange={e => setSeoData({...seoData, keywords: e.target.value})} className="w-full border border-slate-200 rounded p-2" placeholder="e.g. react, programming, course, web development" />
+                 <input type="text" value={seoData.keywords} onChange={e => setSeoData({...seoData, keywords: e.target.value})} className="w-full border border-slate-200 rounded p-2" placeholder="e.g. react, programming, program, web development" />
               </div>
            </div>
            <div className="mt-6 flex items-center justify-end gap-3">
@@ -4167,7 +4323,7 @@ export function SeoManager() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
            <div>
-              <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Courses</h3>
+              <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 mb-4">Programs</h3>
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2">
                  {courses.map(c => (
                     <button key={c.id} onClick={() => loadSeo(c, 'COURSE', c.title)} className="w-full text-left p-3 text-smborder border-slate-100 rounded-lg hover:border-indigo-200 hover:bg-slate-50 transition font-bold text-slate-700 truncate block bg-white">
@@ -4727,7 +4883,7 @@ export function PushNotificationManager() {
         
         <div>
            <label className="block text-sm font-bold text-slate-700 mb-1">Title</label>
-           <input type="text" value={title} onChange={e=>setTitle(e.target.value)} required placeholder="E.g., New Course Available!" className="w-full border border-slate-200 rounded-lg px-4 py-2" />
+           <input type="text" value={title} onChange={e=>setTitle(e.target.value)} required placeholder="E.g., New Program Available!" className="w-full border border-slate-200 rounded-lg px-4 py-2" />
         </div>
         <div>
            <label className="block text-sm font-bold text-slate-700 mb-1">Body / Message</label>
@@ -4903,7 +5059,7 @@ export function PromoBadgeManager() {
            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
                <div>
                   <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Promo Announcement Message</label>
-                  <input type="text" value={promoConfig.message} onChange={e => setPromoConfig({...promoConfig, message: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm" placeholder="e.g. Flat 50% off on Premium collection!, Let's try our brand new course builder!" />
+                  <input type="text" value={promoConfig.message} onChange={e => setPromoConfig({...promoConfig, message: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm" placeholder="e.g. Flat 50% off on Premium collection!, Let's try our brand new program builder!" />
                   <p className="text-xs text-slate-400 mt-2">The core sentence explaining your announcement or offer details.</p>
                </div>
 

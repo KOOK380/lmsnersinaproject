@@ -27,8 +27,8 @@ const menuGroups = [
     title: "Product",
     items: [
       { name: "CATEGORIES", icon: List },
-      { name: "COURSES", icon: BookOpen },
-      { name: "COURSE BUNDLES", icon: BookOpen },
+      { name: "PROGRAMS", icon: BookOpen },
+      { name: "PROGRAM BUNDLES", icon: BookOpen },
       { name: "MEMBERSHIPS", icon: BookOpenText },
       { name: "EVENTS", icon: CalendarDays },
     ]
@@ -200,7 +200,7 @@ export function Admin() {
                {title: t('admin.total_revenue'), value: formatCurrency(stats.revenue, currency), label: "Lifetime earnings"},
                {title: t('admin.total_users'), value: stats.totalUsers, label: "Registered accounts"},
                {title: t('admin.leads'), value: stats.inquiries, label: "Contact requests"},
-               {title: t('admin.course_purchases'), value: stats.coursePurchases, label: "Total courses sold"},
+               {title: t('admin.course_purchases'), value: stats.coursePurchases, label: "Total programs sold"},
                {title: t('admin.membership_sales'), value: stats.membershipPurchases, label: "Total memberships sold"},
                {title: t('admin.event_bookings'), value: stats.eventTicketSales, label: "Total event tickets"},
              ].map((stat, i) => (
@@ -220,7 +220,7 @@ export function Admin() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {[
-                  { title: 'Top Courses', data: stats.topCourses, key: 'title' },
+                  { title: 'Top Programs', data: stats.topCourses, key: 'title' },
                   { title: 'Top Memberships', data: stats.topMemberships, key: 'label' },
                   { title: 'Top Events', data: stats.topEvents, key: 'title' }
               ].map((section, i) => (
@@ -244,8 +244,8 @@ export function Admin() {
         {activeTab === "REPORTS" && <ReportManager />}
         {activeTab === "SEO" && <SeoManager />}
         {activeTab === "CATEGORIES" && <CategoryManager />}
-        {activeTab === "COURSES" && <CourseManager />}
-        {activeTab === "COURSE BUNDLES" && <CourseBundlesManager />}
+        {activeTab === "PROGRAMS" && <CourseManager />}
+        {activeTab === "PROGRAM BUNDLES" && <CourseBundlesManager />}
         {activeTab === "INSTRUCTORS" && <InstructorManager />}
         {activeTab === "MEMBERSHIPS" && <MembershipManager />}
         {activeTab === "REVIEWS" && <ReviewManager />}

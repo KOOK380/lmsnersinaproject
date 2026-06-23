@@ -1,0 +1,36 @@
+257:          {t('cart.empty')} <Link to="/courses" className="text-primary hover:underline font-sans not-italic font-bold text-sm ml-2">{t('cart.browse')} &rarr;</Link>
+305:  const [data, setData] = useState<{courses: any[], memberships: any[], bookings: any[], meetings: any[], rejectedOrders?: any[]}>({ courses: [], memberships: [], bookings: [], meetings: [], rejectedOrders: [] });
+408:              { label: t('dashboard.active_courses'), value: data.courses.length },
+454:        {/* Courses */}
+457:           {data.courses.length === 0 ? <p className="text-slate-500 text-sm font-serif italic">{t('dashboard.no_courses')}</p> : (
+459:               {data.courses.map((c, i) => {
+464:                   <div className="font-bold text-sm mb-3 line-clamp-2 text-ink">{c.course.title}</div>
+480:                          <Link to={isExpired ? "#" : `/courses/${c.course.id}/player`} className={`text-[10px] font-bold uppercase tracking-wider py-2 px-4 rounded-lg transition ${isExpired ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-dark'}`}>{isExpired ? 'Expired' : 'Continue'}</Link>
+554:export function CoursePlayer() {
+556:   const [courseRaw, setCourse] = useState<any>(null);
+562:     fetch(`/api/courses/${id}`).then(r => r.json()).then(data => {
+563:       setCourse(data);
+570:   const course = getTranslated(courseRaw, language);
+572:   if (!course) return <div className="p-12 text-center text-slate-500">Loading program player...</div>;
+582:                    <p>{t('courses.no_content')}</p>
+588:               <h2 className="text-2xl md:text-3xl font-bold mb-4 text-slate-900">{activeLesson?.title || course.title}</h2>
+592:               {activeLesson?.showAboutCourse !== false && (
+594:                   <h3 className="text-xl font-bold mb-4 text-slate-900">{t('courses.about_lesson')}</h3>
+597:                     dangerouslySetInnerHTML={{ __html: activeLesson?.description || course.description }} 
+601:                      {course.instructor && (
+603:                           {course.instructor.imageUrl ? (
+604:                              <img src={course.instructor.imageUrl} alt={course.instructor.name} className="w-12 h-12 rounded-full object-cover" />
+607:                                 {course.instructor.name.charAt(0)}
+611:                              <p className="text-xs text-slate-500 font-bold uppercase tracking-wide">{t('courses.instructor')}</p>
+612:                              <p className="font-bold text-slate-900 text-sm line-clamp-1">{course.instructor.name}</p>
+624:              <span>{t('courses.course_content')}</span>
+625:              <span className="text-xs font-medium bg-slate-100 text-slate-600 px-2 py-1 rounded-full">{course?.lessons?.length || 0} {t('courses.lessons')}</span>
+628:                {course.lessons?.map((lesson: any, i: number) => {
+645:                {(!course.lessons || course.lessons.length === 0) && (
+664:       const res = await fetch("/api/courses/active");
+665:       const courses = await res.json();
+670:         if (f.itemType === 'COURSE') {
+671:            const item = courses.find((c: any) => c.id === f.itemId);
+694:          {t('wishlist.empty')} <Link to="/courses" className="text-primary hover:underline font-sans not-italic font-bold text-sm ml-2">{t('wishlist.browse')} &rarr;</Link>
+705:                       <><span className="text-[10px] text-slate-500 uppercase font-medium mr-1">{t('courses.starting_from', 'Starting from')}</span>{formatCurrency(Math.min(...fav.memberships.map((m:any)=>m.offerPrice||0)), currency)}</>
+710:                 <Link to={`/${fav.isMembership ? 'memberships' : 'courses'}/${fav.itemId}`} className="px-4 py-2 bg-slate-100 font-bold text-sm rounded-lg hover:bg-slate-200 text-center">{t('wishlist.view')}</Link>

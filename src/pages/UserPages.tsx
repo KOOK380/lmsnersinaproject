@@ -1,3 +1,4 @@
+import { BookOpen, Video, Users, CheckCircle2, XCircle, ArrowRight, PlayCircle, ExternalLink, CalendarDays, Download } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -158,55 +159,57 @@ export function Cart() {
                   </div>
                 </div>
                 
-                <div className="pt-6 mt-6 border-t border-slate-100">
-                  <h3 className="font-bold text-lg mb-4 text-slate-800">Payment Method</h3>
-                  <div className="space-y-3">
-                    {isStripeEnabled && (
-                      <label className={`block border rounded-xl p-4 cursor-pointer transition-all ${selectedPayment === 'STRIPE' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                        <div className="flex items-center gap-3">
-                          <input type="radio" name="paymentMethod" value="STRIPE" checked={selectedPayment === 'STRIPE'} onChange={() => setSelectedPayment('STRIPE')} className="w-4 h-4 accent-primary" />
-                          <span className="font-bold text-slate-800">Credit / Debit Card (Online)</span>
-                        </div>
-                      </label>
-                    )}
-                    {isManualEnabled && (
-                      <label className={`block border rounded-xl p-4 cursor-pointer transition-all ${selectedPayment === 'MANUAL' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                        <div className="flex items-center gap-3">
-                          <input type="radio" name="paymentMethod" value="MANUAL" checked={selectedPayment === 'MANUAL'} onChange={() => setSelectedPayment('MANUAL')} className="w-4 h-4 accent-primary" />
-                          <span className="font-bold text-slate-800">Manual Payment (Bank Transfer)</span>
-                        </div>
-                      </label>
-                    )}
-                  </div>
-                  
-                  {selectedPayment === 'MANUAL' && manualConfig && (
-                     <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm">
-                       <p className="font-bold text-amber-800 mb-2">Instructions:</p>
-                       <p className="text-amber-900 whitespace-pre-wrap mb-4">{manualConfig.instructions}</p>
-                       {manualConfig.bankDetails && (
-                         <div className="bg-white p-3 rounded border border-amber-100 mb-4 whitespace-pre-wrap font-mono text-xs text-slate-700">
-                           {manualConfig.bankDetails}
-                         </div>
-                       )}
-                       {manualConfig.qrCodeUrl && (
-                         <div className="mb-4">
-                           <img src={manualConfig.qrCodeUrl} alt="QR Code" className="max-w-[150px] rounded shadow-sm border border-slate-200" />
-                         </div>
-                       )}
-                       <div>
-                         <label className="block text-xs font-bold text-amber-900 mb-1">Upload Payment Proof (Receipt/Screenshot)</label>
-                         <div className="bg-white rounded">
-                            <MediaInput label="Receipt" type="image" value={paymentProofUrl} onChange={v => setPaymentProofUrl(v)} />
+                {getCartTotal() > 0 && (
+                  <div className="pt-6 mt-6 border-t border-slate-100">
+                    <h3 className="font-bold text-lg mb-4 text-slate-800">Payment Method</h3>
+                    <div className="space-y-3">
+                      {isStripeEnabled && (
+                        <label className={`block border rounded-xl p-4 cursor-pointer transition-all ${selectedPayment === 'STRIPE' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                          <div className="flex items-center gap-3">
+                            <input type="radio" name="paymentMethod" value="STRIPE" checked={selectedPayment === 'STRIPE'} onChange={() => setSelectedPayment('STRIPE')} className="w-4 h-4 accent-primary" />
+                            <span className="font-bold text-slate-800">Credit / Debit Card (Online)</span>
+                          </div>
+                        </label>
+                      )}
+                      {isManualEnabled && (
+                        <label className={`block border rounded-xl p-4 cursor-pointer transition-all ${selectedPayment === 'MANUAL' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
+                          <div className="flex items-center gap-3">
+                            <input type="radio" name="paymentMethod" value="MANUAL" checked={selectedPayment === 'MANUAL'} onChange={() => setSelectedPayment('MANUAL')} className="w-4 h-4 accent-primary" />
+                            <span className="font-bold text-slate-800">Manual Payment (Bank Transfer)</span>
+                          </div>
+                        </label>
+                      )}
+                    </div>
+                    
+                    {selectedPayment === 'MANUAL' && manualConfig && (
+                       <div className="mt-4 p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm">
+                         <p className="font-bold text-amber-800 mb-2">Instructions:</p>
+                         <p className="text-amber-900 whitespace-pre-wrap mb-4">{manualConfig.instructions}</p>
+                         {manualConfig.bankDetails && (
+                           <div className="bg-white p-3 rounded border border-amber-100 mb-4 whitespace-pre-wrap font-mono text-xs text-slate-700">
+                             {manualConfig.bankDetails}
+                           </div>
+                         )}
+                         {manualConfig.qrCodeUrl && (
+                           <div className="mb-4">
+                             <img src={manualConfig.qrCodeUrl} alt="QR Code" className="max-w-[150px] rounded shadow-sm border border-slate-200" />
+                           </div>
+                         )}
+                         <div>
+                           <label className="block text-xs font-bold text-amber-900 mb-1">Upload Payment Proof (Receipt/Screenshot)</label>
+                           <div className="bg-white rounded">
+                              <MediaInput label="Receipt" type="image" value={paymentProofUrl} onChange={v => setPaymentProofUrl(v)} />
+                           </div>
                          </div>
                        </div>
-                     </div>
-                  )}
-                </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="pt-6 mt-6 flex gap-4">
                    <button type="button" onClick={() => setShowCheckout(false)} className="px-6 py-4 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex-1">Back to Cart</button>
                    <button type="submit" disabled={isSubmitting} className="px-6 py-4 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary-dark transition flex-1 disabled:opacity-70">
-                     {isSubmitting ? 'Processing...' : 'Place Order'}
+                     {isSubmitting ? 'Processing...' : (getCartTotal() === 0 ? 'Complete Enrollment' : 'Place Order')}
                    </button>
                 </div>
              </form>
@@ -239,7 +242,7 @@ export function Cart() {
          <div className="flex items-center gap-2">
            <button type="button" onClick={() => setShowCheckout(false)} className="px-4 py-3 rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Back</button>
            <button type="submit" form="checkout-form" disabled={isSubmitting} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-              {isSubmitting ? 'Processing...' : 'Place Order'}
+              {isSubmitting ? 'Processing...' : (getCartTotal() === 0 ? 'Complete Enrollment' : 'Place Order')}
            </button>
          </div>
       </div>
@@ -300,8 +303,16 @@ export function Cart() {
   );
 }
 
+
+
+
+
+
+
+
+
 export function Dashboard() {
-  const { user, clearCart } = useStore();
+  const { user, clearCart, language } = useStore();
   const [data, setData] = useState<{courses: any[], memberships: any[], bookings: any[], meetings: any[], rejectedOrders?: any[]}>({ courses: [], memberships: [], bookings: [], meetings: [], rejectedOrders: [] });
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -325,10 +336,8 @@ export function Dashboard() {
       .then(res => {
          if (res.success) {
            clearCart();
-           // remove session_id from URL
            searchParams.delete('session_id');
            setSearchParams(searchParams);
-           // reload data
            fetchDashboardData(token);
          }
       })
@@ -346,24 +355,80 @@ export function Dashboard() {
     }
   }, [user, navigate, searchParams]);
 
+  const handleCancelSubscription = async (subscriptionId: string) => {
+      const token = localStorage.getItem('token');
+      if (!confirm('Are you sure you want to cancel the autopayment? You will not be billed again, but you will retain access until the end of the current billing cycle.')) return;
+      try {
+          const res = await fetch('/api/stripe/cancel-subscription', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify({ subscriptionId })
+          });
+          const result = await res.json();
+          if (result.success) {
+              alert('Autopayment cancelled successfully.');
+              setData((prev: any) => ({
+                 ...prev,
+                 courses: prev.courses.map((c: any) => c.stripeSubscriptionId === subscriptionId ? { ...c, stripeSubscriptionId: null } : c),
+                 memberships: prev.memberships.map((m: any) => m.stripeSubscriptionId === subscriptionId ? { ...m, stripeSubscriptionId: null } : m)
+              }));
+          } else {
+              alert(result.error || 'Failed to cancel subscription.');
+          }
+      } catch (err) {
+          alert('Error cancelling subscription');
+      }
+  };
+
   if (!user) return null;
 
+  const allCommunityLinks: any[] = [];
+  data.courses.forEach(c => {
+     if (c.course.telegramLink || c.course.whatsappLink || c.course.customExternalLink || c.course.meetingLink) {
+         allCommunityLinks.push({ ...c.course, sourceName: c.course.title, sourceType: 'Program', id: c.course.id });
+     }
+  });
+  data.memberships.forEach(m => {
+     if (m.membership.telegramLink || m.membership.whatsappLink || m.membership.customExternalLink || m.membership.meetingLink) {
+         const content = m.membership.contents?.find((c:any) => c.language === language) || m.membership.contents?.[0] || { title: m.membership.label || 'Membership' };
+         allCommunityLinks.push({ ...m.membership, sourceName: content.title, sourceType: 'Membership', id: m.membership.id });
+     }
+  });
+  const uniqueCommunityLinks = Array.from(new Map(allCommunityLinks.map(item => [item.id, item])).values());
+
+  const getTranslated = (item: any, lang: string) => {
+    if (!item) return null;
+    const translation = item.translations?.find((t: any) => t.languageCode === lang);
+    return translation ? { ...item, ...translation } : item;
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
-      <header className="mb-8 p-6 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="w-14 h-14 rounded-full bg-slate-100 border-2 border-primary/20 flex flex-col items-center justify-center">
-            <span className="font-bold text-xl leading-none uppercase text-primary">{user.name.charAt(0)}</span>
-          </div>
-          <div>
-            <p className="text-[10px] text-primary/60 font-bold uppercase tracking-widest mb-0.5">{t('dashboard.student_portal')}</p>
-            <p className="text-3xl font-bold font-serif italic text-ink">{t('dashboard.welcome')}, {user.name}</p>
-          </div>
-        </div>
-      </header>
-      
+    <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 space-y-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200">
+         <div>
+             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">Welcome back, {user.name.split(' ')[0]} 👋</h1>
+             <p className="text-slate-500 font-medium text-lg">Pick up where you left off or join the conversation.</p>
+         </div>
+         <div className="flex gap-4">
+             <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+                 <span className="text-3xl font-black text-primary leading-none mb-1">{data.courses.length}</span>
+                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Active Programs</span>
+             </div>
+             {data.memberships.length > 0 && (
+                 <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+                     <span className="text-3xl font-black text-emerald-600 leading-none mb-1">{data.memberships.length}</span>
+                     <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Memberships</span>
+                 </div>
+             )}
+             <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+                 <span className="text-3xl font-black text-blue-600 leading-none mb-1">{data.bookings.length}</span>
+                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Upcoming Events</span>
+             </div>
+         </div>
+      </div>
+
       {data.rejectedOrders && data.rejectedOrders.length > 0 && (
-        <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-2xl shadow-sm">
+        <div className="p-6 bg-red-50 border border-red-200 rounded-2xl shadow-sm">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-red-100 rounded-xl text-red-600 shrink-0">
               <AlertTriangle className="w-6 h-6 animate-pulse" />
@@ -371,9 +436,8 @@ export function Dashboard() {
             <div className="flex-1">
               <h3 className="text-lg font-bold text-red-800 font-serif italic mb-1">Manual Payment Rejections</h3>
               <p className="text-xs text-red-700 font-sans mb-4">
-                The verification verification of your manual bank transfer payment has failed. Please check the reason below or contact support.
+                The verification of your manual bank transfer payment has failed. Please check the reason below or contact support.
               </p>
-              
               <div className="space-y-4">
                 {data.rejectedOrders.map((order: any, idx: number) => (
                   <div key={idx} className="p-4 bg-white border border-red-100 rounded-xl shadow-sm">
@@ -389,7 +453,6 @@ export function Dashboard() {
                         <span className="text-xs font-bold text-red-600">${order.total}</span>
                       </div>
                     </div>
-                    
                     <div className="mt-3 p-3 bg-red-50/40 rounded-lg border border-red-50 text-xs text-red-800 font-medium">
                       <span className="font-bold text-red-900 block mb-1 uppercase text-[9px] tracking-widest">Rejection Reason:</span>
                       {order.rejectReason}
@@ -401,155 +464,280 @@ export function Dashboard() {
           </div>
         </div>
       )}
-      
-      {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[
-              { label: t('dashboard.active_courses'), value: data.courses.length },
-              { label: t('dashboard.active_memberships'), value: data.memberships.filter(m => !(m.expiresAt && new Date(m.expiresAt) < new Date())).length },
-              { label: t('dashboard.upcoming_events'), value: data.bookings.length },
-              { label: t('dashboard.live_meetings'), value: data.meetings?.length || 0 },
-          ].map((stat, i) => (
-              <div key={i} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center">
-                  <span className="text-3xl font-bold text-primary">{stat.value}</span>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 mt-1">{stat.label}</span>
-              </div>
-          ))}
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Memberships */}
-        <div className="col-span-1 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-           <h2 className="text-xl font-serif italic mb-6 flex items-center gap-2 text-primary">{t('dashboard.membership_tiers')}</h2>
-           {data.memberships.length === 0 ? <p className="text-slate-500 text-sm font-serif italic">{t('dashboard.no_memberships')}</p> : (
-             <div className="space-y-4">
-               {data.memberships.map((m, i) => {
-                 const isPending = !!m.isPending;
-                 const isExpired = !isPending && m.expiresAt && new Date(m.expiresAt) < new Date();
-                 const content = m.membership.contents?.[0] || { title: m.membership.label || 'Membership' };
-                 return (
-                 <div key={i} className={`p-4 border rounded-xl flex items-center gap-4 ${isPending ? 'border-amber-200 bg-amber-50/40 shadow-sm' : isExpired ? 'opacity-60 bg-red-50/50 border-red-100' : 'bg-white border-slate-100 shadow-sm'}`}>
-                   {m.membership.imageUrl ? (
-                      <div className="w-12 h-12 rounded-lg bg-slate-100 flex-shrink-0 overflow-hidden">
-                        <img src={m.membership.imageUrl} alt={content.title} className="w-full h-full object-cover" />
-                      </div>
-                   ) : (
-                      <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center text-white font-serif italic text-lg flex-shrink-0">
-                         {content.title?.charAt(0)}
-                      </div>
-                   )}
-                   <div className="flex-1 min-w-0">
-                     <p className="text-sm font-bold text-slate-800 truncate">{content.title}</p>
-                     <div className={`text-[10px] font-bold mt-1 uppercase tracking-wider ${isPending ? 'text-amber-600' : isExpired ? 'text-red-500' : 'text-primary'}`}>
-                        {isPending ? 'Pending Verification' : isExpired ? 'Expired' : 'Active'}
-                     </div>
-                   </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-10">
+          <div className="xl:col-span-2 space-y-12">
+              <section>
+                 <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                        <BookOpen className="w-6 h-6 text-primary" /> My Programs
+                    </h2>
                  </div>
-               )})}
-             </div>
-           )}
-        </div>
-
-        {/* Courses */}
-        <div className="col-span-1 lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-           <h2 className="text-xl font-serif italic mb-6 flex items-center gap-2 text-primary">{t('dashboard.my_learning')}</h2>
-           {data.courses.length === 0 ? <p className="text-slate-500 text-sm font-serif italic">{t('dashboard.no_courses')}</p> : (
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {data.courses.map((c, i) => {
-                 const isPending = !!c.isPending;
-                 const isExpired = !isPending && c.expiresAt && new Date(c.expiresAt) < new Date();
-                 return (
-                 <div key={i} className={`border rounded-xl p-4 flex flex-col shadow-sm card-hover ${isPending ? 'border-amber-200 bg-amber-50/40' : isExpired ? 'opacity-60 bg-red-50/50 border-red-100' : 'border-slate-100 bg-slate-50'}`}>
-                   <div className="font-bold text-sm mb-3 line-clamp-2 text-ink">{c.course.title}</div>
-                   <div className="mt-auto">
-                     {!isPending && (
-                       <div className="w-full bg-slate-200 rounded-full h-2 mb-3 overflow-hidden">
-                          <div className="bg-primary h-2 rounded-full" style={{ width: `${c.progress}%` }}></div>
-                       </div>
-                     )}
-                     <div className="flex justify-between items-center">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                          {isPending ? 'Manual Payment' : `${c.progress}% Complete`}
+                 
+                 {data.courses.length === 0 ? (
+                    <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-10 text-center flex flex-col items-center justify-center">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-4">
+                            <BookOpen className="w-8 h-8 text-slate-300" />
                         </div>
-                        {isPending ? (
-                          <span className="text-[10px] font-bold uppercase tracking-wider py-1.5 px-3 rounded-lg bg-amber-100 border border-amber-200 text-amber-700 select-none">
-                            Pending Approval
-                          </span>
-                        ) : (
-                          <Link to={isExpired ? "#" : `/courses/${c.course.id}/player`} className={`text-[10px] font-bold uppercase tracking-wider py-2 px-4 rounded-lg transition ${isExpired ? 'bg-slate-300 text-slate-500 cursor-not-allowed' : 'bg-primary text-white hover:bg-primary-dark'}`}>{isExpired ? 'Expired' : 'Continue'}</Link>
-                        )}
-                     </div>
-                   </div>
-                 </div>
-               )})}
-             </div>
-           )}
-        </div>
+                        <p className="text-slate-500 font-medium text-lg mb-2">You haven't enrolled in any programs yet.</p>
+                        <Link to="/courses" className="text-primary font-bold hover:underline">Explore Programs &rarr;</Link>
+                    </div>
+                 ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                       {data.courses.map((c, i) => {
+                          const isPending = !!c.isPending;
+                          const isExpired = !isPending && c.expiresAt && new Date(c.expiresAt) < new Date();
+                          const courseContent = getTranslated(c.course, language);
+                          const enablePlatform = c.course.enablePlatformContent ?? true;
 
-        {/* Events & Meetings */}
-        { (data.bookings.length > 0 || (data.meetings && data.meetings.length > 0)) && (
-            <div className="col-span-1 lg:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Events */}
-                {data.bookings.length > 0 && (
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                        <h2 className="text-xl font-serif italic mb-6 text-primary">{t('dashboard.upcoming_events')}</h2>
-                        <div className="space-y-4">
-                            {data.bookings.map((b, i) => {
+                          return (
+                            <div key={i} className={`flex flex-col bg-white border-2 rounded-2xl overflow-hidden transition-all ${isPending ? 'border-amber-200 bg-amber-50/30' : isExpired ? 'border-slate-200 opacity-60' : 'border-slate-100 hover:border-slate-300 hover:shadow-lg'}`}>
+                               <div className="h-40 bg-slate-100 relative">
+                                  {c.course.imageUrl ? (
+                                      <img src={c.course.imageUrl} alt={courseContent.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                      <div className="w-full h-full bg-slate-800 flex items-center justify-center text-white/20">
+                                          <Video className="w-12 h-12" />
+                                      </div>
+                                  )}
+                                  <div className="absolute top-4 left-4 flex gap-2">
+                                     {isPending ? (
+                                         <span className="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-amber-200/50">Pending</span>
+                                     ) : isExpired ? (
+                                         <span className="bg-red-100 text-red-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-red-200/50">Expired</span>
+                                     ) : (
+                                         <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-emerald-200/50 flex items-center gap-1">
+                                             <CheckCircle2 className="w-3 h-3" /> Active
+                                         </span>
+                                     )}
+                                     {!enablePlatform && (
+                                         <span className="bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-blue-200/50 flex items-center gap-1">
+                                             <Users className="w-3 h-3" /> Community
+                                         </span>
+                                     )}
+                                  </div>
+                               </div>
+                               <div className="p-6 flex-1 flex flex-col">
+                                  <h3 className="font-black text-lg text-slate-900 leading-tight mb-2 line-clamp-2">{courseContent.title}</h3>
+                                  
+                                  {enablePlatform && !isPending && !(c.course.telegramLink || c.course.whatsappLink || c.course.customExternalLink || c.course.meetingLink) && (c.course._count?.lessons ?? 0) > 0 && (
+                                     <div className="mb-6 mt-auto pt-4">
+                                         <div className="flex justify-between items-end mb-2">
+                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Progress</span>
+                                             <span className="text-sm font-black text-slate-900">{c.progress}%</span>
+                                         </div>
+                                         <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/50">
+                                            <div className="bg-primary h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${c.progress}%` }}></div>
+                                         </div>
+                                     </div>
+                                  )}
+
+                                  <div className="mt-auto pt-4 flex flex-col gap-3">
+                                      {c.stripeSubscriptionId && !isExpired && (
+                                          <button onClick={() => handleCancelSubscription(c.stripeSubscriptionId)} className="text-[10px] font-bold text-red-500 hover:text-red-700 underline capitalize text-center mb-1">
+                                            Cancel Autopayment
+                                          </button>
+                                      )}
+                                      
+                                      {isPending ? (
+                                          <button disabled className="w-full py-3 px-4 bg-amber-100 text-amber-800 font-bold text-sm rounded-xl border border-amber-200 opacity-70 cursor-not-allowed">
+                                              Verifying Payment...
+                                          </button>
+                                      ) : isExpired ? (
+                                          <button disabled className="w-full py-3 px-4 bg-slate-100 text-slate-500 font-bold text-sm rounded-xl border border-slate-200 opacity-70 cursor-not-allowed">
+                                              Access Expired
+                                          </button>
+                                      ) : enablePlatform && (c.course._count?.lessons ?? 0) > 0 ? (
+                                          <Link to={`/courses/${c.course.id}/player`} className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                              <PlayCircle className="w-4 h-4" /> Continue Learning
+                                          </Link>
+                                      ) : (
+                                          <div className="flex gap-2 flex-wrap">
+                                              {c.course.telegramLink && (
+                                                  <a href={c.course.telegramLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 px-4 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                                      Join Telegram
+                                                  </a>
+                                              )}
+                                              {c.course.whatsappLink && (
+                                                  <a href={c.course.whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 px-4 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                                      Join WhatsApp
+                                                  </a>
+                                              )}
+                                              {!c.course.telegramLink && !c.course.whatsappLink && (c.course.customExternalLink || c.course.meetingLink) && (
+                                                  <a href={c.course.customExternalLink || c.course.meetingLink} target="_blank" rel="noopener noreferrer" className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
+                                                      <ExternalLink className="w-4 h-4" /> Open Link
+                                                  </a>
+                                              )}
+                                              {!c.course.telegramLink && !c.course.whatsappLink && !c.course.customExternalLink && !c.course.meetingLink && (
+                                                  <button disabled className="w-full py-3 px-4 bg-slate-50 text-slate-400 font-bold text-sm rounded-xl border border-slate-100 cursor-not-allowed">
+                                                      Community & Groups
+                                                  </button>
+                                              )}
+                                          </div>
+                                      )}
+                                  </div>
+                               </div>
+                            </div>
+                          );
+                       })}
+                    </div>
+                 )}
+              </section>
+
+              {uniqueCommunityLinks.length > 0 && (
+                  <section>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <Users className="w-6 h-6 text-blue-600" /> Community & Groups
+                        </h2>
+                      </div>
+                      <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
+                          {uniqueCommunityLinks.map((item, idx) => (
+                              <div key={idx} className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:bg-slate-50 transition-colors">
+                                  <div className="flex items-center gap-5">
+                                      <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center shrink-0">
+                                          <Users className="w-6 h-6 text-blue-600" />
+                                      </div>
+                                      <div>
+                                          <span className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1 block">Via {item.sourceType}</span>
+                                          <h3 className="font-bold text-lg text-slate-900 leading-tight">{item.sourceName} Community</h3>
+                                      </div>
+                                  </div>
+                                  <div className="flex flex-wrap gap-3 w-full sm:w-auto">
+                                      {item.telegramLink && (
+                                          <a href={item.telegramLink} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none py-2.5 px-6 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-sm rounded-xl flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                              Telegram
+                                          </a>
+                                      )}
+                                      {item.whatsappLink && (
+                                          <a href={item.whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none py-2.5 px-6 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                              WhatsApp
+                                          </a>
+                                      )}
+                                      {item.meetingLink && (
+                                          <a href={item.meetingLink} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none py-2.5 px-6 bg-slate-900 hover:bg-black text-white font-bold text-sm rounded-xl flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                              Live Link
+                                          </a>
+                                      )}
+                                      {item.customExternalLink && (
+                                          <a href={item.customExternalLink} target="_blank" rel="noopener noreferrer" className="flex-1 sm:flex-none py-2.5 px-6 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-sm rounded-xl flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                              Open Link
+                                          </a>
+                                      )}
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  </section>
+              )}
+          </div>
+
+          <div className="xl:col-span-1 space-y-10">
+              <section>
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Memberships</h2>
+                  </div>
+                  
+                  {data.memberships.length === 0 ? (
+                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
+                          <p className="text-slate-500 font-medium text-sm">No active memberships.</p>
+                      </div>
+                  ) : (
+                      <div className="space-y-4">
+                          {data.memberships.map((m, i) => {
+                             const isPending = !!m.isPending;
+                             const isExpired = !isPending && m.expiresAt && new Date(m.expiresAt) < new Date();
+                             const content = m.membership.contents?.find((c:any) => c.language === language) || m.membership.contents?.[0] || { title: m.membership.label || 'Membership' };
+                             
+                             return (
+                                 <div key={i} className={`p-5 rounded-2xl border-2 transition-all ${isPending ? 'border-amber-200 bg-amber-50' : isExpired ? 'border-slate-200 bg-slate-50 opacity-70' : 'border-slate-100 bg-white hover:border-slate-300 shadow-sm'}`}>
+                                     <div className="flex items-center gap-4 mb-4">
+                                         {m.membership.imageUrl ? (
+                                             <img src={m.membership.imageUrl} alt={content.title} className="w-12 h-12 rounded-xl object-cover shrink-0 bg-slate-100" />
+                                         ) : (
+                                             <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-black text-xl shrink-0">
+                                                 {content.title?.charAt(0)}
+                                             </div>
+                                         )}
+                                         <div>
+                                             <h4 className="font-bold text-slate-900 leading-tight">{content.title}</h4>
+                                             {isPending ? (
+                                                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-1 block">Pending Verification</span>
+                                             ) : isExpired ? (
+                                                 <span className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-1 block">Expired</span>
+                                             ) : (
+                                                 <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1 block flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Active</span>
+                                             )}
+                                         </div>
+                                     </div>
+                                     <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                                         <div className="text-xs font-medium text-slate-500">
+                                            {m.expiresAt ? `Renews ${new Date(m.expiresAt).toLocaleDateString()}` : 'Lifetime Access'}
+                                         </div>
+                                         {m.stripeSubscriptionId && !isExpired && (
+                                            <button onClick={() => handleCancelSubscription(m.stripeSubscriptionId)} className="text-[10px] font-bold text-slate-400 hover:text-red-600 underline">
+                                                Cancel Auto-renew
+                                            </button>
+                                         )}
+                                     </div>
+                                     {(!isExpired && !isPending && (m.membership.telegramLink || m.membership.whatsappLink || m.membership.meetingLink || m.membership.customExternalLink)) && (
+                                         <div className="pt-4 border-t border-slate-100 flex gap-2 flex-wrap">
+                                             {m.membership.telegramLink && (
+                                                 <a href={m.membership.telegramLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 px-3 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-xs rounded-lg flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                                     Telegram
+                                                 </a>
+                                             )}
+                                             {m.membership.whatsappLink && (
+                                                 <a href={m.membership.whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-2 px-3 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-xs rounded-lg flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                                     WhatsApp
+                                                 </a>
+                                             )}
+                                             {!m.membership.telegramLink && !m.membership.whatsappLink && (m.membership.customExternalLink || m.membership.meetingLink) && (
+                                                 <a href={m.membership.customExternalLink || m.membership.meetingLink} target="_blank" rel="noopener noreferrer" className="w-full py-2 px-3 bg-slate-900 hover:bg-black text-white font-bold text-xs rounded-lg flex items-center justify-center transition-transform active:scale-95 shadow-sm">
+                                                     Open Link
+                                                 </a>
+                                             )}
+                                         </div>
+                                     )}
+                                 </div>
+                             )
+                          })}
+                      </div>
+                  )}
+              </section>
+
+              {data.bookings.length > 0 && (
+                  <section>
+                      <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                            <CalendarDays className="w-5 h-5 text-indigo-600" /> Live Events
+                        </h2>
+                      </div>
+                      <div className="space-y-4">
+                          {data.bookings.map((b, i) => {
                                 const d = new Date(b.event.date);
                                 return (
-                                    <div key={i} className="flex items-center gap-4 p-4 border border-slate-100 rounded-xl bg-slate-50">
-                                        <div className="w-12 h-12 flex flex-col items-center justify-center bg-white border border-slate-200 rounded-lg shrink-0">
-                                            <span className="text-[10px] font-bold text-red-500 leading-none uppercase">{d.toLocaleString('default', { month: 'short' })}</span>
-                                            <span className="text-lg font-bold leading-none mt-1">{d.getDate()}</span>
+                                    <div key={i} className="p-4 bg-white border border-slate-200 rounded-2xl flex gap-4 shadow-sm hover:border-indigo-300 transition-colors cursor-pointer group">
+                                        <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-xl flex flex-col items-center justify-center shrink-0">
+                                            <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest leading-none mb-1">{d.toLocaleString('default', { month: 'short' })}</span>
+                                            <span className="text-lg font-black text-indigo-900 leading-none">{d.getDate()}</span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-slate-800 line-clamp-1">{b.event.title}</p>
-                                            <p className="text-[10px] text-slate-500 mt-1">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {b.event.location}</p>
+                                        <div className="flex-1 flex flex-col justify-center min-w-0">
+                                            <h4 className="font-bold text-slate-900 truncate mb-1 group-hover:text-indigo-600 transition-colors">{b.event.title}</h4>
+                                            <p className="text-xs font-medium text-slate-500 truncate">{d.toLocaleTimeString([], {timeStyle: 'short'})} • {b.event.location}</p>
                                         </div>
-                                        <div className="text-[10px] font-bold text-primary px-2 py-1 bg-primary/10 rounded-lg uppercase tracking-wider">{b.status}</div>
                                     </div>
                                 )
-                            })}
-                        </div>
-                    </div>
-                )}
-                
-                {/* Meetings */}
-                {data.meetings && data.meetings.length > 0 && (
-                    <div className="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
-                        <h2 className="text-xl font-serif italic mb-6 text-blue-600">Live Classes</h2>
-                        <div className="space-y-4">
-                            {data.meetings.map((m, i) => {
-                                const d = m.meetingDate ? new Date(m.meetingDate) : null;
-                                return (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-blue-50/50 rounded-xl border border-blue-100">
-                                        <div className="flex flex-col gap-1 min-w-0">
-                                            <p className="text-[10px] text-blue-500 font-bold uppercase tracking-widest">{m.itemType}</p>
-                                            <p className="text-sm font-bold text-slate-800 line-clamp-1">{m.itemName}</p>
-                                            {d ? (
-                                                <p className="text-xs text-slate-500 font-medium">{d.toLocaleDateString()} at {d.toLocaleTimeString([], {timeStyle:'short'})}</p>
-                                            ) : (
-                                                <p className="text-xs text-slate-500 font-medium">To be determined</p>
-                                            )}
-                                        </div>
-                                        {m.meetingLink && (
-                                            <a href={m.meetingLink} target="_blank" rel="noopener noreferrer" className="ml-4 shrink-0 px-4 py-2 bg-blue-600/10 text-blue-700 font-bold text-xs uppercase tracking-wider rounded-lg hover:bg-blue-600 hover:text-white transition">
-                                                Join
-                                            </a>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        )}
+                          })}
+                      </div>
+                  </section>
+              )}
+          </div>
       </div>
     </div>
   );
 }
+
 
 export function CoursePlayer() {
    const { id } = useParams();
@@ -569,7 +757,36 @@ export function CoursePlayer() {
 
    const course = getTranslated(courseRaw, language);
 
-   if (!course) return <div className="p-12 text-center text-slate-500">Loading course player...</div>;
+   if (!course) return <div className="p-12 text-center text-slate-500">Loading program player...</div>;
+
+   if (courseRaw?.enablePlatformContent === false) {
+      return (
+        <div className="p-12 max-w-2xl mx-auto text-center">
+           <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-8">
+              <Users className="w-10 h-10" />
+           </div>
+           <h1 className="text-2xl font-black mb-4">Platform Learning Content Disabled</h1>
+           <p className="text-slate-500 mb-8">This program is delivered entirely via external communities or live sessions.</p>
+           <div className="flex gap-4 justify-center flex-wrap">
+                {courseRaw.telegramLink && (
+                    <a href={courseRaw.telegramLink} target="_blank" rel="noopener noreferrer" className="py-3 px-6 bg-[#2AABEE] text-white font-bold rounded-md shadow-sm">
+                        Join Telegram
+                    </a>
+                )}
+                {courseRaw.whatsappLink && (
+                    <a href={courseRaw.whatsappLink} target="_blank" rel="noopener noreferrer" className="py-3 px-6 bg-[#25D366] text-white font-bold rounded-md shadow-sm">
+                        Join WhatsApp
+                    </a>
+                )}
+                {!courseRaw.telegramLink && !courseRaw.whatsappLink && (courseRaw.customExternalLink || courseRaw.meetingLink) && (
+                    <a href={courseRaw.customExternalLink || courseRaw.meetingLink} target="_blank" rel="noopener noreferrer" className="py-3 px-6 bg-blue-600 text-white font-bold rounded-md shadow-sm">
+                        Open Link
+                    </a>
+                )}
+           </div>
+        </div>
+      );
+   }
 
    return (
       <div className="flex flex-col md:flex-row md:h-[calc(100vh-64px)] md:overflow-hidden bg-slate-50">
@@ -644,7 +861,7 @@ export function CoursePlayer() {
                 })}
                 {(!course.lessons || course.lessons.length === 0) && (
                    <div className="p-8 text-center text-slate-500 text-sm bg-slate-50 rounded-xl border border-slate-100 italic">
-                      No lessons found for this course.
+                      No lessons found for this program.
                    </div>
                 )}
             </div>

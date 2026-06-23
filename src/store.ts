@@ -15,6 +15,8 @@ interface CartItem {
   editionId?: string;
   title: string;
   price: number;
+  isSubscription?: boolean;
+  subscriptionInterval?: string;
 }
 
 interface AppState {

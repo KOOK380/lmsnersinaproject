@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore, getTranslated } from "../store";
 import { formatCurrency, stripHtml } from "../lib/utils";
-import { Check, Calendar, MapPin, AlertCircle } from "lucide-react";
+import { Check, Calendar, MapPin, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import ReactPlayer from "react-player";
 import { UniversalVideo } from "../components/UniversalVideo";
 
@@ -53,6 +53,7 @@ export function Courses() {
   const { currency, enrolledItems, categories, language } = useStore();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { t } = useTranslation();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/courses/active").then(r => r.json()).then(setCourses);
@@ -65,31 +66,43 @@ export function Courses() {
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('courses.all_courses')}</h1>
-            <p className="text-slate-600 max-w-xl text-lg font-medium">These are not just courses. They are frequencies you step into.</p>
+            <p className="text-slate-600 max-w-xl text-lg font-medium">These are not just programs. They are frequencies you step into.</p>
          </div>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-full">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
-        >
-          All Courses
-        </button>
-        {categories.filter((cat: any) => cat.type === 'COURSE').map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
-          >
-            {cat.name}
-          </button>
-        ))}
+      <div className="relative flex items-center justify-center w-full mb-8">
+        <div className="w-full md:px-24">
+          <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit mx-auto scroll-smooth px-4">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
+            >
+              All Programs
+            </button>
+            {categories.filter((cat: any) => cat.type === 'COURSE').map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="hidden md:flex gap-2 absolute right-0 top-0 pr-4">
+            <button onClick={() => scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10">
+               <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10">
+               <ChevronRight size={16} />
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
         {tCourses.filter((c: any) => !activeCategory || c.categoryId === activeCategory).length === 0 ? (
-          <div className="col-span-full text-center text-gray-500 py-12 bg-white rounded-2xl border border-slate-100">No courses available in this category.</div>
+          <div className="col-span-full text-center text-gray-500 py-12 bg-white rounded-2xl border border-slate-100">No programs available in this category.</div>
         ) : tCourses.filter((c: any) => !activeCategory || c.categoryId === activeCategory).map((course: any) => {
           const isEnrolled = Array.isArray(enrolledItems) && enrolledItems.some((c: any) => c.itemType === "COURSE" && c.itemId === course.id);
           return (
@@ -125,7 +138,7 @@ export function Courses() {
                        <span className="font-bold text-primary text-xl">{formatCurrency(Math.min(...course.memberships.map((m: any) => m.offerPrice || 0)), currency)}</span>
                     </>
                   ) : (
-                    <span className="font-bold text-primary text-xl">{formatCurrency(0, currency)}</span>
+                    <span className="font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded uppercase tracking-widest text-base">Free</span>
                   )}
                </div>
                 {isEnrolled ? (
@@ -153,6 +166,7 @@ export function Courses() {
     const [selectedEdition, setSelectedEdition] = useState<string>('');
     const [selectedOption, setSelectedOption] = useState<string>('course');
     const [editionError, setEditionError] = useState<boolean>(false);
+    const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false);
     
     const [dashboardData, setDashboardData] = useState<any>(null);
 
@@ -235,7 +249,7 @@ export function Courses() {
       }
     };
   
-    if (!course) return <div className="p-12 text-center text-slate-500 italic font-serif">Loading course details...</div>;
+    if (!course) return <div className="p-12 text-center text-slate-500 italic font-serif">Loading program details...</div>;
   
     const inCart = cart.some((i: any) => 
        selectedOption === 'course' ? (i.itemType === "COURSE" && i.itemId === course?.id) 
@@ -266,7 +280,7 @@ export function Courses() {
                  itemType: "MEMBERSHIP", 
                  itemId: membership.id, 
                  title: membership.contents?.find((c:any) => c.language === language)?.title || membership.contents?.[0]?.title || membership.label || membership.type, 
-                 price: membership.offerPrice 
+                 price: membership.offerPrice, isSubscription: membership.isSubscription, subscriptionInterval: membership.subscriptionInterval 
               });
               setAddingToCart(false);
               navigate("/cart");
@@ -301,7 +315,7 @@ export function Courses() {
            itemId: course.id, 
            editionId: selectedEdition || undefined,
            title: finalTitle, 
-           price: course.price 
+           price: course.price, isSubscription: course.isSubscription, subscriptionInterval: course.subscriptionInterval 
         });
         setAddingToCart(false);
         navigate("/cart");
@@ -385,10 +399,10 @@ export function Courses() {
               ) : (
                 <>
                   {course.imageUrl ? (
-                    <img src={course.imageUrl || undefined} alt="Course Banner" className="w-full h-full object-cover" />
+                    <img src={course.imageUrl || undefined} alt="Program Banner" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                       <span className="text-slate-400 font-medium">Course Media</span>
+                       <span className="text-slate-400 font-medium">Program Media</span>
                     </div>
                   )}
                   {course.bannerVideoUrl && (
@@ -433,47 +447,26 @@ export function Courses() {
                </div>
                
                <div className="text-right text-xs text-slate-500 font-medium">
-                  <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull; {course.duration || '21 days'}</p>
+                  <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull; {course.duration == '0' ? 'No expiry date' : (course.duration || '21 days')}</p>
                   <p className="text-emerald-600 font-bold mt-1">✓ Instant Access</p>
                </div>
              </div>
 
-             {courseRaw?.memberships && courseRaw.memberships.length > 0 && (
-               <div className="mb-5 space-y-3">
-                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Enrollment Options</p>
-                 
-                 {course.price > 0 && (
-                   <label className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === 'course' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                      <input type="radio" checked={selectedOption === 'course'} onChange={() => setSelectedOption('course')} className="hidden" />
-                      <div className="flex justify-between items-center">
-                         <span className="font-bold text-sm text-slate-800 leading-tight">Course Only</span>
-                         <span className="font-bold text-primary">{formatCurrency(course.price, currency)}</span>
-                      </div>
-                   </label>
-                 )}
 
-                 {courseRaw.memberships.map((m: any) => (
-                    <label key={m.id} className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === m.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
-                       <input type="radio" checked={selectedOption === m.id} onChange={() => setSelectedOption(m.id)} className="hidden" />
-                       <div className="flex flex-col gap-1">
-                         <div className="flex justify-between items-center">
-                           <span className="font-bold text-sm text-slate-800 leading-tight pr-2">{m.contents?.find((c:any) => c.language === language)?.title || m.contents?.[0]?.title || m.label || m.type}</span>
-                           <span className="font-bold text-primary whitespace-nowrap">{formatCurrency(m.offerPrice, currency)}</span>
-                         </div>
-                         <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/memberships/${m.id}`); }} className="text-xs text-indigo-600 hover:underline text-left mt-1 inline-block">View Details →</button>
-                       </div>
-                    </label>
-                 ))}
-               </div>
-             )}
 
-             <button onClick={handleBuy} disabled={addingToCart} className="w-full bg-primary text-white py-4 rounded-full font-bold shadow-sm hover:bg-opacity-90 transition disabled:opacity-70 flex justify-center items-center gap-2 text-base">
+             <button onClick={(e) => {
+                 if (courseRaw?.memberships && courseRaw.memberships.length > 0 && !enrolled && !inCart && window.innerWidth < 1280) {
+                     setIsMobileBottomSheetOpen(true);
+                 } else {
+                     handleBuy();
+                 }
+              }} disabled={addingToCart} className="w-full bg-primary text-white py-4 rounded-full font-bold shadow-sm hover:bg-opacity-90 transition disabled:opacity-70 flex justify-center items-center gap-2 text-base">
                 {addingToCart ? (
                     <>
                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                        Adding...
                     </>
-                ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Course"}
+                ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Program"}
              </button>
 
              <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition text-gray-700 mt-3">
@@ -482,7 +475,7 @@ export function Courses() {
              </button>
           </div>
 
-          {/* Course Content */}
+          {/* Program Content */}
           {course.lessons?.length > 0 && (
           <div className="space-y-6 pt-8 border-t border-slate-200">
              <h2 className="text-2xl font-bold text-gray-900">{t('courses.course_content')}</h2>
@@ -571,7 +564,7 @@ export function Courses() {
                 <div>
                    <p className="text-xs text-slate-500 uppercase tracking-widest mb-1 font-bold">Coach</p>
                    <h3 className="font-bold text-2xl mb-1">{course.instructor.name}</h3>
-                   <p className="text-sm text-slate-500 mb-4">{course.instructor.courses?.length || 1} Courses <span className="mx-2">&bull;</span> 0 Student</p>
+                   <p className="text-sm text-slate-500 mb-4">{course.instructor.courses?.length || 1} Programs <span className="mx-2">&bull;</span> 0 Student</p>
                    <p className="text-sm text-slate-600 leading-relaxed">{course.instructor.bio}</p>
                 </div>
              </div>
@@ -609,8 +602,8 @@ export function Courses() {
                        <label className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === 'course' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
                           <input type="radio" checked={selectedOption === 'course'} onChange={() => setSelectedOption('course')} className="hidden" />
                           <div className="flex justify-between items-center">
-                             <span className="font-bold text-sm text-slate-800 leading-tight">Course Only</span>
-                             <span className="font-bold text-primary">{formatCurrency(course.price, currency)}</span>
+                             <span className="font-bold text-sm text-slate-800 leading-tight">Program Only</span>
+                             <span className="font-bold text-primary text-lg">{formatCurrency(course.price, currency)}</span>
                           </div>
                        </label>
                      )}
@@ -623,20 +616,25 @@ export function Courses() {
                                <span className="font-bold text-sm text-slate-800 leading-tight pr-2">{m.contents?.find((c:any) => c.language === language)?.title || m.contents?.[0]?.title || m.label || m.type}</span>
                                <span className="font-bold text-primary whitespace-nowrap">{formatCurrency(m.offerPrice, currency)}</span>
                              </div>
-                             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/memberships/${m.id}`); }} className="text-xs text-indigo-600 hover:underline text-left mt-1">View Details →</button>
                            </div>
                         </label>
                      ))}
                    </div>
                  )}
 
-                 <button onClick={handleBuy} disabled={addingToCart} className="w-full bg-primary text-white py-3.5 rounded-full font-bold shadow-sm hover:bg-opacity-90 transition disabled:opacity-70 flex justify-center items-center gap-2">
+                 <button onClick={(e) => {
+                     if (courseRaw?.memberships && courseRaw.memberships.length > 0 && !enrolled && !inCart && window.innerWidth < 1280) {
+                         setIsMobileBottomSheetOpen(true);
+                     } else {
+                         handleBuy();
+                     }
+                  }} disabled={addingToCart} className="w-full bg-primary text-white py-3.5 rounded-full font-bold shadow-sm hover:bg-opacity-90 transition disabled:opacity-70 flex justify-center items-center gap-2">
                     {addingToCart ? (
                         <>
                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                            Adding...
                         </>
-                    ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Course"}
+                    ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Program"}
                  </button>
 
                  <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition text-gray-700">
@@ -645,7 +643,7 @@ export function Courses() {
                  </button>
 
                  <div className="pt-6">
-                    <p className="font-bold mb-5 text-sm text-gray-800">This course includes:</p>
+                    <p className="font-bold mb-5 text-sm text-gray-800">This program includes:</p>
                     <div className="space-y-4 text-sm text-slate-600 font-medium">
                        <div className="flex justify-between border-b border-slate-100 pb-3">
                          <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg> Learners</span> 
@@ -657,7 +655,7 @@ export function Courses() {
                        </div>
                        <div className="flex justify-between border-b border-slate-100 pb-3">
                          <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Duration</span> 
-                         <span>{course.duration || '21 Days'}</span>
+                         <span>{course.duration == '0' ? 'No expiry date' : (course.duration || '21 Days')}</span>
                        </div>
                        <div className="flex justify-between pb-2">
                          <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg> Language</span> 
@@ -781,11 +779,68 @@ export function Courses() {
               </p>
            </div>
            <div className="flex gap-2">
-              <button onClick={handleBuy} disabled={addingToCart} className="text-sm font-bold bg-primary text-white px-6 py-3 rounded-full shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-                 {addingToCart ? "Adding..." : enrolled ? "Already Enrolled" : inCart ? "In Cart" : "Take This Course"}
+              <button onClick={(e) => {
+                 if (courseRaw?.memberships && courseRaw.memberships.length > 0 && !enrolled && !inCart && window.innerWidth < 1280) {
+                     setIsMobileBottomSheetOpen(true);
+                 } else {
+                     handleBuy();
+                 }
+              }} disabled={addingToCart} className="text-sm font-bold bg-primary text-white px-6 py-3 rounded-full shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]">
+                 {addingToCart ? "Adding..." : enrolled ? "Already Enrolled" : inCart ? "In Cart" : "Take This Program"}
               </button>
            </div>
         </div>
+      )}
+
+      {/* Mobile Bottom Sheet for Enrollment Options */}
+      {isMobileBottomSheetOpen && courseRaw?.memberships && courseRaw.memberships.length > 0 && (
+         <div className="fixed inset-0 z-[100] flex flex-col justify-end xl:hidden">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => setIsMobileBottomSheetOpen(false)}></div>
+            <div className="relative bg-white rounded-t-3xl shadow-2xl w-full max-h-[85vh] overflow-y-auto animate-in slide-in-from-bottom duration-300 pb-safe">
+               <div className="sticky top-0 bg-white/80 backdrop-blur-md px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10">
+                  <h3 className="text-lg font-black text-slate-900 tracking-tight">Select Enrollment</h3>
+                  <button onClick={() => setIsMobileBottomSheetOpen(false)} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-full transition-colors">
+                     <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                  </button>
+               </div>
+               
+               <div className="p-6 space-y-4 pb-32">
+                  {course.price > 0 && (
+                    <label className={`block border-2 p-5 rounded-2xl cursor-pointer transition-all ${selectedOption === 'course' ? 'border-primary bg-primary/5 ring-4 ring-primary/10' : 'border-slate-100 hover:border-slate-200'}`}>
+                       <input type="radio" checked={selectedOption === 'course'} onChange={() => setSelectedOption('course')} className="hidden" />
+                       <div className="flex justify-between items-center">
+                          <div>
+                            <span className="font-bold text-base text-slate-900 leading-tight block">Program Only</span>
+                            <span className="text-xs text-slate-500 font-medium mt-1 block">One-time purchase</span>
+                          </div>
+                          <span className="font-black text-primary text-xl">{formatCurrency(course.price, currency)}</span>
+                       </div>
+                    </label>
+                  )}
+
+                  {courseRaw.memberships.map((m: any) => (
+                     <label key={m.id} className={`block border-2 p-5 rounded-2xl cursor-pointer transition-all ${selectedOption === m.id ? 'border-primary bg-primary/5 ring-4 ring-primary/10' : 'border-slate-100 hover:border-slate-200'}`}>
+                        <input type="radio" checked={selectedOption === m.id} onChange={() => setSelectedOption(m.id)} className="hidden" />
+                        <div className="flex flex-col gap-1">
+                          <div className="flex justify-between items-center">
+                            <div>
+                               <span className="font-bold text-base text-slate-900 leading-tight block pr-4">{m.contents?.find((c:any) => c.language === language)?.title || m.contents?.[0]?.title || m.label || m.type}</span>
+                               <span className="text-xs text-slate-500 font-medium mt-1 block capitalize">{m.isSubscription ? m.subscriptionInterval : 'Access'}</span>
+                            </div>
+                            <span className="font-black text-primary text-xl whitespace-nowrap">{formatCurrency(m.offerPrice, currency)}</span>
+                          </div>
+                        </div>
+                     </label>
+                  ))}
+               </div>
+
+               <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-6 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] pb-8">
+                  <button onClick={(e) => { setIsMobileBottomSheetOpen(false); handleBuy(); }} className="w-full bg-primary text-white py-4 rounded-full font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+                     Continue
+                  </button>
+               </div>
+            </div>
+         </div>
       )}
     </div>
   );
@@ -834,7 +889,7 @@ export function BundleDetails() {
         <div className="space-y-8">
           {/* Header Info */}
           <div>
-             <span className="inline-block px-3 py-1 bg-[var(--color-primary)] text-white text-[10px] font-bold rounded mb-4 tracking-wider uppercase">Course Bundle</span>
+             <span className="inline-block px-3 py-1 bg-[var(--color-primary)] text-white text-[10px] font-bold rounded mb-4 tracking-wider uppercase">Program Bundle</span>
              <h1 className="text-3xl md:text-5xl font-bold mb-4 font-sans text-gray-900 leading-tight">{bundle.title}</h1>
           </div>
 
@@ -875,7 +930,7 @@ export function BundleDetails() {
           {/* Bundle Content */}
           {bundle.courses?.length > 0 && (
           <div className="space-y-6 pt-8 border-t border-slate-200">
-             <h2 className="text-2xl font-bold text-gray-900">Included Courses</h2>
+             <h2 className="text-2xl font-bold text-gray-900">Included Programs</h2>
              <div className="space-y-4">
                {bundle.courses.map((item: any) => {
                  const course = item.course;
@@ -903,7 +958,7 @@ export function BundleDetails() {
                  {bundle.realPrice && bundle.realPrice > bundle.price && (
                    <span className="text-xl text-slate-400 line-through mr-3 font-medium">{formatCurrency(bundle.realPrice, currency)}</span>
                  )}
-                 {formatCurrency(bundle.price, currency)}
+                 {bundle.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg uppercase tracking-widest text-2xl">Free</span> : formatCurrency(bundle.price, currency)}
               </h3>
               
               <button 
@@ -927,6 +982,7 @@ export function Memberships() {
   const { language, currency, categories, enrolledItems } = useStore();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const { t } = useTranslation();
+  const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/memberships").then(r => r.json()).then(setMemberships);
@@ -943,22 +999,34 @@ export function Memberships() {
          </div>
       </div>
 
-      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-full">
-        <button
-          onClick={() => setActiveCategory(null)}
-          className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
-        >
-          {t('memberships.all_programs')}
-        </button>
-        {categories.filter((cat: any) => cat.type === 'MEMBERSHIP').map(cat => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
-          >
-            {cat.name}
-          </button>
-        ))}
+      <div className="relative flex items-center justify-center w-full mb-8">
+        <div className="w-full md:px-24">
+          <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-4 hide-scrollbar flex-nowrap w-fit mx-auto scroll-smooth px-4">
+            <button
+              onClick={() => setActiveCategory(null)}
+              className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
+            >
+              {t('memberships.all_programs')}
+            </button>
+            {categories.filter((cat: any) => cat.type === 'MEMBERSHIP').map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === cat.id ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="hidden md:flex gap-2 absolute right-0 top-0 pr-4">
+            <button onClick={() => scrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10">
+               <ChevronLeft size={16} />
+            </button>
+            <button onClick={() => scrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })} className="w-8 h-8 rounded-full border border-slate-200 bg-white flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition z-10">
+               <ChevronRight size={16} />
+            </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
@@ -1096,7 +1164,7 @@ export function MembershipDetails() {
          itemId: membership.id, 
          editionId: selectedEdition || undefined,
          title: title, 
-         price: edition ? edition.price : membership.offerPrice 
+         price: edition ? edition.price : membership.offerPrice, isSubscription: membership.isSubscription, subscriptionInterval: membership.subscriptionInterval 
       });
       setAddingToCart(false);
       navigate("/cart");
@@ -1534,7 +1602,7 @@ export function Events() {
              <div className="flex justify-between items-center border-t border-slate-100 pt-4 mt-4">
                <div className="flex flex-col">
                   {evt.realPrice && evt.realPrice > evt.price && <span className="text-xs text-slate-400 line-through">{formatCurrency(evt.realPrice, currency)}</span>}
-                  <span className="font-bold text-primary text-xl">{formatCurrency(evt.price, currency)}</span>
+                  <span className="font-bold text-primary text-xl">{evt.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span> : formatCurrency(evt.price, currency)}</span>
                </div>
                
                <div className="flex items-center gap-2">
@@ -1650,7 +1718,7 @@ export function EventDetails() {
                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                        <div className="flex items-center gap-3">
-                         <span className="text-3xl font-bold text-primary">{formatCurrency(event.price, currency)}</span>
+                         <span className="text-3xl font-bold text-primary">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg uppercase tracking-widest text-2xl">Free</span> : formatCurrency(event.price, currency)}</span>
                          {event.realPrice && event.realPrice > event.price && <span className="text-lg text-slate-400 line-through font-normal">{formatCurrency(event.realPrice, currency)}</span>}
                        </div>
                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1.5 rounded-full border border-slate-200">{event.availableSeats} / {event.totalSeats} Seats Left</span>
@@ -1735,7 +1803,7 @@ export function EventDetails() {
          <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total</p>
             <div className="flex items-center gap-2">
-               <p className="text-2xl font-black text-gray-900 leading-none">{formatCurrency(event.price, currency)}</p>
+               <p className="text-2xl font-black text-gray-900 leading-none">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xl uppercase tracking-widest">Free</span> : formatCurrency(event.price, currency)}</p>
                {event.realPrice && event.realPrice > event.price && <p className="text-sm font-normal text-slate-400 line-through leading-none">{formatCurrency(event.realPrice, currency)}</p>}
             </div>
          </div>

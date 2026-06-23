@@ -72,11 +72,17 @@ model Course {
   level       String?  @default("Beginner Level")
   isFeatured  Boolean  @default(false)
   isUpcoming  Boolean  @default(false)
+  isSubscription Boolean @default(false)
+  subscriptionInterval String? @default("month")
   isActive    Boolean  @default(true)
   expiryDate  DateTime?
   meetingLink  String?
   meetingDate  DateTime?
   meetingNotes String?
+  enablePlatformContent Boolean @default(true)
+  telegramLink String?
+  whatsappLink String?
+  customExternalLink String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -164,6 +170,7 @@ model UserCourse {
   progress    Int      @default(0) // percentage
   expiresAt   DateTime?
   editionId   String?
+  stripeSubscriptionId String?
   createdAt   DateTime @default(now())
   
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -180,12 +187,18 @@ model Membership {
   label       String?
   realPrice   Float?
   offerPrice  Float
+  isSubscription Boolean @default(false)
+  subscriptionInterval String? @default("month")
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
   expiryDate  DateTime?
   meetingLink  String?
   meetingDate  DateTime?
   meetingNotes String?
+  enablePlatformContent Boolean @default(true)
+  telegramLink String?
+  whatsappLink String?
+  customExternalLink String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -233,6 +246,7 @@ model MembershipOrder {
   editionId       String?
   status          String   @default("ACTIVE")
   expiresAt       DateTime?
+  stripeSubscriptionId String?
   createdAt       DateTime @default(now())
   
   user            User               @relation(fields: [userId], references: [id])
