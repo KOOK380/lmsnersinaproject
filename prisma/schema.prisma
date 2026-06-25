@@ -352,11 +352,12 @@ model OrderItem {
 }
 
 model Slider {
-  id        String   @id @default(uuid())
-  title     String
-  imageUrl  String
-  linkUrl   String?
-  active    Boolean  @default(true)
+  id          String   @id @default(uuid())
+  title       String
+  imageUrl    String
+  linkUrl     String?
+  active      Boolean  @default(true)
+  languageCode String  @default("en")
 }
 
 model EmailCampaign {

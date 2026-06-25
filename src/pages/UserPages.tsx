@@ -124,44 +124,44 @@ export function Cart() {
       <>
         <div className="max-w-4xl mx-auto px-4 py-12">
           <div className="editorial-divider mb-8 pt-4">
-            <h1 className="text-3xl font-bold font-serif italic text-primary">Checkout</h1>
+            <h1 className="text-3xl font-bold font-serif italic text-primary">{t('cart.checkout_title', 'Checkout')}</h1>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 order-2 md:order-1">
-               <h2 className="text-xl font-bold mb-6 text-slate-800">Billing Address</h2>
+               <h2 className="text-xl font-bold mb-6 text-slate-800">{t('cart.billing_address', 'Billing Address')}</h2>
                <form id="checkout-form" onSubmit={handleCheckout} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Full Name</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.full_name', 'Full Name')}</label>
                   <input required type="text" value={billingDetails.fullName} onChange={e => setBillingDetails({...billingDetails, fullName: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Address</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.address', 'Address')}</label>
                   <input required type="text" value={billingDetails.address} onChange={e => setBillingDetails({...billingDetails, address: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">City</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.city', 'City')}</label>
                     <input required type="text" value={billingDetails.city} onChange={e => setBillingDetails({...billingDetails, city: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">State</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.state', 'State')}</label>
                     <input required type="text" value={billingDetails.state} onChange={e => setBillingDetails({...billingDetails, state: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Zip Code</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.zip', 'Zip Code')}</label>
                     <input required type="text" value={billingDetails.zip} onChange={e => setBillingDetails({...billingDetails, zip: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1">Country</label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.country', 'Country')}</label>
                     <input required type="text" value={billingDetails.country} onChange={e => setBillingDetails({...billingDetails, country: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
                   </div>
                 </div>
                 
                 {getCartTotal() > 0 && (
                   <div className="pt-6 mt-6 border-t border-slate-100">
-                    <h3 className="font-bold text-lg mb-4 text-slate-800">Payment Method</h3>
+                    <h3 className="font-bold text-lg mb-4 text-slate-800">{t('cart.payment_method', 'Payment Method')}</h3>
                     <div className="space-y-3">
                       {isStripeEnabled && (
                         <label className={`block border rounded-xl p-4 cursor-pointer transition-all ${selectedPayment === 'STRIPE' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
@@ -207,16 +207,16 @@ export function Cart() {
                 )}
                 
                 <div className="pt-6 mt-6 flex gap-4">
-                   <button type="button" onClick={() => setShowCheckout(false)} className="px-6 py-4 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex-1">Back to Cart</button>
+                   <button type="button" onClick={() => setShowCheckout(false)} className="px-6 py-4 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex-1">{t('cart.back_to_cart', 'Back to Cart')}</button>
                    <button type="submit" disabled={isSubmitting} className="px-6 py-4 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary-dark transition flex-1 disabled:opacity-70">
-                     {isSubmitting ? 'Processing...' : (getCartTotal() === 0 ? 'Complete Enrollment' : 'Place Order')}
+                     {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Enrollment') : t('cart.place_order', 'Place Order'))}
                    </button>
                 </div>
              </form>
           </div>
           
           <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 h-fit order-1 md:order-2">
-             <h3 className="font-bold text-lg mb-4 text-slate-800">Order Summary</h3>
+             <h3 className="font-bold text-lg mb-4 text-slate-800">{t('cart.order_summary', 'Order Summary')}</h3>
              <div className="space-y-3 mb-6">
                {cart.map(item => (
                  <div key={item.id} className="flex justify-between items-center text-sm">
@@ -226,7 +226,7 @@ export function Cart() {
                ))}
              </div>
              <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
-               <span className="font-bold text-lg">Total</span>
+               <span className="font-bold text-lg">{t('cart.total', 'Total')}</span>
                <span className="font-bold text-2xl text-primary">{formatCurrency(getCartTotal(), currency)}</span>
              </div>
           </div>
@@ -236,13 +236,13 @@ export function Cart() {
       {/* Floating Mobile Place Order Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('cart.total', 'Total')}</p>
             <p className="text-2xl font-black text-gray-900 leading-none">{formatCurrency(getCartTotal(), currency)}</p>
          </div>
          <div className="flex items-center gap-2">
-           <button type="button" onClick={() => setShowCheckout(false)} className="px-4 py-3 rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">Back</button>
+           <button type="button" onClick={() => setShowCheckout(false)} className="px-4 py-3 rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">{t('cart.back', 'Back')}</button>
            <button type="submit" form="checkout-form" disabled={isSubmitting} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-              {isSubmitting ? 'Processing...' : (getCartTotal() === 0 ? 'Complete Enrollment' : 'Place Order')}
+              {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Enrollment') : t('cart.place_order', 'Place Order'))}
            </button>
          </div>
       </div>
@@ -406,23 +406,23 @@ export function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 py-8 md:py-12 space-y-12">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-slate-200">
          <div>
-             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">Welcome back, {user.name.split(' ')[0]} 👋</h1>
-             <p className="text-slate-500 font-medium text-lg">Pick up where you left off or join the conversation.</p>
+             <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2">{t('dashboard.welcome')}, {user.name.split(' ')[0]} 👋</h1>
+             <p className="text-slate-500 font-medium text-lg">{t('dashboard.subtitle', 'Pick up where you left off or join the conversation.')}</p>
          </div>
          <div className="flex gap-4">
              <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
                  <span className="text-3xl font-black text-primary leading-none mb-1">{data.courses.length}</span>
-                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Active Programs</span>
+                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{t('dashboard.active_courses', 'Active Programs')}</span>
              </div>
              {data.memberships.length > 0 && (
                  <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
                      <span className="text-3xl font-black text-emerald-600 leading-none mb-1">{data.memberships.length}</span>
-                     <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Memberships</span>
+                     <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{t('dashboard.memberships', 'Memberships')}</span>
                  </div>
              )}
              <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
                  <span className="text-3xl font-black text-blue-600 leading-none mb-1">{data.bookings.length}</span>
-                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Upcoming Events</span>
+                 <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">{t('dashboard.upcoming_events', 'Upcoming Events')}</span>
              </div>
          </div>
       </div>
@@ -434,9 +434,9 @@ export function Dashboard() {
               <AlertTriangle className="w-6 h-6 animate-pulse" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-red-800 font-serif italic mb-1">Manual Payment Rejections</h3>
+              <h3 className="text-lg font-bold text-red-800 font-serif italic mb-1">{t('dashboard.rejections', 'Manual Payment Rejections')}</h3>
               <p className="text-xs text-red-700 font-sans mb-4">
-                The verification of your manual bank transfer payment has failed. Please check the reason below or contact support.
+                {t('dashboard.rejection_msg', 'The verification of your manual bank transfer payment has failed. Please check the reason below or contact support.')}
               </p>
               <div className="space-y-4">
                 {data.rejectedOrders.map((order: any, idx: number) => (
@@ -449,12 +449,12 @@ export function Dashboard() {
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider font-mono">Total Price</span>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider font-mono">{t('dashboard.total_price', 'Total Price')}</span>
                         <span className="text-xs font-bold text-red-600">${order.total}</span>
                       </div>
                     </div>
                     <div className="mt-3 p-3 bg-red-50/40 rounded-lg border border-red-50 text-xs text-red-800 font-medium">
-                      <span className="font-bold text-red-900 block mb-1 uppercase text-[9px] tracking-widest">Rejection Reason:</span>
+                      <span className="font-bold text-red-900 block mb-1 uppercase text-[9px] tracking-widest">{t('dashboard.rejection_reason', 'Rejection Reason:')}</span>
                       {order.rejectReason}
                     </div>
                   </div>
@@ -470,7 +470,7 @@ export function Dashboard() {
               <section>
                  <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                        <BookOpen className="w-6 h-6 text-primary" /> My Programs
+                        <BookOpen className="w-6 h-6 text-primary" /> {t('dashboard.my_learning', 'My Programs')}
                     </h2>
                  </div>
                  
@@ -479,8 +479,8 @@ export function Dashboard() {
                         <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-100 mb-4">
                             <BookOpen className="w-8 h-8 text-slate-300" />
                         </div>
-                        <p className="text-slate-500 font-medium text-lg mb-2">You haven't enrolled in any programs yet.</p>
-                        <Link to="/courses" className="text-primary font-bold hover:underline">Explore Programs &rarr;</Link>
+                        <p className="text-slate-500 font-medium text-lg mb-2">{t('dashboard.no_courses', "You haven't enrolled in any programs yet.")}</p>
+                        <Link to="/courses" className="text-primary font-bold hover:underline">{t('courses.all_courses', 'Explore Programs')} &rarr;</Link>
                     </div>
                  ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -502,17 +502,17 @@ export function Dashboard() {
                                   )}
                                   <div className="absolute top-4 left-4 flex gap-2">
                                      {isPending ? (
-                                         <span className="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-amber-200/50">Pending</span>
+                                         <span className="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-amber-200/50">{t('dashboard.pending', 'Pending')}</span>
                                      ) : isExpired ? (
-                                         <span className="bg-red-100 text-red-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-red-200/50">Expired</span>
+                                         <span className="bg-red-100 text-red-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-red-200/50">{t('dashboard.expired', 'Expired')}</span>
                                      ) : (
                                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-emerald-200/50 flex items-center gap-1">
-                                             <CheckCircle2 className="w-3 h-3" /> Active
+                                             <CheckCircle2 className="w-3 h-3" /> {t('dashboard.active', 'Active')}
                                          </span>
                                      )}
                                      {!enablePlatform && (
                                          <span className="bg-blue-100 text-blue-800 text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-lg shadow-sm border border-blue-200/50 flex items-center gap-1">
-                                             <Users className="w-3 h-3" /> Community
+                                             <Users className="w-3 h-3" /> {t('dashboard.community', 'Community')}
                                          </span>
                                      )}
                                   </div>
@@ -523,7 +523,7 @@ export function Dashboard() {
                                   {enablePlatform && !isPending && !(c.course.telegramLink || c.course.whatsappLink || c.course.customExternalLink || c.course.meetingLink) && (c.course._count?.lessons ?? 0) > 0 && (
                                      <div className="mb-6 mt-auto pt-4">
                                          <div className="flex justify-between items-end mb-2">
-                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Progress</span>
+                                             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('dashboard.progress', 'Progress')}</span>
                                              <span className="text-sm font-black text-slate-900">{c.progress}%</span>
                                          </div>
                                          <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden border border-slate-200/50">
@@ -535,42 +535,42 @@ export function Dashboard() {
                                   <div className="mt-auto pt-4 flex flex-col gap-3">
                                       {c.stripeSubscriptionId && !isExpired && (
                                           <button onClick={() => handleCancelSubscription(c.stripeSubscriptionId)} className="text-[10px] font-bold text-red-500 hover:text-red-700 underline capitalize text-center mb-1">
-                                            Cancel Autopayment
+                                            {t('dashboard.cancel_auto', 'Cancel Autopayment')}
                                           </button>
                                       )}
                                       
                                       {isPending ? (
                                           <button disabled className="w-full py-3 px-4 bg-amber-100 text-amber-800 font-bold text-sm rounded-xl border border-amber-200 opacity-70 cursor-not-allowed">
-                                              Verifying Payment...
+                                              {t('dashboard.verifying', 'Verifying Payment...')}
                                           </button>
                                       ) : isExpired ? (
                                           <button disabled className="w-full py-3 px-4 bg-slate-100 text-slate-500 font-bold text-sm rounded-xl border border-slate-200 opacity-70 cursor-not-allowed">
-                                              Access Expired
+                                              {t('dashboard.access_expired', 'Access Expired')}
                                           </button>
                                       ) : enablePlatform && (c.course._count?.lessons ?? 0) > 0 ? (
                                           <Link to={`/courses/${c.course.id}/player`} className="w-full py-3 px-4 bg-slate-900 hover:bg-black text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                                              <PlayCircle className="w-4 h-4" /> Continue Learning
+                                              <PlayCircle className="w-4 h-4" /> {t('dashboard.continue', 'Continue Learning')}
                                           </Link>
                                       ) : (
                                           <div className="flex gap-2 flex-wrap">
                                               {c.course.telegramLink && (
                                                   <a href={c.course.telegramLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 px-4 bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                                                      Join Telegram
+                                                      {t('dashboard.join_telegram', 'Join Telegram')}
                                                   </a>
                                               )}
                                               {c.course.whatsappLink && (
                                                   <a href={c.course.whatsappLink} target="_blank" rel="noopener noreferrer" className="flex-1 py-3 px-4 bg-[#25D366] hover:bg-[#1DA851] text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                                                      Join WhatsApp
+                                                      {t('dashboard.join_whatsapp', 'Join WhatsApp')}
                                                   </a>
                                               )}
                                               {!c.course.telegramLink && !c.course.whatsappLink && (c.course.customExternalLink || c.course.meetingLink) && (
                                                   <a href={c.course.customExternalLink || c.course.meetingLink} target="_blank" rel="noopener noreferrer" className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl flex items-center justify-center gap-2 transition-transform active:scale-95 shadow-md">
-                                                      <ExternalLink className="w-4 h-4" /> Open Link
+                                                      <ExternalLink className="w-4 h-4" /> {t('dashboard.open_link', 'Open Link')}
                                                   </a>
                                               )}
                                               {!c.course.telegramLink && !c.course.whatsappLink && !c.course.customExternalLink && !c.course.meetingLink && (
                                                   <button disabled className="w-full py-3 px-4 bg-slate-50 text-slate-400 font-bold text-sm rounded-xl border border-slate-100 cursor-not-allowed">
-                                                      Community & Groups
+                                                      {t('dashboard.community_groups', 'Community & Groups')}
                                                   </button>
                                               )}
                                           </div>
@@ -588,7 +588,7 @@ export function Dashboard() {
                   <section>
                       <div className="flex items-center justify-between mb-6">
                         <h2 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                            <Users className="w-6 h-6 text-blue-600" /> Community & Groups
+                            <Users className="w-6 h-6 text-blue-600" /> {t('dashboard.community_groups', 'Community & Groups')}
                         </h2>
                       </div>
                       <div className="bg-white border-2 border-slate-100 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100">
@@ -635,12 +635,12 @@ export function Dashboard() {
           <div className="xl:col-span-1 space-y-10">
               <section>
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Active Memberships</h2>
+                    <h2 className="text-xl font-black text-slate-900 tracking-tight">{t('dashboard.active_memberships', 'Active Memberships')}</h2>
                   </div>
                   
                   {data.memberships.length === 0 ? (
                       <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center">
-                          <p className="text-slate-500 font-medium text-sm">No active memberships.</p>
+                          <p className="text-slate-500 font-medium text-sm">{t('dashboard.no_memberships', 'No active memberships.')}</p>
                       </div>
                   ) : (
                       <div className="space-y-4">
@@ -662,9 +662,9 @@ export function Dashboard() {
                                          <div>
                                              <h4 className="font-bold text-slate-900 leading-tight">{content.title}</h4>
                                              {isPending ? (
-                                                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-1 block">Pending Verification</span>
+                                                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest mt-1 block">{t('dashboard.pending_verification', 'Pending Verification')}</span>
                                              ) : isExpired ? (
-                                                 <span className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-1 block">Expired</span>
+                                                 <span className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-1 block">{t('dashboard.expired', 'Expired')}</span>
                                              ) : (
                                                  <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mt-1 block flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Active</span>
                                              )}

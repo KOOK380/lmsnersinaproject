@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, forwardRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore, getTranslated } from "./store";
-import { ShoppingCart, BookOpen, Menu, X, Heart, Globe, Instagram, Youtube, Linkedin, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, BookOpen, Menu, X, Heart, Globe, Instagram, Youtube, Linkedin, Check, ChevronLeft, ChevronRight, MapPin, Phone, Mail } from "lucide-react";
 
 import { Courses, CourseDetails, Memberships, Events, MembershipDetails, EventDetails, BundleDetails, BlogList, BlogDetails } from "./pages/FrontPages";
 import { Cart, Dashboard, CoursePlayer, Wishlist } from "./pages/UserPages";
@@ -52,16 +52,16 @@ function Navbar() {
           <div className="hidden xl:flex flex-1 max-w-2xl mx-8">
             <div className="flex w-full items-center border border-gray-200 rounded-full overflow-hidden bg-white h-12 shadow-sm transition focus-within:ring-2 focus-within:ring-primary/20 bg-transparent pr-1">
                <select className="px-4 text-sm text-gray-600 border-r border-gray-200 bg-transparent h-full focus:outline-none cursor-pointer max-w-[160px] truncate leading-10">
-                 <option value="">All categories</option>
+                 <option value="">{t('home.all_categories', 'All categories')}</option>
                  {categories.filter((c: any) => c.name.toLowerCase() !== 'membership' && c.name.toLowerCase() !== 'memberships').map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                </select>
               <input 
                 type="text" 
-                placeholder="What do you want to learn?..." 
+                placeholder={t('home.search_placeholder', 'What do you want to learn?...')} 
                 className="flex-1 px-4 py-2 border-none focus:outline-none text-sm w-full min-w-0 placeholder-gray-400 h-full"
               />
               <button className="bg-primary hover:bg-primary-dark transition text-white px-6 h-full flex items-center justify-center gap-2 font-bold shrink-0 rounded-full my-1">
-                Search
+                {t('home.search', 'Search')}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
               </button>
             </div>
@@ -155,8 +155,8 @@ function Navbar() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                  </div>
                  <div className="flex flex-col">
-                    <span className="text-[11px] text-gray-500 font-medium">Call us Now!</span>
-                    <span className="text-[15px] font-bold text-[#0f172a] tracking-tight">+971 55 780 0863</span>
+                    <span className="text-[11px] text-gray-500 font-medium">{t('nav.call_us_now', 'Call us Now!')}</span>
+                    <span className="text-[15px] font-bold text-[#0f172a] tracking-tight" dir="ltr">{t('nav.phone', '+971 55 780 0863')}</span>
                  </div>
               </div>
 
@@ -338,9 +338,9 @@ function AuthModal() {
                <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                   <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                </div>
-               <h3 className="text-lg font-bold text-slate-800 mb-2">Check your email</h3>
-               <p className="text-slate-500 text-sm">We've sent a password reset link to {email}</p>
-               <button onClick={() => { setIsForgot(false); setForgotSent(false); }} className="mt-6 text-primary font-bold hover:underline">Back to Login</button>
+               <h3 className="text-lg font-bold text-slate-800 mb-2">{t('auth.check_email')}</h3>
+               <p className="text-slate-500 text-sm">{t('auth.email_sent_msg')} {email}</p>
+               <button onClick={() => { setIsForgot(false); setForgotSent(false); }} className="mt-6 text-primary font-bold hover:underline">{t('auth.back_to_login')}</button>
             </div>
          ) : (
          <form onSubmit={handleSubmit} className="space-y-4">
@@ -351,15 +351,15 @@ function AuthModal() {
                  <input type="text" value={name} onChange={e => setName(e.target.value)} required className="w-full border rounded p-2" />
                </div>
                <div>
-                 <label className="block text-sm font-medium mb-1">Phone Number *</label>
+                 <label className="block text-sm font-medium mb-1">{t('auth.phone')} *</label>
                  <div className="flex">
                    <select className="border border-r-0 rounded-l p-2 bg-slate-50 w-28 outline-none text-xs" value={phone.split(' ')[0] || '+971'} onChange={(e) => setPhone(e.target.value + ' ' + (phone.split(' ')[1] || ''))} required>
-                     <option value="">Code</option>
+                     <option value="">{t('auth.code')}</option>
                      {countryCodes.map(c => (
                        <option key={c.code} value={c.code}>{c.label} ({c.code})</option>
                      ))}
                    </select>
-                   <input type="tel" value={phone.split(' ')[1] || ''} onChange={e => setPhone((phone.split(' ')[0] || '+971') + ' ' + e.target.value)} required placeholder="Phone Number" className="w-full border rounded-r p-2 outline-none text-sm" />
+                   <input type="tel" value={phone.split(' ')[1] || ''} onChange={e => setPhone((phone.split(' ')[0] || '+971') + ' ' + e.target.value)} required placeholder={t('auth.phone')} className="w-full border rounded-r p-2 outline-none text-sm" />
                  </div>
                </div>
              </>
@@ -374,17 +374,17 @@ function AuthModal() {
              <input type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full border rounded p-2" />
              {isLogin && (
                <div className="text-right mt-1">
-                 <button type="button" onClick={() => setIsForgot(true)} className="text-xs text-primary font-bold hover:underline">Forgot Password?</button>
+                 <button type="button" onClick={() => setIsForgot(true)} className="text-xs text-primary font-bold hover:underline">{t('auth.forgot_password')}</button>
                </div>
              )}
            </div>
            )}
            <button type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold shadow hover:bg-primary-dark transition text-lg mt-2">
-             {isForgot ? 'Reset Password' : isLogin ? t('auth.login') : t('auth.register')}
+             {isForgot ? t('auth.reset_password') : isLogin ? t('auth.login') : t('auth.register')}
            </button>
            {isForgot && (
               <div className="text-center mt-2">
-                 <button type="button" onClick={() => setIsForgot(false)} className="text-xs text-slate-500 font-bold hover:underline">Back to Login</button>
+                 <button type="button" onClick={() => setIsForgot(false)} className="text-xs text-slate-500 font-bold hover:underline">{t('auth.back_to_login')}</button>
               </div>
            )}
          </form>
@@ -392,7 +392,7 @@ function AuthModal() {
          
          {!isForgot && !forgotSent && (socialLoginConfig?.googleEnabled || socialLoginConfig?.facebookEnabled) && (
             <div className="mt-6 border-t border-slate-200 pt-6">
-              <p className="text-center text-sm text-slate-500 mb-4 font-bold uppercase tracking-wider">Or continue with</p>
+              <p className="text-center text-sm text-slate-500 mb-4 font-bold uppercase tracking-wider">{t('auth.or_continue_with')}</p>
               <div className="space-y-3">
                 {socialLoginConfig?.googleEnabled && (
                   <button type="button" onClick={() => handleOAuthLogin('google')} className="w-full flex items-center justify-center gap-3 bg-white border border-slate-300 text-slate-700 font-bold py-2.5 rounded-lg hover:bg-slate-50 transition shadow-sm">
@@ -417,10 +417,12 @@ function AuthModal() {
 }
 
 function WebsitePopup() {
-  const { settings } = useStore();
-  const popupSettingStr = settings.find((s:any) => s.key === 'WEBSITE_POPUP')?.value;
+  const { settings, language } = useStore();
+  const settingKey = language === "en" ? 'WEBSITE_POPUP' : `WEBSITE_POPUP_${language}`;
+  const popupSettingStr = settings.find((s:any) => s.key === settingKey)?.value || settings.find((s:any) => s.key === 'WEBSITE_POPUP')?.value;
   const popupConfig = popupSettingStr ? JSON.parse(popupSettingStr) : null;
   const [isOpen, setIsOpen] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (popupConfig?.enabled) {
@@ -491,7 +493,7 @@ function WebsitePopup() {
            <div dangerouslySetInnerHTML={{ __html: popupConfig.content }} />
            {popupConfig.linkUrl && (
              <div className="mt-6 text-center">
-               <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-white font-bold py-3 px-8 rounded-full shadow hover:opacity-90 transition">Learn More</a>
+               <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-white font-bold py-3 px-8 rounded-full shadow hover:opacity-90 transition">{t('home.learn_more', 'Learn More')}</a>
              </div>
            )}
         </div>
@@ -628,7 +630,8 @@ function Home() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<any[]>([]);
   const [courseBundles, setCourseBundles] = useState<any[]>([]);
-  const [sliders, setSliders] = useState<any[]>([]);
+  const [rawSliders, setRawSliders] = useState<any[]>([]);
+  const sliders = rawSliders.filter(s => (s.languageCode || 'en') === language);
   const [plans, setPlans] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [blogs, setBlogs] = useState<any[]>([]);
@@ -653,7 +656,7 @@ function Home() {
     Promise.all([
       fetch("/api/courses/active").then(r => r.json()).then(setCourses).catch(() => {}),
       fetch("/api/public/course-bundles").then(r => r.json()).then(setCourseBundles).catch(() => {}),
-      fetch("/api/sliders").then(r => r.json()).then(setSliders).catch(() => {}),
+      fetch("/api/sliders").then(r => r.json()).then(setRawSliders).catch(() => {}),
       fetch("/api/memberships").then(r => r.json()).then(setPlans).catch(() => {}),
       fetch("/api/events").then(r => r.json()).then(setEvents).catch(() => {}),
       fetch("/api/testimonials").then(r => r.json()).then(setTestimonialsList).catch(() => {}),
@@ -691,7 +694,8 @@ function Home() {
   const tPlans = getTranslated(plans, language) || [];
   const tCategories = getTranslated(categories, language) || [];
 
-  const sPromo = settings?.find((s:any) => s.key === "PROMO_BADGE_CONFIG");
+  const sPromoKey = language === "en" ? 'PROMO_BADGE_CONFIG' : `PROMO_BADGE_CONFIG_${language}`;
+  const sPromo = settings?.find((s:any) => s.key === sPromoKey) || settings?.find((s:any) => s.key === "PROMO_BADGE_CONFIG");
   let promoConfig = { 
     enabled: false, 
     badgeType: "demo", 
@@ -801,10 +805,10 @@ function Home() {
            <div className="mx-auto w-full h-[40vh] md:h-[60vh] rounded-3xl flex flex-col items-center justify-center p-12 text-white italic font-serif bg-gradient-to-br from-primary to-[#8c356b] shadow-xl relative overflow-hidden">
              <div className="absolute inset-0 bg-black/20 mix-blend-overlay"></div>
              <div className="relative z-10 text-center max-w-3xl">
-                <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">Master Your Mindset.<br/>Build Your Legacy.</h1>
-                <p className="text-lg md:text-xl font-sans not-italic text-white/90 mb-8 max-w-2xl mx-auto font-medium">Join thousands of ambitious individuals transforming their careers and wealth through our proven frameworks.</p>
+                <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">{t('home.default_banner_title', 'Master Your Mindset.')}<br/>{t('home.default_banner_subtitle', 'Build Your Legacy.')}</h1>
+                <p className="text-lg md:text-xl font-sans not-italic text-white/90 mb-8 max-w-2xl mx-auto font-medium">{t('home.default_banner_desc', 'Join thousands of ambitious individuals transforming their careers and wealth through our proven frameworks.')}</p>
                 <div className="flex justify-center gap-4">
-                  <Link to="/courses" className="bg-white text-primary font-sans not-italic font-bold px-8 py-3.5 rounded-full shadow-[0_4px_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform">Explore Programs</Link>
+                  <Link to="/courses" className="bg-white text-primary font-sans not-italic font-bold px-8 py-3.5 rounded-full shadow-[0_4px_20px_rgba(255,255,255,0.3)] hover:scale-105 transition transform">{t('home.explore_programs', 'Explore Programs')}</Link>
                 </div>
              </div>
            </div>
@@ -875,13 +879,13 @@ function Home() {
                               {formatCurrency(Math.min(...course.memberships.map((m: any) => m.offerPrice || 0)), currency)}
                            </>
                         ) : (
-                           <><span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span></>
+                           <><span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">{t('home.free', 'Free')}</span></>
                         )}
                       </span>
                       {isEnrolled ? (
-                         <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1">Purchased</span>
+                         <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1">{t('home.purchased', 'Purchased')}</span>
                       ) : (
-                         <span className="px-3 py-1 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold transition">Enroll Now</span>
+                         <span className="px-3 py-1 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold transition">{t('home.enroll_now', 'Enroll Now')}</span>
                       )}
                     </div>
                   </Link>
@@ -893,7 +897,7 @@ function Home() {
          {getTranslated(courseBundles, language) && getTranslated(courseBundles, language).length > 0 && (
            <section>
              <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
-                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>Program Bundles</h2>
+                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>{t('home.program_bundles', 'Program Bundles')}</h2>
                 <div className="hidden md:flex gap-2">
                    <button onClick={() => { if(bundlesRef.current) bundlesRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronLeft size={16} /></button>
                    <button onClick={() => { if(bundlesRef.current) bundlesRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
@@ -911,9 +915,9 @@ function Home() {
                            {bundle.realPrice && bundle.realPrice > bundle.price && (
                              <span className="text-sm text-slate-400 line-through mr-2 font-medium">{formatCurrency(bundle.realPrice, currency)}</span>
                            )}
-                           {bundle.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span> : formatCurrency(bundle.price, currency)}
+                           {bundle.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">{t('home.free', 'Free')}</span> : formatCurrency(bundle.price, currency)}
                          </span>
-                         <span className="px-3 py-1 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold transition">View Bundle</span>
+                         <span className="px-3 py-1 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold transition">{t('home.view_bundle', 'View Bundle')}</span>
                        </div>
                     </Link>
                   )
@@ -926,8 +930,8 @@ function Home() {
          {tEvents && tEvents.length > 0 && (
            <section>
              <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
-                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>Events</h2>
-                <Link to="/events" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">All Events</Link>
+                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>{t('home.events', 'Events')}</h2>
+                <Link to="/events" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">{t('home.all_events', 'All Events')}</Link>
              </div>
              <div className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {tEvents.map(evt => {
@@ -945,14 +949,14 @@ function Home() {
                        </div>
                     </div>
                     <h3 className="font-bold text-md leading-tight mb-1 line-clamp-1">{evt.title}</h3>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {evt.location || "Online Room"}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {evt.location || t('events.online_room', 'Online Room')}</p>
                     
                     <div className="flex justify-between items-center border-t border-slate-100 pt-3 mt-auto">
-                       <span className="font-bold text-primary flex-1 text-sm">{evt.price > 0 ? formatCurrency(evt.price, currency) : <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs uppercase tracking-widest">Free</span>}</span>
+                       <span className="font-bold text-primary flex-1 text-sm">{evt.price > 0 ? formatCurrency(evt.price, currency) : <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xs uppercase tracking-widest">{t('home.free', 'Free')}</span>}</span>
   {isBooked ? (
-    <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1"><Check className="w-3 h-3" /> Booked</span>
+    <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1"><Check className="w-3 h-3" /> {t('events.already_booked_short', 'Booked')}</span>
   ) : (
-    <span className="text-[10px] font-bold py-1.5 px-4 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white rounded-lg whitespace-nowrap shadow-sm transition">Book Seat</span>
+    <span className="text-[10px] font-bold py-1.5 px-4 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white rounded-lg whitespace-nowrap shadow-sm transition">{t('events.book_ticket', 'Book Seat')}</span>
   )}
   </div>
   </Link>
@@ -965,13 +969,13 @@ function Home() {
          {tCourses && tCourses.filter(c => c.isUpcoming).length > 0 && (
            <section>
              <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
-                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold">Coming Soon</h2>
+                <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold">{t('home.coming_soon', 'Coming Soon')}</h2>
                 <div className="flex items-center gap-4">
                   <div className="hidden md:flex gap-2">
                      <button onClick={() => { if(comingSoonRef.current) comingSoonRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronLeft size={16} /></button>
                      <button onClick={() => { if(comingSoonRef.current) comingSoonRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
                   </div>
-                  <Link to="/courses" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">View Catalog &rarr;</Link>
+                  <Link to="/courses" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">{t('home.view_catalog', 'View Catalog')} &rarr;</Link>
                 </div>
              </div>
              
@@ -981,14 +985,14 @@ function Home() {
                   return (
                   <Link to={`/courses/${course.id}`} key={course.id} className="min-w-[280px] md:min-w-[320px] w-[280px] md:w-[320px] snap-start bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col group opacity-80 cursor-not-allowed" onClick={e => e.preventDefault()}>
                      <img src={course.imageUrl || undefined} alt={course.title} className="w-full h-auto min-h-[160px] object-contain bg-slate-50 rounded-xl mb-4 shadow-sm grayscale" style={{maxHeight: '240px'}} />
-                     <p className="text-xs font-bold text-orange-500 mb-1 uppercase tracking-tighter">Coming Soon</p>
-                     <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">{course.title} (Coming Soon)</h3>
+                     <p className="text-xs font-bold text-orange-500 mb-1 uppercase tracking-tighter">{t('home.coming_soon', 'Coming Soon')}</p>
+                     <h3 className="font-bold text-lg leading-tight mb-2 line-clamp-2">{course.title} ({t('home.coming_soon', 'Coming Soon')})</h3>
                      <div className="flex justify-between items-center mt-auto">
-                       <span className="font-bold text-lg text-primary">TBD</span>
+                       <span className="font-bold text-lg text-primary">{t('home.tbd', 'TBD')}</span>
                        {isEnrolled ? (
-                           <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1">Purchased</span>
+                           <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1">{t('home.purchased', 'Purchased')}</span>
                         ) : (
-                           <span className="px-3 py-1 bg-slate-200 text-slate-500 text-xs rounded-full">Coming Soon</span>
+                           <span className="px-3 py-1 bg-slate-200 text-slate-500 text-xs rounded-full">{t('home.coming_soon', 'Coming Soon')}</span>
                         )}
                      </div>
                   </Link>
@@ -1010,12 +1014,12 @@ function Home() {
 
              {/* Left Content */}
              <div className="w-full lg:w-5/12 relative z-10 pl-4 md:pl-0">
-               <h3 className="text-[13px] font-medium uppercase tracking-[0.15em] text-primary/60 mb-4">Testimonials</h3>
+               <h3 className="text-[13px] font-medium uppercase tracking-[0.15em] text-primary/60 mb-4">{t('home.testimonials', 'Testimonials')}</h3>
                <h2 className="text-4xl md:text-[2.75rem] font-bold tracking-tight text-gray-900 mb-6 leading-[1.15]">
-                  They Were Exactly Where You Are. Look Where They Are Now
+                  {t('home.testimonials_title', 'They Were Exactly Where You Are. Look Where They Are Now')}
                </h2>
                <p className="text-[17px] text-slate-500 mb-10 leading-relaxed max-w-md">
-                  Read slowly. Because somewhere between these lines you will find yourself - the version of you that exists six months from now, on the other side of the decision you are about to make.
+                  {t('home.testimonials_desc', 'Read slowly. Because somewhere between these lines you will find yourself - the version of you that exists six months from now, on the other side of the decision you are about to make.')}
                </p>
              </div>
 
@@ -1029,13 +1033,13 @@ function Home() {
          {/* Content by Nesrina (Blog) */}
          <section className="mt-8 relative group/section">
            <div className="flex justify-between items-end mb-6 editorial-divider pt-6">
-              <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>Content by Nesrina</h2>
+              <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>{t('home.content_by', 'Content by')} Nesrina</h2>
               <div className="flex items-center gap-4">
                   <div className="hidden md:flex gap-2">
                      <button onClick={() => { if(blogRef.current) blogRef.current.scrollBy({ left: -320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronLeft size={16} /></button>
                      <button onClick={() => { if(blogRef.current) blogRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
                   </div>
-                  <button onClick={() => navigate("/blog")} className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">View All</button>
+                  <button onClick={() => navigate("/blog")} className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">{t('home.view_all', 'View All')}</button>
               </div>
            </div>
            <DragScrollContainer ref={blogRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
@@ -1055,7 +1059,7 @@ function Home() {
                     <p className="text-[11px] text-slate-500 font-medium mb-1">{new Date(b.createdAt).toLocaleDateString()}</p>
                     <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition line-clamp-2">{b.title}</h3>
                     <div className="mt-auto pt-4 flex items-center gap-2 text-primary font-bold text-[13px]">
-                      Read Article <svg className="w-4 h-4 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                      {t('home.read_article', 'Read Article')} <svg className="w-4 h-4 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                     </div>
                   </div>
                 </div>
@@ -1112,15 +1116,15 @@ function Footer() {
   return (
     <footer className="bg-white border-t border-slate-200 pt-16 pb-12 mt-auto text-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row justify-between gap-12 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 mb-8">
           
           {/* Column 1 */}
-          <div className="flex flex-col gap-6 lg:w-[35%] max-w-sm">
+          <div className="flex flex-col gap-6 lg:col-span-4">
             <Link to="/" className="text-4xl font-bold italic font-serif flex items-center shrink-0 tracking-tighter" style={{ fontFamily: 'cursive' }}>
                {logoUrl ? <img src={logoUrl} alt="Logo" className="max-h-12 object-contain" /> : 'Nesrina'}
             </Link>
             <p className="text-slate-500 text-[15px] leading-relaxed">
-              The global online learning platform that offers anyone, anywhere access to online programs and degrees from world-class universities and companies.
+              {t('footer.description', 'The global online learning platform that offers anyone, anywhere access to online programs and degrees from world-class universities and companies.')}
             </p>
             <div className="flex gap-3 mt-2">
               <a href={socialLinks.instagram} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 hover:bg-primary hover:text-white transition">
@@ -1141,31 +1145,40 @@ function Footer() {
           </div>
 
           {/* Column 2 */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-lg text-slate-900 mb-2">Important Link</h3>
-            <Link to="/about" className="text-slate-500 hover:text-primary transition font-medium">About Nesrina</Link>
-            <Link to="/courses" className="text-slate-500 hover:text-primary transition font-medium">Programs</Link>
+          <div className="flex flex-col gap-4 lg:col-span-2">
+            <h3 className="font-bold text-lg text-slate-900 mb-2">{t('footer.important_link', 'Important Link')}</h3>
+            <Link to="/about" className="text-slate-500 hover:text-primary transition font-medium">{t('footer.about_title', 'About Nesrina')}</Link>
+            <Link to="/courses" className="text-slate-500 hover:text-primary transition font-medium">{t('footer.programs', 'Programs')}</Link>
             <Link to="/events" className="text-slate-500 hover:text-primary transition font-medium">{t('nav.events', 'Events')}</Link>
           </div>
 
           {/* Column 3 */}
-          <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-[17px] text-slate-900 mb-2">Inquiries</h3>
-            <p className="text-slate-500 font-medium">Abu Dubai, United Arab Emirates</p>
-            <p className="text-slate-500 font-medium">+971 55 780 0863</p>
-            <a href="mailto:info@nesrinaconsultancy.com" className="font-bold text-slate-900 hover:text-primary transition mt-2">info@nesrinaconsultancy.com</a>
+          <div className="flex flex-col gap-4 lg:col-span-3">
+            <h3 className="font-bold text-[17px] text-slate-900 mb-2">{t('footer.inquiries', 'Inquiries')}</h3>
+            <div className="flex items-start gap-2">
+              <MapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+              <p className="text-slate-500 font-medium">{t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Phone className="w-5 h-5 text-slate-400 shrink-0" />
+              <p className="text-slate-500 font-medium" dir="ltr">{t('footer.phone', '+971 55 780 0863')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Mail className="w-5 h-5 text-slate-400 shrink-0" />
+              <a href="mailto:info@nesrinaconsultancy.com" className="font-bold text-slate-900 hover:text-primary transition break-words">info@nesrinaconsultancy.com</a>
+            </div>
           </div>
 
           {/* Column 4 */}
-          <div className="flex flex-col gap-4 lg:w-[25%]">
-            <h3 className="font-bold text-[17px] text-slate-900 mb-2 lg:whitespace-nowrap">Sign up for the newsletter</h3>
+          <div className="flex flex-col gap-4 lg:col-span-3">
+            <h3 className="font-bold text-[17px] text-slate-900 mb-2 lg:whitespace-nowrap">{t('footer.newsletter_title', 'Sign up for the newsletter')}</h3>
             <div className="relative w-full">
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email address" className="w-full bg-slate-50 border-none rounded-full py-3.5 pl-5 pr-24 outline-none focus:ring-2 focus:ring-[#371C3B]/20 text-slate-700 font-medium shadow-sm transition-shadow" />
-              <button disabled={loading} onClick={handleSubscribe} className="absolute right-1.5 top-1.5 bottom-1.5 bg-transparent text-slate-900 font-bold px-4 hover:text-[#371C3B] transition">{loading ? '...' : success ? 'Done' : 'Sign Up'}</button>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('footer.email_placeholder', 'Email address')} className="w-full bg-slate-50 border-none rounded-full py-3.5 pl-5 pr-24 outline-none focus:ring-2 focus:ring-[#371C3B]/20 text-slate-700 font-medium shadow-sm transition-shadow" />
+              <button disabled={loading} onClick={handleSubscribe} className="absolute right-1.5 top-1.5 bottom-1.5 bg-transparent text-slate-900 font-bold px-4 hover:text-[#371C3B] transition">{loading ? '...' : success ? t('footer.done', 'Done') : t('footer.sign_up', 'Sign Up')}</button>
             </div>
             <label className="flex items-start gap-3 mt-2 cursor-pointer group">
               <input type="checkbox" className="mt-1 flex-shrink-0 rounded border-slate-300 text-primary focus:ring-primary w-4 h-4" />
-              <span className="text-sm text-slate-400 group-hover:text-slate-600 transition leading-snug">I'm okay with getting emails and having that activity tracked to improve my experience.</span>
+              <span className="text-sm text-slate-400 group-hover:text-slate-600 transition leading-snug">{t('footer.newsletter_consent', 'I\'m okay with getting emails and having that activity tracked to improve my experience.')}</span>
             </label>
           </div>
 
@@ -1288,6 +1301,7 @@ function ResetPassword() {
   const token = searchParams.get('token');
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState("idle");
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1318,9 +1332,9 @@ function ResetPassword() {
          <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
          </div>
-         <h1 className="text-3xl font-serif font-bold text-slate-800 mb-4">Password Reset Successfully</h1>
+         <h1 className="text-3xl font-serif font-bold text-slate-800 mb-4">{t('auth.reset_success', 'Password Reset Successfully')}</h1>
          <p className="text-slate-500 mb-8 max-w-md text-center">Your password has been securely updated. You can now log in using your new credentials.</p>
-         <Link to="/" className="bg-primary text-white px-8 py-3 rounded-lg font-bold shadow-sm hover:bg-primary-dark transition">Go to Homepage</Link>
+         <Link to="/" className="bg-primary text-white px-8 py-3 rounded-lg font-bold shadow-sm hover:bg-primary-dark transition">{t('auth.go_home', 'Go to Homepage')}</Link>
        </div>
      );
   }
@@ -1328,16 +1342,16 @@ function ResetPassword() {
   return (
     <div className="flex items-center justify-center py-20 px-4">
        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 w-full max-w-md">
-          <h1 className="text-2xl font-bold font-serif text-slate-800 mb-2">Reset Password</h1>
-          <p className="text-sm text-slate-500 mb-6">Enter your new secure password below.</p>
+          <h1 className="text-2xl font-bold font-serif text-slate-800 mb-2">{t('auth.reset_password', 'Reset Password')}</h1>
+          <p className="text-sm text-slate-500 mb-6">{t('auth.enter_secure_password', 'Enter your new secure password below.')}</p>
           <form onSubmit={handleSubmit} className="space-y-4">
              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">New Password</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">{t('auth.new_password', 'New Password')}</label>
                 <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} required minLength={8} className="w-full border border-slate-200 rounded-lg p-3 text-sm" placeholder="••••••••" />
-                <p className="text-xs text-slate-400 mt-1">Must be at least 8 characters long.</p>
+                <p className="text-xs text-slate-400 mt-1">{t('auth.min_length', 'Must be at least 8 characters long.')}</p>
              </div>
              <button disabled={status === "loading"} type="submit" className="w-full bg-primary text-white py-3 rounded-lg font-bold shadow-sm hover:bg-primary-dark transition disabled:opacity-50 mt-4">
-                {status === "loading" ? 'Resetting...' : 'Update Password'}
+                {status === "loading" ? t('auth.resetting', 'Resetting...') : t('auth.update_password', 'Update Password')}
              </button>
           </form>
        </div>

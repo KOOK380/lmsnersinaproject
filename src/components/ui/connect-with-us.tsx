@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Instagram, Youtube, Linkedin, Music2 } from 'lucide-react';
 import { useStore } from '../../store';
+import { useTranslation } from 'react-i18next';
 
 const SocialConnect = () => {
   const { settings } = useStore();
+  const { t } = useTranslation();
   const [links, setLinks] = useState({ instagram: '#', tiktok: '#', youtube: '#', linkedin: '#' });
 
   useEffect(() => {
@@ -19,10 +21,10 @@ const SocialConnect = () => {
     <div className="bg-transparent flex flex-col items-center justify-center p-4 font-sans w-full rounded-3xl py-12">
       <div className="w-full max-w-3xl mx-auto text-center mb-10">
         <h1 className="text-3xl md:text-4xl font-bold font-serif italic text-primary mb-4">
-          Connect With Us
+          {t('connect.title', 'Connect With Us')}
         </h1>
         <p className="text-slate-600 max-w-2xl mx-auto">
-          Join our community and stay updated with the latest news, releases, and exclusive content
+          {t('connect.desc', 'Join our community and stay updated with the latest news, releases, and exclusive content')}
         </p>
       </div>
       

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useStore } from "../store";
-import { defaultAboutUsHtml } from "./AboutUs";
+import { useTranslation } from "react-i18next";
+import { getDefaultAboutUsHtml } from "./AboutUs";
 import { formatCurrency } from "../lib/utils";
 import { Plus, Settings, Trash2, X, BookOpen, ExternalLink } from "lucide-react";
 import { Editor } from '@tinymce/tinymce-react';
@@ -1474,14 +1475,14 @@ export function MembershipManager() {
 
 export function SliderManager() {
   const [sliders, setSliders] = useState<any[]>([]);
-  const { token } = useStore();
+  const { token, languages } = useStore();
   const [showAdd, setShowAdd] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ title: '', imageUrl: '', linkUrl: '' });
+  const [formData, setFormData] = useState({ title: '', imageUrl: '', linkUrl: '', languageCode: 'en' });
 
   useEffect(() => {
-    fetch("/api/sliders").then(r => r.json()).then(setSliders).catch(()=>{});
-  }, []);
+    fetch("/api/admin/sliders", { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setSliders).catch(()=>{});
+  }, [token]);
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/admin/sliders/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
@@ -1493,7 +1494,8 @@ export function SliderManager() {
     setFormData({
       title: slider.title || '',
       imageUrl: slider.imageUrl || '',
-      linkUrl: slider.linkUrl || ''
+      linkUrl: slider.linkUrl || '',
+      languageCode: slider.languageCode || 'en'
     });
     setShowAdd(true);
   };
@@ -1530,11 +1532,11 @@ export function SliderManager() {
     if (!res.ok) { alert("Failed to save slider"); return; }
     
     // Refresh list
-    fetch("/api/sliders").then(r => r.json()).then(setSliders).catch(()=>{});
+    fetch("/api/admin/sliders", { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()).then(setSliders).catch(()=>{});
     
     setShowAdd(false);
     setEditId(null);
-    setFormData({ title: '', imageUrl: '', linkUrl: '' });
+    setFormData({ title: '', imageUrl: '', linkUrl: '', languageCode: 'en' });
   };
 
   return (
@@ -1545,9 +1547,9 @@ export function SliderManager() {
              if (showAdd) {
                setShowAdd(false);
                setEditId(null);
-               setFormData({ title: '', imageUrl: '', linkUrl: '' });
+               setFormData({ title: '', imageUrl: '', linkUrl: '', languageCode: 'en' });
              } else {
-               setFormData({ title: '', imageUrl: '', linkUrl: '' });
+               setFormData({ title: '', imageUrl: '', linkUrl: '', languageCode: 'en' });
                setShowAdd(true);
              }
           }} className="bg-primary text-white px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider shadow-sm hover:bg-primary-dark transition">{showAdd ? "Cancel" : "+ New Slider"}</button>
@@ -1555,7 +1557,15 @@ export function SliderManager() {
 
       {showAdd && (
         <div className="mb-6 p-4 border border-slate-200 rounded-xl space-y-4 bg-slate-50">
-           <input type="text" placeholder="Title" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded" />
+           <div className="flex gap-4">
+              <input type="text" placeholder="Title" value={formData.title} onChange={e=>setFormData({...formData, title: e.target.value})} className="w-full p-2 border rounded" />
+              <select value={formData.languageCode} onChange={e=>setFormData({...formData, languageCode: e.target.value})} className="p-2 border rounded min-w-[150px]">
+                 <option value="en">English (Default)</option>
+                 {languages.filter(l => l.code !== 'en').map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                 ))}
+              </select>
+           </div>
            <input type="text" placeholder="Link URL" value={formData.linkUrl} onChange={e=>setFormData({...formData, linkUrl: e.target.value})} className="w-full p-2 border rounded" />
            <MediaInput 
              label="Slider Image" 
@@ -1573,16 +1583,18 @@ export function SliderManager() {
             <tr className="border-b-2 border-slate-100 text-slate-400 text-[10px] uppercase tracking-widest font-bold">
               <th className="pb-3 px-2">Image</th>
               <th className="pb-3 px-2">Link</th>
+              <th className="pb-3 px-2">Lang</th>
               <th className="pb-3 px-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
             {sliders.length === 0 ? (
-               <tr><td colSpan={3} className="py-12 text-center text-slate-400 font-serif italic">No sliders found.</td></tr>
+               <tr><td colSpan={4} className="py-12 text-center text-slate-400 font-serif italic">No sliders found.</td></tr>
             ) : sliders.map(slider => (
               <tr key={slider.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition">
                 <td className="py-4 px-2 text-sm">{slider.imageUrl ? <img src={slider.imageUrl} alt="" className="w-20 h-10 object-cover" /> : null}</td>
                 <td className="py-4 px-2 text-sm text-slate-500">{slider.linkUrl}</td>
+                <td className="py-4 px-2 text-sm font-bold text-slate-600">{slider.languageCode}</td>
                 <td className="py-4 px-2 text-right space-x-2">
                   <button onClick={() => handleEdit(slider)} className="text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-colors">Edit</button>
                   <DeleteButton onDelete={() => handleDelete(slider.id)} />
@@ -2890,12 +2902,15 @@ export function LanguageManager() {
 }
 
 export function PagesManager() {
+  const { t, i18n } = useTranslation();
   const { token } = useStore();
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedPage, setSelectedPage] = useState("ABOUT_US_PAGE");
   const [settingsData, setSettingsData] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
 
   const pages = [
     { id: "ABOUT_US_PAGE", name: "About Us", description: "The main about us page for the public site." },
@@ -2914,20 +2929,32 @@ export function PagesManager() {
       }
     })
     .catch(()=>{});
+
+    fetch("/api/languages")
+    .then(r => r.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        setLanguages(data);
+      }
+    })
+    .catch(()=>{});
   }, [token]);
 
+  const pageKey = selectedLanguage === "en" ? selectedPage : `${selectedPage}_${selectedLanguage}`;
+
   useEffect(() => {
-    const pageSetting = settingsData.find((s: any) => s.key === selectedPage);
-    if (pageSetting) {
+    const pageSetting = settingsData.find((s: any) => s.key === pageKey);
+    if (pageSetting && pageSetting.value) {
       setContent(pageSetting.value);
     } else {
       if (selectedPage === "ABOUT_US_PAGE") {
-        setContent(defaultAboutUsHtml);
+        const langT = i18n.getFixedT(selectedLanguage);
+        setContent(getDefaultAboutUsHtml(langT));
       } else {
         setContent(`<h2>${pages.find(p => p.id === selectedPage)?.name}</h2><p>Content goes here...</p>`);
       }
     }
-  }, [selectedPage, settingsData]);
+  }, [selectedPage, selectedLanguage, settingsData, i18n]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2938,15 +2965,15 @@ export function PagesManager() {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`
       },
-      body: JSON.stringify({ key: selectedPage, value: content })
+      body: JSON.stringify({ key: pageKey, value: content })
     });
     
     if (newSettingsReq.ok) {
        const updatedSetting = await newSettingsReq.json();
        setSettingsData(prev => {
-          const exists = prev.find((s: any) => s.key === selectedPage);
+          const exists = prev.find((s: any) => s.key === pageKey);
           if (exists) {
-            return prev.map((s: any) => s.key === selectedPage ? updatedSetting : s);
+            return prev.map((s: any) => s.key === pageKey ? updatedSetting : s);
           }
           return [...prev, updatedSetting];
        });
@@ -2961,7 +2988,22 @@ export function PagesManager() {
   if (!isEditing) {
     return (
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <h2 className="text-xl font-bold font-serif italic text-indigo-600 mb-2">Manage Pages</h2>
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-bold font-serif italic text-indigo-600">Manage Pages</h2>
+          <div className="flex items-center gap-3">
+             <label className="text-sm font-bold text-slate-700">Language:</label>
+             <select
+               value={selectedLanguage}
+               onChange={(e) => setSelectedLanguage(e.target.value)}
+               className="border border-slate-200 rounded p-1.5 text-sm bg-white"
+             >
+                <option value="en">English (Default)</option>
+                {languages.filter(l => l.code !== 'en').map(l => (
+                   <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+             </select>
+          </div>
+        </div>
         <p className="text-sm text-slate-500 mb-6">Select a page below to edit its HTML content.</p>
 
         <div className="space-y-4">
@@ -4443,28 +4485,34 @@ export function LeadsManager() {
 }
 
 export function PopupManager() {
-  const { token, settings, setSettings } = useStore();
+  const { token, settings, setSettings, languages } = useStore();
   const [status, setStatus] = useState('');
-  const popupSettingStr = settings?.find((s:any) => s.key === 'WEBSITE_POPUP')?.value;
-  const initPopup = popupSettingStr ? JSON.parse(popupSettingStr) : { enabled: false, type: 'IMAGE', content: '', linkUrl: '', displayMode: 'ONCE_PER_SESSION', delayMs: 1500 };
-  
-  if (!initPopup.displayMode) initPopup.displayMode = 'ONCE_PER_SESSION';
-  if (initPopup.delayMs === undefined) initPopup.delayMs = 1500;
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
 
-  const [popupConfig, setPopupConfig] = useState(initPopup);
+  const settingKey = selectedLanguage === "en" ? 'WEBSITE_POPUP' : `WEBSITE_POPUP_${selectedLanguage}`;
+
+  const [popupConfig, setPopupConfig] = useState({ enabled: false, type: 'IMAGE', content: '', linkUrl: '', displayMode: 'ONCE_PER_SESSION', delayMs: 1500 });
+
+  useEffect(() => {
+    const popupSettingStr = settings?.find((s:any) => s.key === settingKey)?.value;
+    const initPopup = popupSettingStr ? JSON.parse(popupSettingStr) : { enabled: false, type: 'IMAGE', content: '', linkUrl: '', displayMode: 'ONCE_PER_SESSION', delayMs: 1500 };
+    if (!initPopup.displayMode) initPopup.displayMode = 'ONCE_PER_SESSION';
+    if (initPopup.delayMs === undefined) initPopup.delayMs = 1500;
+    setPopupConfig(initPopup);
+  }, [selectedLanguage, settings, settingKey]);
 
   const saveSettings = async () => {
     setStatus('Saving...');
     const res = await fetch("/api/admin/settings", {
       method: "POST",
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ key: 'WEBSITE_POPUP', value: JSON.stringify(popupConfig) })
+      body: JSON.stringify({ key: settingKey, value: JSON.stringify(popupConfig) })
     });
     if(res.ok) {
        setStatus('Saved successfully!');
        const storeSettings = [...settings];
-       const i = storeSettings.findIndex((s:any) => s.key === 'WEBSITE_POPUP');
-       const updated = { key: 'WEBSITE_POPUP', value: JSON.stringify(popupConfig) };
+       const i = storeSettings.findIndex((s:any) => s.key === settingKey);
+       const updated = { key: settingKey, value: JSON.stringify(popupConfig) };
        if(i >= 0) storeSettings[i] = updated;
        else storeSettings.push(updated);
        setSettings(storeSettings);
@@ -4476,9 +4524,24 @@ export function PopupManager() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="mb-8">
-        <h2 className="text-2xl font-serif italic font-bold text-indigo-600">Website Popup settings</h2>
-        <p className="text-slate-500 text-sm mt-2">Manage the universal promotional popup shown to visitors.</p>
+      <div className="mb-8 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-serif italic font-bold text-indigo-600">Website Popup settings</h2>
+          <p className="text-slate-500 text-sm mt-2">Manage the universal promotional popup shown to visitors.</p>
+        </div>
+        <div className="flex items-center gap-3">
+           <label className="text-sm font-bold text-slate-700">Language:</label>
+           <select
+             value={selectedLanguage}
+             onChange={(e) => setSelectedLanguage(e.target.value)}
+             className="border border-slate-200 rounded p-1.5 text-sm bg-white"
+           >
+              <option value="en">English (Default)</option>
+              {languages.filter((l: any) => l.code !== 'en').map((l: any) => (
+                 <option key={l.code} value={l.code}>{l.name}</option>
+              ))}
+           </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8 mt-4">
@@ -4903,39 +4966,54 @@ export function PushNotificationManager() {
 }
 
 export function PromoBadgeManager() {
-  const { token, settings, setSettings } = useStore();
+  const { token, settings, setSettings, languages } = useStore();
   const [status, setStatus] = useState('');
-  const promoSettingStr = settings?.find((s:any) => s.key === 'PROMO_BADGE_CONFIG')?.value;
-  
-  // Backwards compatible parsing
-  const parsedPromo = promoSettingStr ? JSON.parse(promoSettingStr) : {};
-  const initPromo = { 
-    enabled: parsedPromo.enabled ?? false, 
-    badgeType: parsedPromo.badgeType ?? 'demo', 
-    badgeText: parsedPromo.badgeText ?? 'Exclusive Offer', 
-    message: parsedPromo.message ?? 'Flat 50% off on Premium collection!', 
-    linkUrl: parsedPromo.linkUrl ?? '',
-    bgColor: parsedPromo.bgColor ?? '',
-    borderColor: parsedPromo.borderColor ?? '',
-    textColor: parsedPromo.textColor ?? '',
-    tagBgColor: parsedPromo.tagBgColor ?? '',
-    tagTextColor: parsedPromo.tagTextColor ?? ''
-  };
-  
-  const [promoConfig, setPromoConfig] = useState(initPromo);
+  const [selectedLanguage, setSelectedLanguage] = useState("en");
+
+  const settingKey = selectedLanguage === "en" ? 'PROMO_BADGE_CONFIG' : `PROMO_BADGE_CONFIG_${selectedLanguage}`;
+
+  const [promoConfig, setPromoConfig] = useState({ 
+    enabled: false, 
+    badgeType: 'demo', 
+    badgeText: 'Exclusive Offer', 
+    message: 'Flat 50% off on Premium collection!', 
+    linkUrl: '',
+    bgColor: '',
+    borderColor: '',
+    textColor: '',
+    tagBgColor: '',
+    tagTextColor: ''
+  });
+
+  useEffect(() => {
+    const promoSettingStr = settings?.find((s:any) => s.key === settingKey)?.value;
+    const parsedPromo = promoSettingStr ? JSON.parse(promoSettingStr) : {};
+    setPromoConfig({ 
+      enabled: parsedPromo.enabled ?? false, 
+      badgeType: parsedPromo.badgeType ?? 'demo', 
+      badgeText: parsedPromo.badgeText ?? 'Exclusive Offer', 
+      message: parsedPromo.message ?? 'Flat 50% off on Premium collection!', 
+      linkUrl: parsedPromo.linkUrl ?? '',
+      bgColor: parsedPromo.bgColor ?? '',
+      borderColor: parsedPromo.borderColor ?? '',
+      textColor: parsedPromo.textColor ?? '',
+      tagBgColor: parsedPromo.tagBgColor ?? '',
+      tagTextColor: parsedPromo.tagTextColor ?? ''
+    });
+  }, [selectedLanguage, settings, settingKey]);
 
   const saveSettings = async () => {
     setStatus('Saving...');
     const res = await fetch("/api/admin/settings", {
       method: "POST",
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-      body: JSON.stringify({ key: 'PROMO_BADGE_CONFIG', value: JSON.stringify(promoConfig) })
+      body: JSON.stringify({ key: settingKey, value: JSON.stringify(promoConfig) })
     });
     if(res.ok) {
        setStatus('Saved successfully!');
        const storeSettings = [...settings];
-       const i = storeSettings.findIndex((s:any) => s.key === 'PROMO_BADGE_CONFIG');
-       const updated = { key: 'PROMO_BADGE_CONFIG', value: JSON.stringify(promoConfig) };
+       const i = storeSettings.findIndex((s:any) => s.key === settingKey);
+       const updated = { key: settingKey, value: JSON.stringify(promoConfig) };
        if(i >= 0) storeSettings[i] = updated;
        else storeSettings.push(updated);
        setSettings(storeSettings);
@@ -5023,9 +5101,24 @@ export function PromoBadgeManager() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="mb-8 font-sans">
-        <h2 className="text-2xl font-serif italic font-bold text-violet-600">Dynamic Promo Badge settings</h2>
-        <p className="text-slate-500 text-sm mt-2">Manage the homepage promo banner shown right before the slider. Choose your design styles, pick custom branding colors, and configure content.</p>
+      <div className="mb-8 font-sans flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-serif italic font-bold text-violet-600">Dynamic Promo Badge settings</h2>
+          <p className="text-slate-500 text-sm mt-2">Manage the homepage promo banner shown right before the slider. Choose your design styles, pick custom branding colors, and configure content.</p>
+        </div>
+        <div className="flex items-center gap-3">
+           <label className="text-sm font-bold text-slate-700">Language:</label>
+           <select
+             value={selectedLanguage}
+             onChange={(e) => setSelectedLanguage(e.target.value)}
+             className="border border-slate-200 rounded p-1.5 text-sm bg-white"
+           >
+              <option value="en">English (Default)</option>
+              {languages.filter((l: any) => l.code !== 'en').map((l: any) => (
+                 <option key={l.code} value={l.code}>{l.name}</option>
+              ))}
+           </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8 mt-4 font-sans">

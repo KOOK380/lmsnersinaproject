@@ -66,7 +66,7 @@ export function Courses() {
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('courses.all_courses')}</h1>
-            <p className="text-slate-600 max-w-xl text-lg font-medium">These are not just programs. They are frequencies you step into.</p>
+            <p className="text-slate-600 max-w-xl text-lg font-medium">{t('home.subtitle_programs', 'These are not just programs. They are frequencies you step into.')}</p>
          </div>
       </div>
 
@@ -77,7 +77,7 @@ export function Courses() {
               onClick={() => setActiveCategory(null)}
               className={`px-6 py-2 rounded-full font-bold text-sm transition shrink-0 snap-start ${activeCategory === null ? 'bg-primary text-white shadow-sm' : 'border border-primary text-primary hover:bg-primary/5'}`}
             >
-              All Programs
+              {t('courses.all_courses')}
             </button>
             {categories.filter((cat: any) => cat.type === 'COURSE').map(cat => (
               <button
@@ -447,8 +447,8 @@ export function Courses() {
                </div>
                
                <div className="text-right text-xs text-slate-500 font-medium">
-                  <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull; {course.duration == '0' ? 'No expiry date' : (course.duration || '21 days')}</p>
-                  <p className="text-emerald-600 font-bold mt-1">✓ Instant Access</p>
+                  <p>{totalLessons} {t('courses.lessons', 'lessons')} &bull; {course.duration == '0' ? t('courses.no_expiry', 'No expiry date') : (course.duration || '21 days')}</p>
+                  <p className="text-emerald-600 font-bold mt-1">✓ {t('courses.instant_access', 'Instant Access')}</p>
                </div>
              </div>
 
@@ -464,14 +464,14 @@ export function Courses() {
                 {addingToCart ? (
                     <>
                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                       Adding...
+                       {t('courses.adding_to_cart', 'Adding...')}
                     </>
-                ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Program"}
+                ) : enrolled ? t('courses.already_enrolled', 'Already Enrolled (Go to Dashboard)') : inCart ? t('courses.in_cart', 'In Your Cart (Go to Cart)') : t('courses.take_program', 'Take This Program')}
              </button>
 
              <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition text-gray-700 mt-3">
                <svg className={`w-4 h-4 transition ${isFavored ? "fill-red-500 stroke-red-500" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-               {isFavored ? "Remove from favorites" : "Add to favorites"}
+               {isFavored ? t('courses.remove_favorite', 'Remove from favorites') : t('courses.add_favorite', 'Add to favorites')}
              </button>
           </div>
 
@@ -596,7 +596,7 @@ export function Courses() {
               <div className="p-8 flex-1 flex flex-col space-y-4">
                  {courseRaw?.memberships && courseRaw.memberships.length > 0 && (
                    <div className="space-y-3 mb-2">
-                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Enrollment Options</p>
+                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('courses.enrollment_options', 'Enrollment Options')}</p>
                      
                      {course.price > 0 && (
                        <label className={`block border p-4 rounded-xl cursor-pointer transition-all ${selectedOption === 'course' ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-slate-200 hover:border-slate-300'}`}>
@@ -632,33 +632,33 @@ export function Courses() {
                     {addingToCart ? (
                         <>
                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                           Adding...
+                           {t('courses.adding_to_cart', 'Adding...')}
                         </>
-                    ) : enrolled ? "Already Enrolled (Go to Dashboard)" : inCart ? "In Your Cart (Go to Cart)" : "Take This Program"}
+                    ) : enrolled ? t('courses.already_enrolled', 'Already Enrolled (Go to Dashboard)') : inCart ? t('courses.in_cart', 'In Your Cart (Go to Cart)') : t('courses.take_program', 'Take This Program')}
                  </button>
 
                  <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 text-sm font-medium py-3 border border-slate-200 rounded-full hover:bg-slate-50 transition text-gray-700">
                    <svg className={`w-4 h-4 transition ${isFavored ? "fill-red-500 stroke-red-500" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                   {isFavored ? "Remove from favorites" : "Add to favorite"}
+                   {isFavored ? t('courses.remove_favorite', 'Remove from favorites') : t('courses.add_favorite', 'Add to favorites')}
                  </button>
 
                  <div className="pt-6">
-                    <p className="font-bold mb-5 text-sm text-gray-800">This program includes:</p>
+                    <p className="font-bold mb-5 text-sm text-gray-800">{t('courses.includes', 'This program includes:')}</p>
                     <div className="space-y-4 text-sm text-slate-600 font-medium">
                        <div className="flex justify-between border-b border-slate-100 pb-3">
-                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg> Learners</span> 
-                         <span>0 Students</span>
+                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg> {t('courses.learners', 'Learners')}</span> 
+                         <span>0 {t('courses.students', 'Students')}</span>
                        </div>
                        <div className="flex justify-between border-b border-slate-100 pb-3">
-                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> Lessons</span> 
+                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg> {t('courses.lessons', 'Lessons')}</span> 
                          <span>{totalLessons}</span>
                        </div>
                        <div className="flex justify-between border-b border-slate-100 pb-3">
-                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> Duration</span> 
-                         <span>{course.duration == '0' ? 'No expiry date' : (course.duration || '21 Days')}</span>
+                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> {t('courses.duration', 'Duration')}</span> 
+                         <span>{course.duration == '0' ? t('courses.no_expiry', 'No expiry date') : (course.duration || '21 Days')}</span>
                        </div>
                        <div className="flex justify-between pb-2">
-                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg> Language</span> 
+                         <span className="flex items-center gap-2"><svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg> {t('courses.language', 'Language')}</span> 
                          <span>{course.language || 'Arabic'}</span>
                        </div>
                     </div>
@@ -667,11 +667,11 @@ export function Courses() {
                  <div className="pt-6 flex gap-6 text-xs font-bold justify-center border-t border-slate-100 text-slate-500">
                     <button className="flex items-center gap-1 hover:text-primary transition">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> 
-                      Share
+                      {t('courses.share', 'Share')}
                     </button>
                     <button className="flex items-center gap-1 hover:text-primary transition">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                      Report
+                      {t('courses.report', 'Report')}
                     </button>
                  </div>
               </div>
@@ -683,7 +683,7 @@ export function Courses() {
           
           {/* Feedback & Reviews */}
           <div className="space-y-6 pt-8 md:pt-0 border-t md:border-t-0 border-slate-200">
-             <h2 className="text-2xl font-bold text-gray-900">Feedback & Reviews</h2>
+             <h2 className="text-2xl font-bold text-gray-900">{t('courses.feedback', 'Feedback & Reviews')}</h2>
              <div className="flex flex-col md:flex-row gap-8 items-start mb-8">
                  <div className="text-center md:text-left">
                     <div className="text-6xl font-black text-gray-900">
@@ -697,7 +697,7 @@ export function Courses() {
                          <svg key={i} className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                        ))}
                     </div>
-                    <div className="text-sm text-slate-500 mt-2 font-medium">Based on {reviews.length} Reviews</div>
+                    <div className="text-sm text-slate-500 mt-2 font-medium">{t('courses.based_on_reviews', 'Based on {{count}} Reviews', { count: reviews.length })}</div>
                  </div>
                  <div className="flex-1 w-full space-y-2">
                     {[5,4,3,2,1].map(stars => {
@@ -720,19 +720,19 @@ export function Courses() {
               </div>
 
               <form onSubmit={handlePostReview} className="space-y-4">
-                 <p className="font-bold text-sm text-gray-800">Your rating</p>
+                 <p className="font-bold text-sm text-gray-800">{t('courses.your_rating', 'Your rating')}</p>
                  <div className="flex gap-1 text-slate-300">
                    {[1,2,3,4,5].map(star => (
                      <svg key={star} onClick={() => setNewReview({ ...newReview, rating: star })} className={`w-5 h-5 cursor-pointer transition ${newReview.rating >= star ? 'fill-orange-400 stroke-orange-400' : 'fill-none stroke-current stroke-2 hover:fill-orange-400 hover:stroke-orange-400'}`} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                    ))}
                  </div>
-                 <textarea required rows={4} value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder="Your Comment" className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition bg-slate-50 hover:bg-white"></textarea>
-                 <button type="submit" className="bg-primary text-white px-8 py-3 rounded-full text-sm font-bold shadow-sm hover:bg-opacity-90 transition">Submit</button>
+                 <textarea required rows={4} value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder={t('courses.your_comment', 'Your Comment')} className="w-full border border-slate-200 rounded-xl p-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition bg-slate-50 hover:bg-white"></textarea>
+                 <button type="submit" className="bg-primary text-white px-8 py-3 rounded-full text-sm font-bold shadow-sm hover:bg-opacity-90 transition">{t('courses.submit_review', 'Submit')}</button>
               </form>
               
               <div className="pt-8 space-y-6">
                 {reviews.length === 0 ? (
-                  <div className="text-slate-500 text-sm italic">There are no reviews yet.</div>
+                  <div className="text-slate-500 text-sm italic">{t('courses.no_reviews', 'There are no reviews yet.')}</div>
                 ) : (
                   reviews.map((rev: any) => (
                     <div key={rev.id} className="border-b border-slate-100 pb-6 last:border-0">
@@ -786,7 +786,7 @@ export function Courses() {
                      handleBuy();
                  }
               }} disabled={addingToCart} className="text-sm font-bold bg-primary text-white px-6 py-3 rounded-full shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-                 {addingToCart ? "Adding..." : enrolled ? "Already Enrolled" : inCart ? "In Cart" : "Take This Program"}
+                 {addingToCart ? t('courses.adding_to_cart', 'Adding...') : enrolled ? t('courses.already_enrolled', 'Already Enrolled') : inCart ? t('courses.in_cart', 'In Cart') : t('courses.take_program', 'Take This Program')}
               </button>
            </div>
         </div>
@@ -836,7 +836,7 @@ export function Courses() {
 
                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 p-6 z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.03)] pb-8">
                   <button onClick={(e) => { setIsMobileBottomSheetOpen(false); handleBuy(); }} className="w-full bg-primary text-white py-4 rounded-full font-black text-lg shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
-                     Continue
+                     {t('courses.continue', 'Continue')}
                   </button>
                </div>
             </div>
@@ -1348,7 +1348,7 @@ export function MembershipDetails() {
           
             {/* Feedback & Reviews */}
             <div className="bg-white rounded-3xl p-8 md:p-10 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/60 mt-8">
-               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 tracking-tight">Student Feedback</h2>
+               <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 tracking-tight">{t('courses.feedback', 'Feedback & Reviews')}</h2>
                <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start mb-10">
                    <div className="text-center md:text-left w-full md:w-auto">
                       <div className="text-7xl font-black text-gray-900 leading-none">
@@ -1362,7 +1362,7 @@ export function MembershipDetails() {
                            <svg key={`empty-${i}`} className="w-5 h-5 fill-none stroke-current stroke-2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                          ))}
                       </div>
-                      <div className="text-sm text-slate-500 mt-2 font-medium">Based on {reviews.length} reviews</div>
+                      <div className="text-sm text-slate-500 mt-2 font-medium">{t('courses.based_on_reviews', 'Based on {{count}} Reviews', { count: reviews.length })}</div>
                    </div>
                    <div className="flex-1 w-full space-y-3 lg:border-l lg:border-slate-100 lg:pl-12">
                       {[5,4,3,2,1].map(stars => {
@@ -1385,22 +1385,22 @@ export function MembershipDetails() {
                 </div>
 
                 <form onSubmit={handlePostReview} className="bg-slate-50 p-6 rounded-2xl border border-slate-200/60 mb-8 shadow-sm">
-                   <p className="font-bold text-gray-900 mb-3">Write a Review</p>
+                   <p className="font-bold text-gray-900 mb-3">{t('memberships.write_review', 'Write a Review')}</p>
                    <div className="flex gap-2 mb-4">
                      {[1,2,3,4,5].map(star => (
                        <svg key={star} onClick={() => setNewReview({ ...newReview, rating: star })} className={`w-8 h-8 cursor-pointer transition-transform hover:scale-110 ${newReview.rating >= star ? 'fill-amber-400 stroke-amber-400 filter drop-shadow-sm' : 'fill-none stroke-slate-300 stroke-2 hover:fill-amber-400 hover:stroke-amber-400'}` } viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                      ))}
                    </div>
-                   <textarea required rows={4} value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder="Tell us about your experience..." className="w-full border-none rounded-xl p-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] transition bg-white mb-4 placeholder-slate-400 resize-none"></textarea>
+                   <textarea required rows={4} value={newReview.comment} onChange={(e) => setNewReview({ ...newReview, comment: e.target.value })} placeholder={t('memberships.experience_placeholder', 'Tell us about your experience...')} className="w-full border-none rounded-xl p-4 text-base focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-[inset_0_2px_4px_rgb(0,0,0,0.02)] transition bg-white mb-4 placeholder-slate-400 resize-none"></textarea>
                    <div className="flex justify-end">
-                     <button type="submit" className="bg-primary text-white px-8 py-2.5 rounded-full font-bold shadow-[0_4px_14px_0_rgba(75,29,63,0.39)] hover:shadow-[0_6px_20px_rgba(75,29,63,0.23)] hover:bg-primary/90 transition transform hover:-translate-y-0.5">Post Review</button>
+                     <button type="submit" className="bg-primary text-white px-8 py-2.5 rounded-full font-bold shadow-[0_4px_14px_0_rgba(75,29,63,0.39)] hover:shadow-[0_6px_20px_rgba(75,29,63,0.23)] hover:bg-primary/90 transition transform hover:-translate-y-0.5">{t('memberships.post_review', 'Post Review')}</button>
                    </div>
                 </form>
                 
                 <div className="space-y-6">
                   {reviews.length === 0 ? (
                     <div className="text-center p-8 border border-dashed border-slate-200 rounded-2xl">
-                       <p className="text-slate-500 font-medium">No reviews yet. Be the first to share your thoughts!</p>
+                       <p className="text-slate-500 font-medium">{t('memberships.no_reviews', 'No reviews yet. Be the first to share your thoughts!')}</p>
                     </div>
                   ) : (
                     reviews.map((rev: any) => (
@@ -1454,7 +1454,7 @@ export function MembershipDetails() {
                        {membership.realPrice && membership.realPrice > membership.offerPrice && (
                           <div className="flex items-center gap-2 mt-2">
                             <span className="text-lg text-slate-400 line-through font-medium">{formatCurrency(membership.realPrice, currency)}</span>
-                            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-md border border-emerald-200 uppercase">Save {Math.round((1 - membership.offerPrice/membership.realPrice) * 100)}%</span>
+                            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-0.5 rounded-md border border-emerald-200 uppercase">{t('courses.save_percent', 'Save {{percent}}%', {percent: Math.round((1 - membership.offerPrice/membership.realPrice) * 100)})}</span>
                           </div>
                        )}
                     </div>
@@ -1463,18 +1463,18 @@ export function MembershipDetails() {
                        {addingToCart ? (
                            <>
                               <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                              Adding to Cart
+                           {t('memberships.adding_to_cart', 'Adding to Cart')}
                            </>
-                       ) : enrolled ? "Already Subscribed" : inCart ? "Added to Cart" : "Become a Member"}
+                       ) : enrolled ? t('memberships.already_subscribed', 'Already Subscribed') : inCart ? t('memberships.added_to_cart', 'Added to Cart') : t('memberships.become_member', 'Become a Member')}
                     </button>
                     
                     <button onClick={handleFavorite} className="w-full flex items-center justify-center gap-2 font-bold py-3.5 border-2 border-slate-100 rounded-2xl hover:border-slate-200 hover:bg-slate-50 transition text-slate-600">
                       <svg className={`w-5 h-5 transition ${isFavored ? "fill-red-500 stroke-red-500" : "fill-transparent stroke-slate-400"}`} stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                      {isFavored ? "Saved to Wishlist" : "Add to Wishlist"}
+                      {isFavored ? t('courses.remove_favorite', 'Saved to Wishlist') : t('courses.add_favorite', 'Add to Wishlist')}
                     </button>
 
                     <div className="pt-8 mt-6 border-t border-slate-100">
-                       <p className="font-bold text-gray-900 mb-4 text-base">Key Details</p>
+                       <p className="font-bold text-gray-900 mb-4 text-base">{t('memberships.key_details', 'Key Details')}</p>
                        <ul className="space-y-4">
                           <li className="flex items-center gap-4 text-slate-600">
                             <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
@@ -1523,7 +1523,7 @@ export function MembershipDetails() {
                          <div className="p-2 rounded-full bg-slate-50 group-hover:bg-indigo-50 border border-slate-100 group-hover:border-indigo-100 transition-colors">
                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path></svg> 
                          </div>
-                         Share
+                         {t('courses.share', 'Share')}
                        </button>
                     </div>
                  </div>
@@ -1541,7 +1541,7 @@ export function MembershipDetails() {
             </div>
          </div>
          <button onClick={handleBuyNow} disabled={addingToCart} className="text-base font-bold bg-primary text-white px-8 py-3.5 rounded-full shadow-[0_4px_14px_0_rgba(75,29,63,0.39)] disabled:opacity-70 disabled:shadow-none flex items-center justify-center min-w-[140px] transform active:scale-95 transition">
-            {addingToCart ? "Adding..." : enrolled ? "Subscribed" : inCart ? "In Cart" : "Become a Member"}
+            {addingToCart ? t('courses.adding_to_cart', 'Adding...') : enrolled ? t('memberships.already_subscribed', 'Subscribed') : inCart ? t('memberships.added_to_cart', 'In Cart') : t('memberships.become_member', 'Become a Member')}
          </button>
       </div>
     </div>
@@ -1565,7 +1565,7 @@ export function Events() {
       <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-3xl p-8 md:p-12 mb-10 flex flex-col md:flex-row items-center justify-between border border-primary/10">
          <div>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-serif italic text-primary font-bold mb-4">{t('events.title')}</h1>
-            <p className="text-slate-600 max-w-xl text-lg font-medium">Join our exclusive live sessions and interactive bookings to step up your growth.</p>
+            <p className="text-slate-600 max-w-xl text-lg font-medium">{t('events.subtitle_events', 'Join our exclusive live sessions and interactive bookings to step up your growth.')}</p>
          </div>
       </div>
 
@@ -1596,21 +1596,21 @@ export function Events() {
                 </div>
              )}
              
-             <p className="text-[10px] font-bold text-emerald-500 mb-1 uppercase tracking-widest">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {evt.location || "Online Room"}</p>
+             <p className="text-[10px] font-bold text-emerald-500 mb-1 uppercase tracking-widest">{d.toLocaleTimeString([], {timeStyle: 'short'})} &bull; {evt.location || t('events.online_room', 'Online Room')}</p>
              <h3 className="font-bold text-lg leading-tight mb-2 flex-1">{evt.title}</h3>
              
              <div className="flex justify-between items-center border-t border-slate-100 pt-4 mt-4">
                <div className="flex flex-col">
                   {evt.realPrice && evt.realPrice > evt.price && <span className="text-xs text-slate-400 line-through">{formatCurrency(evt.realPrice, currency)}</span>}
-                  <span className="font-bold text-primary text-xl">{evt.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">Free</span> : formatCurrency(evt.price, currency)}</span>
+                  <span className="font-bold text-primary text-xl">{evt.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-sm uppercase tracking-widest">{t('events.free', 'Free')}</span> : formatCurrency(evt.price, currency)}</span>
                </div>
                
                <div className="flex items-center gap-2">
-                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{evt.availableSeats}/{evt.totalSeats} Seats</span>
+                 <span className="text-[10px] font-bold uppercase tracking-widest text-primary/60">{evt.availableSeats}/{evt.totalSeats} {t('events.seats', 'Seats')}</span>
                  {isBooked ? (
-                    <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1"><Check className="w-3 h-3" /> Booked</span>
+                    <span className="bg-emerald-100 text-emerald-700 font-bold text-[10px] px-3 py-1.5 rounded-full uppercase tracking-wider items-center flex gap-1"><Check className="w-3 h-3" /> {t('events.booked', 'Booked')}</span>
                  ) : (
-                    <span className="px-5 py-2 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold shadow-sm transition">Details</span>
+                    <span className="px-5 py-2 bg-slate-100 text-slate-600 group-hover:bg-primary group-hover:text-white text-xs rounded-full font-bold shadow-sm transition">{t('events.details', 'Details')}</span>
                  )}
                </div>
              </div>
@@ -1660,7 +1660,7 @@ export function EventDetails() {
     }
   }, [user, event, token]);
 
-  if (!event) return <div className="flex h-screen items-center justify-center font-bold text-slate-400">Loading...</div>;
+  if (!event) return <div className="flex h-screen items-center justify-center font-bold text-slate-400">{t('common.loading', 'Loading...')}</div>;
 
   const d = new Date(event.date);
   const month = d.toLocaleString('default', { month: 'short' });
@@ -1707,21 +1707,21 @@ export function EventDetails() {
                 </div>
              </div>
              <div className="w-full md:w-1/2 p-8 lg:p-12 flex flex-col justify-center">
-                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Event</p>
+                 <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">{t('events.event', 'Event')}</p>
                  <h1 className="text-3xl lg:text-4xl font-bold text-slate-800 leading-tight mb-4">{event.title}</h1>
                  <p className="text-sm font-bold uppercase tracking-wider text-slate-400 mb-6 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 break-words">
                    <span>🕒 {d.toLocaleTimeString([], {timeStyle: 'short'})}</span>
                    <span className="hidden sm:inline">&bull;</span>
-                   <span>📍 {event.location || "Online"}</span>
+                   <span>📍 {event.location || t('events.online', 'Online')}</span>
                  </p>
                  
                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                        <div className="flex items-center gap-3">
-                         <span className="text-3xl font-bold text-primary">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg uppercase tracking-widest text-2xl">Free</span> : formatCurrency(event.price, currency)}</span>
+                         <span className="text-3xl font-bold text-primary">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-3 py-1 rounded-lg uppercase tracking-widest text-2xl">{t('events.free', 'Free')}</span> : formatCurrency(event.price, currency)}</span>
                          {event.realPrice && event.realPrice > event.price && <span className="text-lg text-slate-400 line-through font-normal">{formatCurrency(event.realPrice, currency)}</span>}
                        </div>
-                       <span className="text-sm font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1.5 rounded-full border border-slate-200">{event.availableSeats} / {event.totalSeats} Seats Left</span>
+                       <span className="text-sm font-bold text-slate-500 uppercase tracking-wider bg-white px-3 py-1.5 rounded-full border border-slate-200">{t('events.seats_left', '{{available}} / {{total}} Seats Left', {available: event.availableSeats, total: event.totalSeats})}</span>
                     </div>
                     <button 
                       onClick={handleBook}
@@ -1731,11 +1731,11 @@ export function EventDetails() {
                       {addingToCart ? (
                         <>
                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                           Booking...
+                           {t('events.booking', 'Booking...')}
                         </>
-                      ) : enrolled ? "Already Booked (Go to Dashboard)" : inCart ? "Added to Cart (Go to Cart)" : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
+                      ) : enrolled ? t('events.already_booked', 'Already Booked (Go to Dashboard)') : inCart ? t('events.added_to_cart', 'Added to Cart (Go to Cart)') : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
                     </button>
-                    <p className="text-xs text-center text-slate-400 mt-4">Secure checkout. Instant confirmation.</p>
+                    <p className="text-xs text-center text-slate-400 mt-4">{t('events.secure_checkout', 'Secure checkout. Instant confirmation.')}</p>
                  </div>
              </div>
           </div>
@@ -1744,7 +1744,7 @@ export function EventDetails() {
              <div className="xl:col-span-2">
                  {/* What to expect */}
                  <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 mb-8">
-                    <h2 className="text-2xl font-bold font-serif italic text-primary mb-6">About this event</h2>
+                    <h2 className="text-2xl font-bold font-serif italic text-primary mb-6">{t('events.about_event', 'About this event')}</h2>
                     <div 
                       className="text-slate-600 prose prose-sm max-w-none prose-p:leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: event.description }}
@@ -1755,27 +1755,27 @@ export function EventDetails() {
              <div className="xl:col-span-1 space-y-6">
                  {/* Info Sidebar */}
                  <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
-                    <h3 className="font-bold text-slate-800 mb-4 uppercase tracking-wider text-xs">Event Details</h3>
+                    <h3 className="font-bold text-slate-800 mb-4 uppercase tracking-wider text-xs">{t('events.event_details', 'Event Details')}</h3>
                     <ul className="space-y-4 text-sm text-slate-600">
                       <li className="flex gap-3">
                          <span className="text-slate-400 mt-0.5">📅</span>
                          <div>
-                            <p className="font-bold text-slate-800">Date & Time</p>
+                            <p className="font-bold text-slate-800">{t('events.date_time', 'Date & Time')}</p>
                             <p>{d.toLocaleString()}</p>
                          </div>
                       </li>
                       <li className="flex gap-3">
                          <span className="text-slate-400 mt-0.5">📍</span>
                          <div>
-                            <p className="font-bold text-slate-800">Location</p>
-                            <p>{event.location || "Online (Link provided after booking)"}</p>
+                            <p className="font-bold text-slate-800">{t('events.location', 'Location')}</p>
+                            <p>{event.location || t('events.online_provided_after_booking', 'Online (Link provided after booking)')}</p>
                          </div>
                       </li>
                       <li className="flex gap-3">
                          <span className="text-slate-400 mt-0.5">🎟️</span>
                          <div>
-                            <p className="font-bold text-slate-800">Availability</p>
-                            <p>{event.availableSeats} of {event.totalSeats} seats remaining</p>
+                            <p className="font-bold text-slate-800">{t('events.availability', 'Availability')}</p>
+                            <p>{t('events.seats_remaining', '{{available}} of {{total}} seats remaining', { available: event.availableSeats, total: event.totalSeats })}</p>
                          </div>
                       </li>
                     </ul>
@@ -1786,10 +1786,10 @@ export function EventDetails() {
                          disabled={enrolled || addingToCart || event.availableSeats === 0}
                          className="w-full text-base font-bold bg-primary text-white py-4 rounded-xl shadow-md hover:bg-primary-dark transition disabled:opacity-70 flex items-center justify-center min-h-[56px]"
                       >
-                         {addingToCart ? "Processing..." : 
-                             enrolled ? "Already Booked" : 
-                             event.availableSeats === 0 ? "Sold Out" :
-                             "Book Ticket"
+                         {addingToCart ? t('events.processing', 'Processing...') : 
+                             enrolled ? t('events.already_booked_short', 'Already Booked') : 
+                             event.availableSeats === 0 ? t('events.sold_out', 'Sold Out') :
+                             t('events.book_ticket', 'Book Ticket')
                          }
                       </button>
                     </div>
@@ -1801,14 +1801,14 @@ export function EventDetails() {
       {/* Sticky Mobile Add To Cart Bar */}
       <div className="xl:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
          <div>
-            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('events.total', 'Total')}</p>
             <div className="flex items-center gap-2">
-               <p className="text-2xl font-black text-gray-900 leading-none">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xl uppercase tracking-widest">Free</span> : formatCurrency(event.price, currency)}</p>
+               <p className="text-2xl font-black text-gray-900 leading-none">{event.price === 0 ? <span className="text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded text-xl uppercase tracking-widest">{t('events.free', 'Free')}</span> : formatCurrency(event.price, currency)}</p>
                {event.realPrice && event.realPrice > event.price && <p className="text-sm font-normal text-slate-400 line-through leading-none">{formatCurrency(event.realPrice, currency)}</p>}
             </div>
          </div>
          <button onClick={handleBook} disabled={event.availableSeats <= 0 || addingToCart} className="text-sm font-bold bg-primary text-white px-8 py-3 rounded-full shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-            {addingToCart ? "Adding..." : enrolled ? "Booked" : inCart ? "In Cart" : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
+            {addingToCart ? t('events.booking', 'Booking...') : enrolled ? t('events.already_booked_short', 'Booked') : inCart ? t('events.added_to_cart_short', 'In Cart') : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
          </button>
       </div>
 
@@ -1818,6 +1818,7 @@ export function EventDetails() {
 
 export function BlogList() {
   const { language } = useStore();
+  const { t } = useTranslation();
   const [blogs, setBlogs] = useState<any[]>([]);
 
   useEffect(() => {
@@ -1850,7 +1851,7 @@ export function BlogList() {
                <p className="text-[11px] text-slate-500 font-medium mb-2">{new Date(b.createdAt).toLocaleDateString()}</p>
                <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition">{b.title}</h3>
                <div className="mt-auto pt-6 flex items-center gap-2 text-primary font-bold text-[13px]">
-                 Read Article <svg className="w-4 h-4 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                 {t('home.read_article', 'Read Article')} <svg className="w-4 h-4 group-hover:translate-x-1 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                </div>
              </div>
            </div>

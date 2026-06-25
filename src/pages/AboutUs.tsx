@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
-export const defaultAboutUsHtml = `
+export const getDefaultAboutUsHtml = (t: any) => `
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-  <div class="text-left mb-16 relative">
-    <h1 class="text-5xl font-bold font-serif italic text-[#0f172a] mb-4">About Us</h1>
-    <p class="text-gray-500 text-lg sm:text-xl">Inspiring discovery through creativity.</p>
+  <div class="text-start mb-16 relative">
+    <h1 class="text-5xl font-bold font-serif italic text-[#0f172a] mb-4">${t('about.title', 'About Us')}</h1>
+    <p class="text-gray-500 text-lg sm:text-xl">${t('about.subtitle', 'Inspiring discovery through creativity.')}</p>
     
     <!-- Abstract graphic top right -->
     <div class="absolute right-0 top-0 opacity-20 pointer-events-none hidden md:block">
@@ -16,32 +17,26 @@ export const defaultAboutUsHtml = `
 
   <div class="flex flex-col md:flex-row items-center gap-16 mb-24">
     <div class="flex-1">
-      <p class="text-[10px] font-bold uppercase tracking-widest text-[#d7b068] mb-6">ABOUT NESRINA</p>
+      <p class="text-[10px] font-bold uppercase tracking-widest text-[#d7b068] mb-6">${t('about.about_nesrina', 'ABOUT NESRINA')}</p>
       <div class="text-gray-600 space-y-6 leading-relaxed text-lg">
         <p>
-          Most people are waiting for the right moment. The right strategy. The right opportunity. You are not most people. 
-          You feel it &mdash; that pull toward something bigger. That quiet certainty that you were built for more. 
-          You just haven&apos;t found the key yet. <span class="font-medium text-ink">I am here because I found it.</span>
+          ${t('about.p1', "Most people are waiting for the right moment. The right strategy. The right opportunity. You are not most people. You feel it — that pull toward something bigger. That quiet certainty that you were built for more. You just haven't found the key yet. I am here because I found it.")}
         </p>
         <p>
-          <strong class="text-xl font-serif italic text-ink block mb-2">I am Nesrina. Not just a coach. A living proof.</strong>
-          I came from Tunisia with a vision and no safety net. I built my financial freedom at 28 &mdash; from scratch, on my own terms. 
-          I scaled businesses by 10x. I studied money, mind, and reality for 8 years straight &mdash; not in theory. In life. 
-          <span class="font-medium text-ink">And what I discovered changed everything.</span>
+          <strong class="text-xl font-serif italic text-ink block mb-2">${t('about.p2_title', 'I am Nesrina. Not just a coach. A living proof.')}</strong>
+          ${t('about.p2', "I came from Tunisia with a vision and no safety net. I built my financial freedom at 28 — from scratch, on my own terms. I scaled businesses by 10x. I studied money, mind, and reality for 8 years straight — not in theory. In life. And what I discovered changed everything.")}
         </p>
         <div class="pl-6 border-l-4 border-[#d7b068] my-8 py-2">
-            <p class="font-bold text-xl text-ink">Success is not a strategy.</p>
-            <p class="font-bold text-xl text-ink">Money is not a method.</p>
-            <p class="font-bold text-xl text-ink">Business is not a system.</p>
-            <p class="font-bold text-2xl text-primary mt-4">They are all frequencies First.</p>
+            <p class="font-bold text-xl text-ink">${t('about.q1', 'Success is not a strategy.')}</p>
+            <p class="font-bold text-xl text-ink">${t('about.q2', 'Money is not a method.')}</p>
+            <p class="font-bold text-xl text-ink">${t('about.q3', 'Business is not a system.')}</p>
+            <p class="font-bold text-2xl text-primary mt-4">${t('about.q4', 'They are all frequencies First.')}</p>
         </div>
         <p>
-          And when you learn to become &mdash; not just to do &mdash; everything you&apos;ve been reaching for starts reaching back. 
-          This is what I teach. This is what I live. <strong class="text-ink">This is Nesrina 369.</strong>
+          ${t('about.p3', "And when you learn to become — not just to do — everything you've been reaching for starts reaching back. This is what I teach. This is what I live. This is Nesrina 369.")}
         </p>
         <p class="text-xl font-medium mt-6 text-black border-b border-gray-200 pb-6 inline-block">
-          Your freedom is not a dream. It is a frequency away.
-          <span class="font-bold block pt-4 text-2xl text-primary font-serif italic">Are you ready to find it?</span>
+          ${t('about.p4', "Your freedom is not a dream. It is a frequency away. Are you ready to find it?")}
         </p>
       </div>
     </div>
@@ -55,16 +50,16 @@ export const defaultAboutUsHtml = `
   <div class="mb-16">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 relative gap-6">
        <div>
-         <p class="text-[12px] font-bold uppercase tracking-widest text-[#d7b068] mb-4">WHY CHOOSE US</p>
-         <h2 class="text-3xl md:text-5xl font-bold font-sans text-ink">Learn the Skills you Need<br/>to Succeed</h2>
+         <p class="text-[12px] font-bold uppercase tracking-widest text-[#d7b068] mb-4">${t('about.why_choose_us', 'WHY CHOOSE US')}</p>
+         <h2 class="text-3xl md:text-5xl font-bold font-sans text-ink">${t('about.why_title', 'Learn the Skills you Need\nto Succeed').replace('\\n', '<br/>')}</h2>
        </div>
-       <p class="text-gray-500 max-w-lg text-left md:text-left text-sm md:text-base leading-relaxed hidden sm:block">Online learning community with thousands of classes for creative and curious people, on topics including illustration, design, photography, video, freelancing, and more.</p>
+       <p class="text-gray-500 max-w-lg text-start md:text-start text-sm md:text-base leading-relaxed hidden sm:block">${t('about.why_desc', 'Online learning community with thousands of classes for creative and curious people, on topics including illustration, design, photography, video, freelancing, and more.')}</p>
     </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
       <div class="bg-[#d7b068] text-white p-10 rounded-[30px] flex gap-4 item-start relative overflow-hidden group">
         <div class="flex-1">
-          <h3 class="text-xl font-bold mb-4 z-10 relative">Get Achieve<br/>New Level</h3>
-          <p class="text-white/80 text-sm leading-relaxed z-10 relative">Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque. Ut placerat orci nulla pellentesque.</p>
+          <h3 class="text-xl font-bold mb-4 z-10 relative">${t('about.b1_title', 'Get Achieve New Level')}</h3>
+          <p class="text-white/80 text-sm leading-relaxed z-10 relative">${t('about.b1_desc', 'Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque.')}</p>
         </div>
         <div class="w-12 h-12 rounded-full bg-white/20 shrink-0 flex items-center justify-center z-10 relative">
           <span class="text-xl">🎓</span>
@@ -73,8 +68,8 @@ export const defaultAboutUsHtml = `
       </div>
       <div class="bg-primary text-white p-10 rounded-[30px] flex gap-4 item-start relative overflow-hidden group">
         <div class="flex-1">
-          <h3 class="text-xl font-bold mb-4 z-10 relative">Learn With<br/>Effectivey</h3>
-          <p class="text-white/80 text-sm leading-relaxed z-10 relative">Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque. Ut placerat orci nulla pellentesque.</p>
+          <h3 class="text-xl font-bold mb-4 z-10 relative">${t('about.b2_title', 'Learn With Effectivey')}</h3>
+          <p class="text-white/80 text-sm leading-relaxed z-10 relative">${t('about.b2_desc', 'Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque.')}</p>
         </div>
         <div class="w-12 h-12 rounded-full bg-white/10 shrink-0 flex items-center justify-center z-10 relative">
           <span class="text-xl">💡</span>
@@ -83,8 +78,8 @@ export const defaultAboutUsHtml = `
       </div>
       <div class="bg-[#d7b068] text-white p-10 rounded-[30px] flex gap-4 item-start relative overflow-hidden group">
         <div class="flex-1">
-          <h3 class="text-xl font-bold mb-4 z-10 relative">Award Winning<br/>Team</h3>
-          <p class="text-white/80 text-sm leading-relaxed z-10 relative">Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque. Ut placerat orci nulla pellentesque.</p>
+          <h3 class="text-xl font-bold mb-4 z-10 relative">${t('about.b3_title', 'Award Winning Team')}</h3>
+          <p class="text-white/80 text-sm leading-relaxed z-10 relative">${t('about.b3_desc', 'Flexible Classes refers to the process of acquiring. Dui accumsan sit amet nulla facilisi. Neque convallis a cras semper auctor neque.')}</p>
         </div>
         <div class="w-12 h-12 rounded-full bg-white/20 shrink-0 flex items-center justify-center z-10 relative">
           <span class="text-xl">🏆</span>
@@ -98,13 +93,15 @@ export const defaultAboutUsHtml = `
 
 export function AboutUs() {
   const [htmlContent, setHtmlContent] = useState("");
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     fetch("/api/settings") // ensure there is an endpoint for public settings
       .then(res => res.json())
       .then(settings => {
-         const aboutUsSetting = settings.find((s: any) => s.key === "ABOUT_US_PAGE");
-         let content = defaultAboutUsHtml;
+         const pageKey = i18n.language === 'en' ? "ABOUT_US_PAGE" : `ABOUT_US_PAGE_${i18n.language}`;
+         const aboutUsSetting = settings.find((s: any) => s.key === pageKey);
+         let content = getDefaultAboutUsHtml(t);
          if (aboutUsSetting && aboutUsSetting.value) {
            content = aboutUsSetting.value;
          }
@@ -125,9 +122,9 @@ export function AboutUs() {
          setHtmlContent(content);
       })
       .catch(() => {
-         setHtmlContent(defaultAboutUsHtml);
+         setHtmlContent(getDefaultAboutUsHtml(t));
       });
-  }, []);
+  }, [i18n.language]);
 
   return (
     <div className="bg-white min-h-screen">

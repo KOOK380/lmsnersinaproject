@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { SocialConnect } from "../components/ui/connect-with-us";
 import { Headphones, Mail, MapPin } from "lucide-react";
 import { useStore } from "../store";
+import { useTranslation } from "react-i18next";
 
 export function ContactUs() {
   const { settings } = useStore();
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [status, setStatus] = useState<null | 'submitting' | 'success' | 'error'>(null);
 
@@ -46,22 +48,22 @@ export function ContactUs() {
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 items-start">
             <Headphones className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Contact phone number</h3>
-              <p className="text-slate-600">+971 55 780 0863</p>
+              <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.contact_phone', 'Contact phone number')}</h3>
+              <p className="text-slate-600" dir="ltr">+971 55 780 0863</p>
             </div>
           </div>
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 items-start">
             <Mail className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Email Address</h3>
-              <p className="text-slate-600">info@nesrinaconsultancy.com</p>
+              <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.email_address', 'Email Address')}</h3>
+              <p className="text-slate-600" dir="ltr">info@nesrinaconsultancy.com</p>
             </div>
           </div>
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 items-start">
             <MapPin className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
-              <h3 className="font-bold text-gray-900 text-lg mb-2">Our Location</h3>
-              <p className="text-slate-600">Abu Dhabi , UAE</p>
+              <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.location', 'Our Location')}</h3>
+              <p className="text-slate-600">{t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
             </div>
           </div>
         </div>
@@ -80,35 +82,35 @@ export function ContactUs() {
 
           {/* Right Column: Form */}
           <div className="flex flex-col justify-center py-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">Send a Message</h1>
-            <p className="text-slate-500 mb-8 font-medium">Have a question or need assistance? Our team is here to help.</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">{t('contact.send_message', 'Send a Message')}</h1>
+            <p className="text-slate-500 mb-8 font-medium">{t('contact.subtitle', 'Have a question or need assistance? Our team is here to help.')}</p>
 
             {status === 'success' ? (
               <div className="p-6 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200">
-                <p className="font-bold">Thank you for your message!</p>
-                <p className="text-sm mt-1">We will get back to you soon.</p>
-                <button onClick={() => setStatus(null)} className="mt-4 px-4 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-sm hover:bg-emerald-200">Send another message</button>
+                <p className="font-bold">{t('contact.success_title', 'Thank you for your message!')}</p>
+                <p className="text-sm mt-1">{t('contact.success_desc', 'We will get back to you soon.')}</p>
+                <button onClick={() => setStatus(null)} className="mt-4 px-4 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-lg text-sm hover:bg-emerald-200">{t('contact.send_another', 'Send another message')}</button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-slate-800 mb-2">Name</label>
-                    <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm" placeholder="Your name" />
+                    <label className="block text-sm font-bold text-slate-800 mb-2">{t('contact.name', 'Name')}</label>
+                    <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm" placeholder={t('contact.name_placeholder', 'Your name')} />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-800 mb-2">Email</label>
-                    <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm" placeholder="example@gmail.com" />
+                    <label className="block text-sm font-bold text-slate-800 mb-2">{t('contact.email', 'Email')}</label>
+                    <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm" placeholder={t('contact.email_placeholder', 'example@gmail.com')} />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-800 mb-2">Message</label>
-                  <textarea required value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full p-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm min-h-[180px] resize-y" placeholder="Your message..."></textarea>
+                  <label className="block text-sm font-bold text-slate-800 mb-2">{t('contact.message', 'Message')}</label>
+                  <textarea required value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="w-full p-4 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-shadow bg-white shadow-sm min-h-[180px] resize-y" placeholder={t('contact.message_placeholder', 'Your message...')}></textarea>
                 </div>
                 <button disabled={status === 'submitting'} type="submit" className="w-auto px-8 py-3.5 bg-[#3B1736] text-white rounded-full font-bold hover:bg-primary transition disabled:opacity-70 disabled:cursor-not-allowed text-sm">
-                  {status === 'submitting' ? 'Sending...' : 'Send Message'}
+                  {status === 'submitting' ? t('contact.sending', 'Sending...') : t('contact.send', 'Send Message')}
                 </button>
-                {status === 'error' && <p className="text-red-500 text-sm font-bold mt-2">Failed to send message. Please try again.</p>}
+                {status === 'error' && <p className="text-red-500 text-sm font-bold mt-2">{t('contact.error', 'Failed to send message. Please try again.')}</p>}
               </form>
             )}
           </div>

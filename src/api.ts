@@ -718,17 +718,23 @@ router.get("/sliders", async (req, res) => {
   res.json(sliders);
 });
 
+router.get("/admin/sliders", authMiddleware, async (req, res) => {
+  if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
+  const sliders = await prisma.slider.findMany();
+  res.json(sliders);
+});
+
 router.post("/admin/sliders", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, imageUrl, linkUrl, active } = req.body;
-  const slider = await prisma.slider.create({ data: { title, imageUrl, linkUrl, active } });
+  const { title, imageUrl, linkUrl, active, languageCode } = req.body;
+  const slider = await prisma.slider.create({ data: { title, imageUrl, linkUrl, active, languageCode: languageCode || 'en' } });
   res.json(slider);
 });
 
 router.put("/admin/sliders/:id", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, imageUrl, linkUrl, active } = req.body;
-  const slider = await prisma.slider.update({ where: { id: req.params.id }, data: { title, imageUrl, linkUrl, active } });
+  const { title, imageUrl, linkUrl, active, languageCode } = req.body;
+  const slider = await prisma.slider.update({ where: { id: req.params.id }, data: { title, imageUrl, linkUrl, active, languageCode: languageCode || 'en' } });
   res.json(slider);
 });
 
