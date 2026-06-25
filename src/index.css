@@ -66,18 +66,18 @@ body {
 .animate-badge-marquee {
   display: inline-block;
   white-space: nowrap;
-  animation: badge-marquee 15s linear infinite;
+  animation: badge-marquee 30s linear infinite;
 }
 
 .animate-badge-marquee:hover {
   animation-play-state: paused;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 2560px) {
   .tablet-mobile-marquee {
     display: inline-block !important;
     white-space: nowrap !important;
-    animation: badge-marquee 15s linear infinite;
+    animation: badge-marquee 30s linear infinite;
   }
   .tablet-mobile-marquee:hover {
     animation-play-state: paused;

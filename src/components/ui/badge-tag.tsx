@@ -42,7 +42,7 @@ export default function Example({
         <div 
             onClick={onClick}
             style={outerStyle}
-            className={`group/badge flex items-center space-x-2.5 sm:space-x-3 border rounded-2xl sm:rounded-full p-1.5 md:p-2 pl-2 sm:pl-2.5 pr-3 sm:pr-4 md:pr-5 text-sm transition-all duration-300 w-full max-w-[92vw] sm:max-w-md md:max-w-xl lg:max-w-none ${bgColor ? 'border-gray-500/30' : defaultOuterClass} ${onClick ? "cursor-pointer hover:scale-[1.02] active:scale-[0.99]" : ""}`}
+            className={`group/badge flex items-center space-x-2.5 sm:space-x-3 border rounded-2xl sm:rounded-full p-1.5 md:p-2 pl-2 sm:pl-2.5 pr-3 sm:pr-4 md:pr-5 text-sm transition-all duration-300 w-full ${bgColor ? 'border-gray-500/30' : defaultOuterClass} ${onClick ? "cursor-pointer hover:scale-[1.02] active:scale-[0.99]" : ""}`}
         >
             <div 
                 style={innerStyle}

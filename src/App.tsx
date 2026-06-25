@@ -720,7 +720,7 @@ function Home() {
     <div className="pb-20">
       {/* Promo Badge Container */}
       {promoConfig.enabled && (
-        <div className="max-w-7xl mx-auto px-4 mt-8 flex justify-center">
+        <div className="max-w-7xl mx-auto px-4 mt-8 w-full">
           <motion.div
             initial={{ opacity: 0, y: 15, scale: 0.95 }}
             animate={{ 
@@ -745,7 +745,7 @@ function Home() {
               transition: { duration: 0.2, y: { repeat: 0 } } 
             }}
             whileTap={{ scale: 0.98 }}
-            className="inline-block relative z-10 cursor-pointer rounded-full"
+            className="block w-full relative z-10 cursor-pointer rounded-full"
           >
             {promoConfig.badgeType === "badge-tag" ? (
               <BadgeTag 
