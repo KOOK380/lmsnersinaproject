@@ -36,6 +36,8 @@ function Navbar() {
   };
 
   const designSettingStr = settings?.find((s:any) => s.key === 'EMAIL_DESIGN')?.value;
+  const contactInfoStr = settings?.find((s:any) => s.key === 'CONTACT_INFO')?.value;
+  const contactInfo = contactInfoStr ? JSON.parse(contactInfoStr) : null;
   const design = designSettingStr ? JSON.parse(designSettingStr) : null;
   const logoUrl = design?.logoUrl || '';
 
@@ -156,7 +158,7 @@ function Navbar() {
                  </div>
                  <div className="flex flex-col">
                     <span className="text-[11px] text-gray-500 font-medium">{t('nav.call_us_now', 'Call us Now!')}</span>
-                    <span className="text-[15px] font-bold text-[#0f172a] tracking-tight" dir="ltr">{t('nav.phone', '+971 55 780 0863')}</span>
+                    <span className="text-[15px] font-bold text-[#0f172a] tracking-tight" dir="ltr">{contactInfo?.phone || t('nav.phone', '+971 55 780 0863')}</span>
                  </div>
               </div>
 
@@ -223,6 +225,67 @@ function Navbar() {
         </div>
       )}
     </header>
+  );
+}
+
+function SubscriptionModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+  const { t } = useTranslation();
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [status, setStatus] = useState<null | 'submitting' | 'success' | 'error'>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('submitting');
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, message: 'Subscription from Promo Badge', source: 'NEWSLETTER' })
+      });
+      if (!res.ok) throw new Error('Failed');
+      setStatus('success');
+      setFormData({ name: '', email: '' });
+      setTimeout(() => {
+        onClose();
+        setStatus(null);
+      }, 2000);
+    } catch (err) {
+      setStatus('error');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full relative shadow-2xl">
+        <button onClick={onClose} className="absolute top-4 right-4"><X className="w-5 h-5 text-gray-500"/></button>
+        <h2 className="text-2xl font-bold mb-2">{t('promo.subscribe_title', 'Subscribe for Updates')}</h2>
+        <p className="text-slate-500 text-sm mb-6">{t('promo.subscribe_desc', 'Enter your name and email to get the latest updates and exclusive offers.')}</p>
+        
+        {status === 'success' ? (
+          <div className="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200">
+             <p className="font-bold">{t('contact.success_title', 'Thank you!')}</p>
+             <p className="text-sm mt-1">{t('promo.success_desc', 'You have been successfully subscribed.')}</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.name', 'Name')}</label>
+              <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.name_placeholder', 'Your name')} />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.email', 'Email')}</label>
+              <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.email_placeholder', 'example@gmail.com')} />
+            </div>
+            <button disabled={status === 'submitting'} type="submit" className="w-full bg-primary text-white py-3 rounded-full font-bold hover:bg-primary-dark transition disabled:opacity-70">
+               {status === 'submitting' ? t('contact.sending', 'Sending...') : t('promo.subscribe_btn', 'Subscribe Now')}
+            </button>
+            {status === 'error' && <p className="text-red-500 text-sm font-bold text-center">{t('contact.error', 'Failed. Please try again.')}</p>}
+          </form>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -416,6 +479,67 @@ function AuthModal() {
   );
 }
 
+function SubscriptionPopupContent({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
+  const [formData, setFormData] = useState({ name: '', email: '' });
+  const [status, setStatus] = useState<null | 'submitting' | 'success' | 'error'>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('submitting');
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, message: 'Subscription from Website Popup', source: 'NEWSLETTER' })
+      });
+      if (!res.ok) throw new Error('Failed');
+      setStatus('success');
+      setFormData({ name: '', email: '' });
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (err) {
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success') {
+    return (
+      <div className="p-12 flex flex-col items-center justify-center text-center">
+        <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-6">
+          <Check className="w-8 h-8" />
+        </div>
+        <h3 className="text-2xl font-bold text-slate-800 mb-2">{t('contact.success_title', 'Thank you!')}</h3>
+        <p className="text-slate-500">{t('promo.success_desc', 'You have been successfully subscribed.')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 md:p-12 max-w-lg mx-auto w-full">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold mb-3">{t('promo.subscribe_title', 'Subscribe for Updates')}</h2>
+        <p className="text-slate-500 text-sm">{t('promo.subscribe_desc', 'Enter your name and email to get the latest updates and exclusive offers.')}</p>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.name', 'Name')}</label>
+          <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.name_placeholder', 'Your name')} />
+        </div>
+        <div>
+          <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.email', 'Email')}</label>
+          <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.email_placeholder', 'example@gmail.com')} />
+        </div>
+        <button disabled={status === 'submitting'} type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary-dark transition disabled:opacity-70 mt-2">
+           {status === 'submitting' ? t('contact.sending', 'Sending...') : t('promo.subscribe_btn', 'Subscribe Now')}
+        </button>
+        {status === 'error' && <p className="text-red-500 text-sm font-bold text-center mt-4">{t('contact.error', 'Failed. Please try again.')}</p>}
+      </form>
+    </div>
+  );
+}
+
 function WebsitePopup() {
   const { settings, language } = useStore();
   const settingKey = language === "en" ? 'WEBSITE_POPUP' : `WEBSITE_POPUP_${language}`;
@@ -423,6 +547,49 @@ function WebsitePopup() {
   const popupConfig = popupSettingStr ? JSON.parse(popupSettingStr) : null;
   const [isOpen, setIsOpen] = useState(false);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const handleFormSubmit = async (e: Event) => {
+      const target = e.target as HTMLFormElement;
+      if (target && target.matches && target.matches('form.custom-lead-form')) {
+        e.preventDefault();
+        const formData = new FormData(target);
+        const name = formData.get('name') as string || '';
+        const email = formData.get('email') as string || '';
+        const message = formData.get('message') as string || 'Subscription from Custom HTML Popup';
+        
+        const submitBtn = target.querySelector('button[type="submit"], input[type="submit"]') as HTMLButtonElement;
+        const originalText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = 'Sending...';
+        }
+
+        try {
+          const res = await fetch('/api/leads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, message, source: 'NEWSLETTER' })
+          });
+          if (!res.ok) throw new Error('Failed');
+          
+          target.innerHTML = `<div class="p-4 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 text-center font-bold">Thank you! Your submission has been received.</div>`;
+          setTimeout(() => {
+            setIsOpen(false);
+          }, 3000);
+        } catch (err) {
+          alert('Failed to submit. Please try again.');
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+          }
+        }
+      }
+    };
+
+    document.addEventListener('submit', handleFormSubmit);
+    return () => document.removeEventListener('submit', handleFormSubmit);
+  }, []);
 
   useEffect(() => {
     if (popupConfig?.enabled) {
@@ -488,16 +655,42 @@ function WebsitePopup() {
       return popupConfig.linkUrl ? <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="block relative">{video}</a> : video;
     }
     if (popupConfig.type === 'HTML' && popupConfig.content) {
+      if (popupConfig.content.includes('[subscription_form]')) {
+        const parts = popupConfig.content.split('[subscription_form]');
+        return (
+          <div className="p-8 prose prose-slate max-w-none w-full max-h-[80vh] overflow-y-auto">
+             {parts.map((part: string, index: number) => (
+                <React.Fragment key={index}>
+                   <div dangerouslySetInnerHTML={{ __html: part }} />
+                   {index < parts.length - 1 && (
+                     <div className="not-prose my-6 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
+                       <SubscriptionPopupContent onClose={handleClose} />
+                     </div>
+                   )}
+                </React.Fragment>
+             ))}
+             {popupConfig.linkUrl && (
+               <div className="mt-6 text-center not-prose">
+                 <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-white font-bold py-3 px-8 rounded-full shadow hover:opacity-90 transition">{t('home.learn_more', 'Learn More')}</a>
+               </div>
+             )}
+          </div>
+        );
+      }
+
       return (
         <div className="p-8 prose prose-slate max-w-none w-full max-h-[80vh] overflow-y-auto">
            <div dangerouslySetInnerHTML={{ __html: popupConfig.content }} />
            {popupConfig.linkUrl && (
-             <div className="mt-6 text-center">
+             <div className="mt-6 text-center not-prose">
                <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="inline-block bg-primary text-white font-bold py-3 px-8 rounded-full shadow hover:opacity-90 transition">{t('home.learn_more', 'Learn More')}</a>
              </div>
            )}
         </div>
       );
+    }
+    if (popupConfig.type === 'SUBSCRIPTION') {
+      return <SubscriptionPopupContent onClose={handleClose} />;
     }
     return null;
   };
@@ -638,6 +831,7 @@ function Home() {
   const [testimonialsList, setTestimonialsList] = useState<any[]>([]);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const blogRef = useRef<HTMLDivElement>(null);
   const coursesRef = useRef<HTMLDivElement>(null);
@@ -701,6 +895,7 @@ function Home() {
     badgeType: "demo", 
     badgeText: "Exclusive Offer", 
     message: "Flat 50% off on Premium collection!", 
+    actionType: "link",
     linkUrl: "",
     bgColor: "",
     borderColor: "",
@@ -751,7 +946,13 @@ function Home() {
               <BadgeTag 
                 badgeText={promoConfig.badgeText} 
                 message={promoConfig.message} 
-                onClick={promoConfig.linkUrl ? () => navigate(promoConfig.linkUrl) : undefined}
+                onClick={() => {
+                   if (promoConfig.actionType === 'subscription') {
+                     setIsSubModalOpen(true);
+                   } else if (promoConfig.linkUrl) {
+                     navigate(promoConfig.linkUrl);
+                   }
+                }}
                 bgColor={promoConfig.bgColor}
                 borderColor={promoConfig.borderColor}
                 textColor={promoConfig.textColor}
@@ -762,7 +963,13 @@ function Home() {
               <DemoBadge 
                 badgeText={promoConfig.badgeText} 
                 message={promoConfig.message} 
-                onClick={promoConfig.linkUrl ? () => navigate(promoConfig.linkUrl) : undefined}
+                onClick={() => {
+                   if (promoConfig.actionType === 'subscription') {
+                     setIsSubModalOpen(true);
+                   } else if (promoConfig.linkUrl) {
+                     navigate(promoConfig.linkUrl);
+                   }
+                }}
                 bgColor={promoConfig.bgColor}
                 borderColor={promoConfig.borderColor}
                 textColor={promoConfig.textColor}
@@ -1071,6 +1278,7 @@ function Home() {
          </section>
 
       </div>
+      <SubscriptionModal isOpen={isSubModalOpen} onClose={() => setIsSubModalOpen(false)} />
     </div>
   )
 }
@@ -1088,6 +1296,8 @@ function Footer() {
   const logoUrl = design?.logoUrl || '';
 
   const socialLinksStr = settings.find((s:any) => s.key === 'SOCIAL_LINKS')?.value;
+  const contactInfoStr = settings.find((s:any) => s.key === 'CONTACT_INFO')?.value;
+  const contactInfo = contactInfoStr ? JSON.parse(contactInfoStr) : null;
   const socialLinks = socialLinksStr ? JSON.parse(socialLinksStr) : { instagram: '#', tiktok: '#', youtube: '#', linkedin: '#' };
 
   const handleSubscribe = async () => {
@@ -1157,15 +1367,15 @@ function Footer() {
             <h3 className="font-bold text-[17px] text-slate-900 mb-2">{t('footer.inquiries', 'Inquiries')}</h3>
             <div className="flex items-start gap-2">
               <MapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-              <p className="text-slate-500 font-medium">{t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
+              <p className="text-slate-500 font-medium">{contactInfo?.location || t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
             </div>
             <div className="flex items-center gap-2">
               <Phone className="w-5 h-5 text-slate-400 shrink-0" />
-              <p className="text-slate-500 font-medium" dir="ltr">{t('footer.phone', '+971 55 780 0863')}</p>
+              <p className="text-slate-500 font-medium" dir="ltr">{contactInfo?.phone || t('footer.phone', '+971 55 780 0863')}</p>
             </div>
             <div className="flex items-center gap-2">
               <Mail className="w-5 h-5 text-slate-400 shrink-0" />
-              <a href="mailto:info@nesrinaconsultancy.com" className="font-bold text-slate-900 hover:text-primary transition break-words">info@nesrinaconsultancy.com</a>
+              <a href={`mailto:${contactInfo?.email || 'info@nesrinaconsultancy.com'}`} className="font-bold text-slate-900 hover:text-primary transition break-words">{contactInfo?.email || 'info@nesrinaconsultancy.com'}</a>
             </div>
           </div>
 
@@ -1185,6 +1395,34 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+
+function FloatingContact() {
+  const { settings } = useStore();
+  const contactInfoStr = settings.find((s:any) => s.key === 'CONTACT_INFO')?.value;
+  const contactInfo = contactInfoStr ? JSON.parse(contactInfoStr) : null;
+  
+  if (!contactInfo || (!contactInfo.whatsapp && !contactInfo.telegram)) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[90] flex flex-col gap-3">
+      {contactInfo.telegram && (
+        <a href={`https://t.me/${contactInfo.telegram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="w-14 h-14 bg-[#0088cc] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+          <svg viewBox="0 0 24 24" className="w-7 h-7 fill-current" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.892-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+          </svg>
+        </a>
+      )}
+      {contactInfo.whatsapp && (
+        <a href={`https://wa.me/${contactInfo.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-14 h-14 bg-[#25D366] text-white rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+           <svg viewBox="0 0 24 24" className="w-8 h-8 fill-current" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+           </svg>
+        </a>
+      )}
+    </div>
   );
 }
 
@@ -1288,6 +1526,7 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
       {!isAdminRoute && <Navbar />}
       <AuthModal />
       {!isAdminRoute && <WebsitePopup />}
+      {!isAdminRoute && <FloatingContact />}
       <main className="flex-1 flex flex-col min-w-0">
         {children}
       </main>

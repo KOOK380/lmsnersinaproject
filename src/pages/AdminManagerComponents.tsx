@@ -2009,6 +2009,7 @@ export function SettingsManager() {
   const [currency, setCurrency] = useState('USD');
   const [status, setStatus] = useState('');
   const [socialLinks, setSocialLinks] = useState({ instagram: '', tiktok: '', youtube: '', linkedin: '' });
+  const [contactInfo, setContactInfo] = useState({ whatsapp: '', telegram: '', phone: '', email: '', location: '' });
 
   const [meetConfig, setMeetConfig] = useState({ clientEmail: '', privateKey: '' });
   const [meetEnabledConfig, setMeetEnabledConfig] = useState({ enabled: true });
@@ -2051,6 +2052,7 @@ export function SettingsManager() {
           const sMeet = data.find((s:any) => s.key === 'GOOGLE_MEET_CONFIG');
           const sMeetEn = data.find((s:any) => s.key === 'GOOGLE_MEET_ENABLED');
           const sSocial = data.find((s:any) => s.key === 'SOCIAL_LINKS');
+          const sContactInfo = data.find((s:any) => s.key === 'CONTACT_INFO');
           const sSocialLogin = data.find((s:any) => s.key === 'SOCIAL_LOGIN_CONFIG');
           const sStorageProviders = data.find((s:any) => s.key === 'STORAGE_PROVIDERS_CONFIG');
           const sSiteImages = data.find((s:any) => s.key === 'SITE_IMAGES');
@@ -2066,6 +2068,7 @@ export function SettingsManager() {
           if(sMeet) setMeetConfig(JSON.parse(sMeet.value));
           if(sMeetEn) setMeetEnabledConfig(JSON.parse(sMeetEn.value));
           if(sSocial) setSocialLinks(JSON.parse(sSocial.value));
+          if(sContactInfo) setContactInfo(JSON.parse(sContactInfo.value));
           if(sSocialLogin) setSocialLoginConfig(JSON.parse(sSocialLogin.value));
           if(sStorageProviders) {
             const parsed = JSON.parse(sStorageProviders.value);
@@ -2582,6 +2585,35 @@ export function SettingsManager() {
         </div>
         <div className="mt-4 flex items-center justify-between">
            <button onClick={() => saveSettings('SOCIAL_LINKS', socialLinks)} className="bg-primary text-white px-4 py-2 rounded text-sm font-bold shadow-sm">Save Social Links</button>
+        </div>
+      </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8 mt-8">
+        <h2 className="text-2xl font-serif italic font-bold text-indigo-600 mb-6">Contact Information</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">WhatsApp Number</label>
+              <input type="text" value={contactInfo.whatsapp} onChange={e=>setContactInfo({...contactInfo, whatsapp: e.target.value})} className="w-full border border-slate-200 rounded p-2 text-sm" placeholder="+1234567890" />
+           </div>
+           <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Telegram ID</label>
+              <input type="text" value={contactInfo.telegram} onChange={e=>setContactInfo({...contactInfo, telegram: e.target.value})} className="w-full border border-slate-200 rounded p-2 text-sm" placeholder="username" />
+           </div>
+           <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Phone Number (Call Us Now)</label>
+              <input type="text" value={contactInfo.phone} onChange={e=>setContactInfo({...contactInfo, phone: e.target.value})} className="w-full border border-slate-200 rounded p-2 text-sm" placeholder="+1234567890" />
+           </div>
+           <div>
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Email Address</label>
+              <input type="email" value={contactInfo.email} onChange={e=>setContactInfo({...contactInfo, email: e.target.value})} className="w-full border border-slate-200 rounded p-2 text-sm" placeholder="info@example.com" />
+           </div>
+           <div className="md:col-span-2">
+              <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Location</label>
+              <input type="text" value={contactInfo.location} onChange={e=>setContactInfo({...contactInfo, location: e.target.value})} className="w-full border border-slate-200 rounded p-2 text-sm" placeholder="Dubai, UAE" />
+           </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+           <button onClick={() => saveSettings('CONTACT_INFO', contactInfo)} className="bg-primary text-white px-4 py-2 rounded text-sm font-bold shadow-sm">Save Contact Info</button>
         </div>
       </div>
 
@@ -4582,6 +4614,7 @@ export function PopupManager() {
                 <option value="IMAGE">Image</option>
                 <option value="VIDEO">Video</option>
                 <option value="HTML">Custom HTML</option>
+                <option value="SUBSCRIPTION">Newsletter Subscription</option>
              </select>
            </div>
 
@@ -4608,6 +4641,8 @@ export function PopupManager() {
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 mt-4">
                  <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Custom HTML / Text</label>
                  <HtmlEditor value={popupConfig.content} onChange={v => setPopupConfig({...popupConfig, content: v})} />
+                 <p className="text-xs text-slate-500 mt-3 font-medium">💡 Tip: You can insert <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">[subscription_form]</code> anywhere in your HTML to render a newsletter subscription form.</p>
+                 <p className="text-xs text-slate-500 mt-2 font-medium">✨ Or, you can build your own custom form in HTML. Just make sure the form tag has <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">class="custom-lead-form"</code> and the inputs have <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">name="name"</code> and <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">name="email"</code>. We will automatically capture the lead when it is submitted!</p>
               </div>
            )}
            
@@ -4977,6 +5012,7 @@ export function PromoBadgeManager() {
     badgeType: 'demo', 
     badgeText: 'Exclusive Offer', 
     message: 'Flat 50% off on Premium collection!', 
+    actionType: 'link', // 'link' or 'subscription'
     linkUrl: '',
     bgColor: '',
     borderColor: '',
@@ -4993,6 +5029,7 @@ export function PromoBadgeManager() {
       badgeType: parsedPromo.badgeType ?? 'demo', 
       badgeText: parsedPromo.badgeText ?? 'Exclusive Offer', 
       message: parsedPromo.message ?? 'Flat 50% off on Premium collection!', 
+      actionType: parsedPromo.actionType ?? 'link',
       linkUrl: parsedPromo.linkUrl ?? '',
       bgColor: parsedPromo.bgColor ?? '',
       borderColor: parsedPromo.borderColor ?? '',
@@ -5157,11 +5194,22 @@ export function PromoBadgeManager() {
                </div>
 
                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Redirect URL / Link (Optional)</label>
-                  <input type="text" value={promoConfig.linkUrl} onChange={e => setPromoConfig({...promoConfig, linkUrl: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm" placeholder="e.g. /courses, /memberships, https://..." />
-                  <p className="text-xs text-slate-400 mt-2">Redirect path or external link when users click on the banner badge.</p>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Badge Action Type</label>
+                  <select value={promoConfig.actionType} onChange={e => setPromoConfig({...promoConfig, actionType: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition bg-white shadow-sm font-semibold">
+                     <option value="link">Redirect to URL</option>
+                     <option value="subscription">Open Subscription Form (Leads)</option>
+                  </select>
+                  <p className="text-xs text-slate-400 mt-2">Choose what happens when a user clicks the promo badge.</p>
                </div>
            </div>
+
+           {promoConfig.actionType === 'link' && (
+             <div className="mt-6">
+                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Redirect URL / Link</label>
+                <input type="text" value={promoConfig.linkUrl} onChange={e => setPromoConfig({...promoConfig, linkUrl: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm" placeholder="e.g. /courses, /memberships, https://..." />
+                <p className="text-xs text-slate-400 mt-2">Redirect path or external link when users click on the banner badge.</p>
+             </div>
+           )}
 
            {/* Brand Color Picker Panel */}
            <div className="border-t border-slate-100 pt-8 mt-8">

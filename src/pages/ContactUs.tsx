@@ -11,6 +11,8 @@ export function ContactUs() {
   const [status, setStatus] = useState<null | 'submitting' | 'success' | 'error'>(null);
 
   const siteImagesStr = settings.find((s:any) => s.key === 'SITE_IMAGES')?.value;
+  const contactInfoStr = settings.find((s:any) => s.key === 'CONTACT_INFO')?.value;
+  const contactInfo = contactInfoStr ? JSON.parse(contactInfoStr) : null;
   const siteImages = siteImagesStr ? JSON.parse(siteImagesStr) : {};
   const contactUsImage = siteImages.contactUsImage || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=600&auto=format&fit=crop";
 
@@ -49,21 +51,21 @@ export function ContactUs() {
             <Headphones className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
               <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.contact_phone', 'Contact phone number')}</h3>
-              <p className="text-slate-600" dir="ltr">+971 55 780 0863</p>
+              <p className="text-slate-600" dir="ltr">{contactInfo?.phone || '+971 55 780 0863'}</p>
             </div>
           </div>
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 items-start">
             <Mail className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
               <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.email_address', 'Email Address')}</h3>
-              <p className="text-slate-600" dir="ltr">info@nesrinaconsultancy.com</p>
+              <p className="text-slate-600" dir="ltr">{contactInfo?.email || 'info@nesrinaconsultancy.com'}</p>
             </div>
           </div>
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 flex flex-col gap-6 items-start">
             <MapPin className="w-10 h-10 text-[#d4af37]" strokeWidth={1.5} />
             <div>
               <h3 className="font-bold text-gray-900 text-lg mb-2">{t('contact.location', 'Our Location')}</h3>
-              <p className="text-slate-600">{t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
+              <p className="text-slate-600">{contactInfo?.location || t('footer.location', 'Abu Dubai, United Arab Emirates')}</p>
             </div>
           </div>
         </div>
