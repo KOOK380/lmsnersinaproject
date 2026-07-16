@@ -55,7 +55,7 @@ function Navbar() {
             <div className="flex w-full items-center border border-gray-200 rounded-full overflow-hidden bg-white h-12 shadow-sm transition focus-within:ring-2 focus-within:ring-primary/20 bg-transparent pr-1">
                <select className="px-4 text-sm text-gray-600 border-r border-gray-200 bg-transparent h-full focus:outline-none cursor-pointer max-w-[160px] truncate leading-10">
                  <option value="">{t('home.all_categories', 'All categories')}</option>
-                 {categories.filter((c: any) => c.name.toLowerCase() !== 'membership' && c.name.toLowerCase() !== 'memberships').map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                 {getTranslated(categories, language).filter((c: any) => c.name.toLowerCase() !== 'membership' && c.name.toLowerCase() !== 'memberships').map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                </select>
               <input 
                 type="text" 

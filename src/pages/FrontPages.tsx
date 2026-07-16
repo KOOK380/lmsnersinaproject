@@ -79,7 +79,7 @@ export function Courses() {
             >
               {t('courses.all_courses')}
             </button>
-            {categories.filter((cat: any) => cat.type === 'COURSE').map(cat => (
+            {getTranslated(categories, language).filter((cat: any) => cat.type === 'COURSE').map((cat: any) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
@@ -119,7 +119,7 @@ export function Courses() {
               )}
               {course.level && <span className="inline-block px-2 py-1 bg-indigo-50 text-indigo-500 border border-indigo-100 text-[10px] font-bold uppercase rounded-md mb-2 w-max">{course.level}</span>}
               <div className="flex flex-wrap gap-2 mb-1 items-center">
-                 <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{course.category?.name || 'Uncategorized'}</p>
+                 <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">{getTranslated(categories, language).find((c: any) => c.id === course.categoryId)?.name || course.category?.name || 'Uncategorized'}</p>
                  {course.labels?.map((label: string, i: number) => (
                     <span key={i} className="text-[10px] font-bold text-secondary bg-secondary/10 px-1.5 py-0.5 rounded uppercase tracking-widest">{label}</span>
                  ))}
@@ -356,7 +356,7 @@ export function Courses() {
              <div className="flex flex-wrap gap-2 mb-4 items-center">
                  {course.category?.name && (
                      <span className="inline-block px-3 py-1 bg-[var(--color-primary)] text-white text-[10px] font-bold rounded tracking-wider uppercase">
-                         {course.category.name}
+                         {getTranslated(categories, language).find((c: any) => c.id === course.categoryId)?.name || course.category?.name}
                      </span>
                  )}
                  {course.labels?.map((label: string, i: number) => (
@@ -1008,7 +1008,7 @@ export function Memberships() {
             >
               {t('memberships.all_programs')}
             </button>
-            {categories.filter((cat: any) => cat.type === 'MEMBERSHIP').map(cat => (
+            {getTranslated(categories, language).filter((cat: any) => cat.type === 'MEMBERSHIP').map((cat: any) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
