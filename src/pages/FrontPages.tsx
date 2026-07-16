@@ -158,7 +158,7 @@ export function Courses() {
   export function CourseDetails() {
     const { id } = useParams();
     const [courseRaw, setCourse] = useState<any>(null);
-    const { user, token, addToCart, cart, setAuthModalOpen, currency, favorites, toggleFavorite, language } = useStore();
+    const { user, token, addToCart, cart, setAuthModalOpen, currency, favorites, toggleFavorite, language, categories } = useStore();
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [addingToCart, setAddingToCart] = useState(false);
@@ -354,7 +354,7 @@ export function Courses() {
           {/* Header Info */}
           <div>
              <div className="flex flex-wrap gap-2 mb-4 items-center">
-                 {course.category?.name && (
+                 {(getTranslated(categories, language).find((c: any) => c.id === course.categoryId)?.name || course.category?.name) && (
                      <span className="inline-block px-3 py-1 bg-[var(--color-primary)] text-white text-[10px] font-bold rounded tracking-wider uppercase">
                          {getTranslated(categories, language).find((c: any) => c.id === course.categoryId)?.name || course.category?.name}
                      </span>
