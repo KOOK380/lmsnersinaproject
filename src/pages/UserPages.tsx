@@ -752,7 +752,7 @@ export function CoursePlayer() {
        if (data && data.lessons && data.lessons.length > 0) {
          setActiveLesson(data.lessons[0]);
        }
-     });
+     }).catch(console.error);
    }, [id]);
 
    const course = getTranslated(courseRaw, language);
@@ -880,7 +880,7 @@ export function Wishlist() {
     const fetchItems = async () => {
        const res = await fetch("/api/courses/active");
        const courses = await res.json();
-       const mRes = await fetch("/api/memberships");
+       const mRes = await fetch("/api/memberships/active");
        const memberships = await mRes.json();
        
        const all = favorites.map(f => {

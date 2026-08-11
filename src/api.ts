@@ -492,6 +492,14 @@ router.get("/memberships", async (req, res) => {
   res.json(memberships);
 });
 
+router.get("/memberships/active", async (req, res) => {
+  const memberships = await prisma.membership.findMany({
+    where: { isActive: true },
+    include: { contents: true, editions: true, category: true }
+  });
+  res.json(memberships);
+});
+
 router.get("/memberships/:id", async (req, res) => {
   const membership = await prisma.membership.findUnique({
     where: { id: req.params.id },
@@ -505,6 +513,21 @@ router.get("/memberships/:id", async (req, res) => {
 router.get("/events", async (req, res) => {
   const events = await prisma.event.findMany({
     where: {
+      OR: [
+        { expiryDate: null },
+        { expiryDate: { gt: new Date() } }
+      ]
+    },
+    orderBy: { date: 'asc' },
+    include: { translations: true }
+  });
+  res.json(events);
+});
+
+router.get("/events/active", async (req, res) => {
+  const events = await prisma.event.findMany({
+    where: {
+      isActive: true,
       OR: [
         { expiryDate: null },
         { expiryDate: { gt: new Date() } }
@@ -530,6 +553,7 @@ router.post("/admin/events", authMiddleware, async (req, res) => {
   const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isSubscription, subscriptionInterval } = req.body;
   const event = await prisma.event.create({
     data: {
+      isActive: isActive !== undefined ? isActive : true,
       title, description, date: new Date(date), 
       endDate: endDate ? new Date(endDate) : null,
       expiryDate: expiryDate ? new Date(expiryDate) : null,
@@ -564,20 +588,28 @@ router.post("/admin/events", authMiddleware, async (req, res) => {
 
 router.put("/admin/events/:id", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled } = req.body;
+  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isActive } = req.body;
+  const updateData: any = {};
+  if (isActive !== undefined) updateData.isActive = isActive;
+  
+  if (title !== undefined) updateData.title = title;
+  if (description !== undefined) updateData.description = description;
+  if (date !== undefined) updateData.date = new Date(date);
+  if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+  if (expiryDate !== undefined) updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
+  if (totalSeats !== undefined) updateData.totalSeats = parseInt(totalSeats);
+  if (availableSeats !== undefined) updateData.availableSeats = parseInt(availableSeats);
+  if (price !== undefined) updateData.price = parseFloat(price);
+  if (realPrice !== undefined) updateData.realPrice = realPrice !== null ? parseFloat(realPrice) : null;
+  if (location !== undefined) updateData.location = location;
+  if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+  if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
+  if (meetingDate !== undefined) updateData.meetingDate = meetingDate ? new Date(meetingDate) : null;
+  if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
+  
   const event = await prisma.event.update({
     where: { id: req.params.id },
-    data: {
-      title, description, date: new Date(date), 
-      endDate: endDate ? new Date(endDate) : null,
-      expiryDate: expiryDate ? new Date(expiryDate) : null,
-      totalSeats: totalSeats ? parseInt(totalSeats) : 0,
-      availableSeats: availableSeats !== undefined ? parseInt(availableSeats) : undefined,
-      price: parseFloat(price), 
-      realPrice: realPrice !== undefined && realPrice !== null ? parseFloat(realPrice) : null,
-      location, imageUrl,
-      meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes
-    }
+    data: updateData
   });
 
   if (translations !== undefined) {
@@ -2170,6 +2202,7 @@ router.put("/admin/course-bundles/:id", authMiddleware, async (req, res) => {
     if (realPrice !== undefined) updateData.realPrice = realPrice ? parseFloat(realPrice) : null;
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
     if (bannerVideoUrl !== undefined) updateData.bannerVideoUrl = bannerVideoUrl;
+    
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
 
@@ -2335,9 +2368,10 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
       updateData.memberships = { set: Array.isArray(membershipIds) ? membershipIds.map((id:string) => ({ id })) : [] };
     }
     if (labels !== undefined) updateData.labels = labels;
+    if (isActive !== undefined) updateData.isActive = isActive;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
     if (isUpcoming !== undefined) updateData.isUpcoming = isUpcoming;
-    if (isActive !== undefined) updateData.isActive = isActive;
+    
     if (language !== undefined) updateData.language = language;
     if (level !== undefined) updateData.level = level;
     if (duration !== undefined) updateData.duration = duration;
@@ -2674,7 +2708,7 @@ router.delete("/admin/users/:id", authMiddleware, async (req, res) => {
 router.post("/admin/memberships", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink } = req.body;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink, isActive } = req.body;
     let parsedCategoryId = categoryId === '' ? null : categoryId;
     const membership = await prisma.membership.create({
       data: { 
@@ -2716,15 +2750,31 @@ router.post("/admin/memberships", authMiddleware, async (req, res) => {
 router.put("/admin/memberships/:id", authMiddleware, async (req, res) => {
   try {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink } = req.body;
-    let parsedCategoryId = categoryId === '' ? null : categoryId;
+    const { contents, editions, type, label, offerPrice, realPrice, imageUrl, categoryId, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, enablePlatformContent, telegramLink, whatsappLink, customExternalLink, isActive, isSubscription, subscriptionInterval } = req.body;
+    
+    const updateData: any = {};
+    
+    if (isActive !== undefined) updateData.isActive = isActive;
+    if (type !== undefined) updateData.type = type;
+    if (label !== undefined) updateData.label = label;
+    if (offerPrice !== undefined) updateData.offerPrice = offerPrice;
+    if (realPrice !== undefined) updateData.realPrice = realPrice;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (categoryId !== undefined) updateData.categoryId = categoryId === '' ? null : categoryId;
+    if (expiryDate !== undefined) updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
+    if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
+    if (meetingDate !== undefined) updateData.meetingDate = meetingDate ? new Date(meetingDate) : null;
+    if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
+    if (enablePlatformContent !== undefined) updateData.enablePlatformContent = enablePlatformContent;
+    if (telegramLink !== undefined) updateData.telegramLink = telegramLink;
+    if (whatsappLink !== undefined) updateData.whatsappLink = whatsappLink;
+    if (customExternalLink !== undefined) updateData.customExternalLink = customExternalLink;
+    if (isSubscription !== undefined) updateData.isSubscription = isSubscription;
+    if (subscriptionInterval !== undefined) updateData.subscriptionInterval = subscriptionInterval;
+
     const membership = await prisma.membership.update({ 
       where: { id: req.params.id }, 
-      data: { 
-        type, label, offerPrice, realPrice, imageUrl, categoryId: parsedCategoryId,
-        expiryDate: expiryDate ? new Date(expiryDate) : null,
-        meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes, enablePlatformContent: enablePlatformContent ?? true, telegramLink, whatsappLink, customExternalLink
-      }
+      data: updateData
     });
     
     if (contents) {

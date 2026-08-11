@@ -753,7 +753,7 @@ const DragScrollContainer = React.forwardRef<HTMLDivElement, { children: React.R
       onMouseLeave={handleMouseLeave}
       onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
-      style={{ cursor: isDown ? 'grabbing' : 'grab', userSelect: 'none', touchAction: 'pan-x' }}
+      style={{ cursor: isDown ? 'grabbing' : 'grab', userSelect: 'none',  }}
     >
       {children}
     </div>
@@ -851,8 +851,8 @@ function Home() {
       fetch("/api/courses/active").then(r => r.json()).then(setCourses).catch(() => {}),
       fetch("/api/public/course-bundles").then(r => r.json()).then(setCourseBundles).catch(() => {}),
       fetch("/api/sliders").then(r => r.json()).then(setRawSliders).catch(() => {}),
-      fetch("/api/memberships").then(r => r.json()).then(setPlans).catch(() => {}),
-      fetch("/api/events").then(r => r.json()).then(setEvents).catch(() => {}),
+      fetch("/api/memberships/active").then(r => r.json()).then(setPlans).catch(() => {}),
+      fetch("/api/events/active").then(r => r.json()).then(setEvents).catch(() => {}),
       fetch("/api/testimonials").then(r => r.json()).then(setTestimonialsList).catch(() => {}),
       fetch("/api/blogs").then(r => r.json()).then(setBlogs).catch(() => {})
     ]).finally(() => {

@@ -56,7 +56,7 @@ export function Courses() {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/courses/active").then(r => r.json()).then(setCourses);
+    fetch("/api/courses/active").then(r => r.json()).then(setCourses).catch(console.error);
   }, []);
 
   const tCourses = getTranslated(courses, language) || [];
@@ -213,20 +213,20 @@ export function Courses() {
          if (res && res.price === 0 && res.memberships?.length > 0) {
             setSelectedOption(res.memberships[0].id);
          }
-      });
+      }).catch(console.error).catch(console.error);
       fetchReviews();
     }, [id]);
 
     useEffect(() => {
       const localToken = localStorage.getItem("token") || token;
-      if (user && course && localToken) {
+      if (user && courseRaw?.id && localToken) {
         fetch("/api/dashboard", { headers: { Authorization: `Bearer ${localToken}` } })
           .then(r => r.json())
           .then(res => {
              if(!res.error) setDashboardData(res);
-          });
+          }).catch(console.error);
       }
-    }, [user, course, token]);
+    }, [user, courseRaw?.id, token]);
 
     const handlePostReview = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -985,7 +985,7 @@ export function Memberships() {
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/memberships").then(r => r.json()).then(setMemberships);
+    fetch("/api/memberships/active").then(r => r.json()).then(setMemberships).catch(console.error);
   }, []);
 
   const getContent = (m: any) => m.contents?.find((c: any) => c.language === language) || m.contents?.[0] || { title: 'Untitled' };
@@ -1101,22 +1101,14 @@ export function MembershipDetails() {
 
   useEffect(() => {
     const localToken = localStorage.getItem("token") || token;
-    if (user && membership && localToken) {
-      fetch("/api/dashboard", { headers: { Authorization: `Bearer ${localToken}` } })
-        .then(r => r.json())
-        .then(res => {
-           if(!res.error) {
-              const enrolledMem = res.memberships?.find((c: any) => c.membershipId === membership.id);
-              if (enrolledMem) {
-                 const isExpired = enrolledMem.expiresAt && new Date(enrolledMem.expiresAt) < new Date();
-                 setEnrolled(!isExpired);
-              } else {
-                 setEnrolled(false);
-              }
-           }
-        });
-    }
-  }, [user, membership, token]);
+    if (user && membershipRaw?.id && localToken) {
+        fetch("/api/dashboard", { headers: { Authorization: `Bearer ${localToken}` } })
+          .then(r => r.json())
+          .then(res => {
+             if(!res.error) setDashboardData(res);
+          }).catch(console.error);
+      }
+    }, [user, membershipRaw?.id, token]);
 
   if (!membership) return <div className="p-12 text-center text-slate-500 font-serif italic">Loading...</div>;
 
@@ -1555,7 +1547,7 @@ export function Events() {
   const { t } = useTranslation();
 
   useEffect(() => {
-    fetch("/api/events").then(r => r.json()).then(setEvents);
+    fetch("/api/events/active").then(r => r.json()).then(setEvents).catch(console.error);
   }, []);
   
   const tEvents = getTranslated(events, language) || [];
@@ -1633,7 +1625,7 @@ export function EventDetails() {
   const { t } = useTranslation();
 
   const fetchEvent = () => {
-    fetch(`/api/events/${id}`).then(r => r.json()).then(setEvent);
+    fetch(`/api/events/${id}`).then(r => r.json()).then(setEvent).catch(console.error);
   };
 
   useEffect(() => {
@@ -1644,21 +1636,14 @@ export function EventDetails() {
 
   useEffect(() => {
     const localToken = localStorage.getItem("token") || token;
-    if (user && event && localToken) {
-      fetch("/api/dashboard", { headers: { Authorization: `Bearer ${localToken}` } })
-        .then(r => r.json())
-        .then(res => {
-           if(!res.error) {
-              const enrolledEvent = res.bookings?.find((c: any) => c.eventId === event.id);
-              if (enrolledEvent) {
-                 setEnrolled(true);
-              } else {
-                 setEnrolled(false);
-              }
-           }
-        });
-    }
-  }, [user, event, token]);
+    if (user && eventRaw?.id && localToken) {
+        fetch("/api/dashboard", { headers: { Authorization: `Bearer ${localToken}` } })
+          .then(r => r.json())
+          .then(res => {
+             if(!res.error) setDashboardData(res);
+          }).catch(console.error);
+      }
+    }, [user, eventRaw?.id, token]);
 
   if (!event) return <div className="flex h-screen items-center justify-center font-bold text-slate-400">{t('common.loading', 'Loading...')}</div>;
 

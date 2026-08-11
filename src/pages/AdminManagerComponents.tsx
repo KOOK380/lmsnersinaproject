@@ -1154,7 +1154,8 @@ export function MembershipManager() {
   const [activeLangTab, setActiveLangTab] = useState((languages || []).find((l:any) => l.isDefault)?.code || (languages || []).find((l:any) => l.isActive)?.code || 'en');
 
   const [formData, setFormData] = useState({ 
-    type: 'STANDARD', 
+    type: 'STANDARD',
+    isActive: true,
     label: '', 
     offerPrice: 0, 
     realPrice: 0, 
@@ -1189,6 +1190,7 @@ export function MembershipManager() {
 
     setFormData({
       type: membership.type || 'STANDARD',
+      isActive: membership.isActive !== undefined ? membership.isActive : true,
       label: membership.label || '',
       offerPrice: membership.offerPrice || 0,
       realPrice: membership.realPrice || 0,
@@ -1216,7 +1218,9 @@ export function MembershipManager() {
       language: lang.code, title: '', description: '', whoIsFor: '', benefits: '', entryCondition: '', keyDetails: ''
     }));
 
-    setFormData({ type: 'STANDARD', label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], isSubscription: false, subscriptionInterval: 'month', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '' });
+    setFormData({ type: 'STANDARD',
+    isActive: true,
+    label: '', offerPrice: 0, realPrice: 0, expiryDate: '', imageUrl: '', categoryId: '', contents: initialContents, editions: [], isSubscription: false, subscriptionInterval: 'month', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '' });
     setEditId(null);
     setShowAdd(false);
   };
@@ -1286,6 +1290,10 @@ export function MembershipManager() {
            <h3 className="font-bold text-lg text-slate-700">{editId ? 'Edit Program/Membership' : 'Add Program/Membership'}</h3>
            
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="flex items-center gap-2 sm:col-span-2">
+                <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="rounded text-primary focus:ring-primary" />
+                <span className="text-sm font-bold text-slate-700">Active (Visible on Frontend)</span>
+              </label>
               <input type="text" placeholder="Type (e.g. STANDARD)" value={formData.type} onChange={e=>setFormData({...formData, type: e.target.value})} className="p-2 border rounded bg-white" />
               <select value={formData.categoryId} onChange={e=>setFormData({...formData, categoryId: e.target.value})} className="p-2 border rounded bg-white">
                  <option value="">No Category</option>
@@ -1462,7 +1470,18 @@ export function MembershipManager() {
                 <td className="p-4">{m.type}</td>
                 <td className="p-4">{formatCurrency(m.offerPrice, currency)}</td>
                 <td className="p-4 text-right space-x-2">
-                  <button onClick={() => handleEdit(m)} className="text-indigo-600 hover:underline font-bold text-sm">Edit</button>
+                  <button onClick={async (e) => {
+      e.stopPropagation();
+      await fetch(`/api/admin/memberships/${m.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isActive: !m.isActive })
+      });
+      fetch("/api/memberships").then(r => r.json()).then(setMemberships).catch(()=>{});
+  }} className={`px-2 py-1 mr-2 rounded text-[10px] uppercase font-bold transition-colors ${m.isActive ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'}`}>
+    {m.isActive ? 'Active' : 'Disabled'}
+  </button>
+  <button onClick={() => handleEdit(m)} className="text-indigo-600 hover:underline font-bold text-sm">Edit</button>
                   <DeleteButton onDelete={() => handleDelete(m.id)} className="text-red-500 hover:underline font-bold text-sm" />
                 </td>
               </tr>
@@ -3103,7 +3122,7 @@ export function EventManager() {
   const [activeLangTab, setActiveLangTab] = useState((languages || []).find((l:any) => l.isDefault)?.code || (languages || []).find((l:any) => l.isActive)?.code || 'en');
 
   const [formData, setFormData] = useState({
-    title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: [] as any[]
+    isActive: true, title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: [] as any[]
   });
 
   useEffect(() => {
@@ -3132,7 +3151,7 @@ export function EventManager() {
       languageCode: lang.code, title: '', description: ''
     }));
     setFormData({
-      title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: initialContents
+      isActive: true, title: '', description: '', date: '', endDate: '', expiryDate: '', totalSeats: 0, availableSeats: 0, price: 0, realPrice: 0, location: '', imageUrl: '', meetingLink: '', meetingDate: '', meetingNotes: '', notifyEnrolled: false, enablePlatformContent: true, telegramLink: '', whatsappLink: '', customExternalLink: '', translations: initialContents
     });
     setEditingEvent(null);
     setFormOpen(false);
@@ -3147,6 +3166,7 @@ export function EventManager() {
     });
 
     setFormData({
+      isActive: evt.isActive !== undefined ? evt.isActive : true,
       title: evt.title,
       description: evt.description,
       date: new Date(evt.date).toISOString().slice(0, 16),
@@ -3243,7 +3263,7 @@ export function EventManager() {
                   <div className="flex items-center gap-3">
                     {evt.imageUrl && <img src={evt.imageUrl} alt="" className="w-10 h-10 object-cover rounded" />}
                     <div>
-                      <div className="font-bold text-slate-800">{evt.title}</div>
+                      <div className="font-bold text-slate-800">{evt.title} {!evt.isActive && <span className="ml-2 text-[10px] bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-bold">INACTIVE</span>}</div>
                       <div className="text-xs text-slate-500">{evt.location}</div>
                     </div>
                   </div>
@@ -3261,7 +3281,18 @@ export function EventManager() {
                 </td>
                 <td className="p-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <button onClick={() => handleEdit(evt)} className="p-2 text-slate-400 hover:text-indigo-600 transition bg-white border border-slate-200 rounded-lg shadow-sm">
+                    <button onClick={async (e) => {
+      e.stopPropagation();
+      await fetch(`/api/admin/events/${evt.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ isActive: !evt.isActive })
+      });
+      fetchEvents();
+  }} className={`px-2.5 py-0.5 rounded border text-[10px] uppercase font-bold transition-colors ${evt.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'}`}>
+    {evt.isActive ? 'Active' : 'Disabled'}
+  </button>
+  <button onClick={() => handleEdit(evt)} className="p-2 text-slate-400 hover:text-indigo-600 transition bg-white border border-slate-200 rounded-lg shadow-sm">
                       <Settings className="w-4 h-4" />
                     </button>
                     <button onClick={() => handleDelete(evt.id)} className="p-2 text-slate-400 hover:text-red-500 transition bg-white border border-slate-200 rounded-lg shadow-sm">
@@ -3296,6 +3327,12 @@ export function EventManager() {
             
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               <div className="grid grid-cols-2 gap-6">
+                <div className="col-span-2">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" checked={formData.isActive} onChange={e => setFormData({...formData, isActive: e.target.checked})} className="rounded text-primary focus:ring-primary" />
+                    <span className="text-sm font-bold text-slate-700">Active (Visible on Frontend)</span>
+                  </label>
+                </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-bold text-slate-700 mb-1">Title</label>
                   <input required value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full p-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none transition" />
