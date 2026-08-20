@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, forwardRef } from "react";
 import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore, getTranslated } from "./store";
+import ReactPlayer from "react-player";
 import { ShoppingCart, BookOpen, Menu, X, Heart, Globe, Instagram, Youtube, Linkedin, Check, ChevronLeft, ChevronRight, MapPin, Phone, Mail } from "lucide-react";
 
 import { Courses, CourseDetails, Memberships, Events, MembershipDetails, EventDetails, BundleDetails, BlogList, BlogDetails } from "./pages/FrontPages";
@@ -552,7 +553,6 @@ function WebsitePopup() {
     const handleFormSubmit = async (e: Event) => {
       const target = e.target as HTMLFormElement;
       if (target && target.matches && target.matches('form.custom-lead-form')) {
-        e.preventDefault();
         const formData = new FormData(target);
         const name = formData.get('name') as string || '';
         const email = formData.get('email') as string || '';
@@ -651,7 +651,7 @@ function WebsitePopup() {
       return popupConfig.linkUrl ? <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer">{img}</a> : img;
     }
     if (popupConfig.type === 'VIDEO' && popupConfig.content) {
-      const video = <video src={popupConfig.content} controls autoPlay loop muted playsInline className="w-full max-h-[80vh] bg-black/5 block" />;
+      const video = <video src={popupConfig.content} controls autoPlay loop playsInline className="w-full max-h-[80vh] bg-black/5 block" />;
       return popupConfig.linkUrl ? <a href={popupConfig.linkUrl} target="_blank" rel="noopener noreferrer" className="block relative">{video}</a> : video;
     }
     if (popupConfig.type === 'HTML' && popupConfig.content) {
@@ -739,7 +739,6 @@ const DragScrollContainer = React.forwardRef<HTMLDivElement, { children: React.R
   
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDown || !ref.current) return;
-    e.preventDefault();
     const x = e.pageX - (ref.current.getBoundingClientRect().left + window.scrollX);
     const walk = (x - startX) * 0.75; 
     ref.current.scrollLeft = scrollLeft - walk;
@@ -762,20 +761,32 @@ const DragScrollContainer = React.forwardRef<HTMLDivElement, { children: React.R
 
 function TestimonialCarousel({ testimonials }: { testimonials: any[] }) {
   const [index, setIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsInView(entry.isIntersecting);
+    }, { threshold: 0.5 });
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (testimonials.length <= 1) return;
+    if (isPlaying || testimonials[index]?.videoUrl) return;
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % testimonials.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [testimonials.length]);
+  }, [testimonials.length, isPlaying, index, testimonials]);
 
   if (testimonials.length === 0) return null;
   const testi = testimonials[index];
 
   return (
-    <div className="relative w-full overflow-hidden flex flex-col justify-center items-center min-h-[350px]">
+    <div ref={containerRef} className="relative w-full overflow-hidden flex flex-col justify-center items-center min-h-[350px]">
       <AnimatePresence mode="wait">
         <motion.div
            key={index}
@@ -788,9 +799,16 @@ function TestimonialCarousel({ testimonials }: { testimonials: any[] }) {
            <div className="flex gap-1 text-[#fbbf24] mb-4">
                {[...Array(5)].map((_, idx) => <svg key={idx} className="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>)}
            </div>
+           {testi.videoUrl && (
+             <div className="w-full aspect-video rounded-xl overflow-hidden mb-4 bg-black">
+               <ReactPlayer url={testi.videoUrl} width="100%" height="100%" controls playing={isInView} onPlay={() => setIsPlaying(true)} onPause={() => setIsPlaying(false)} onEnded={() => { setIsPlaying(false); setIndex((prev) => (prev + 1) % testimonials.length); }} />
+             </div>
+           )}
+           {testi.text && (
            <p className="text-[14px] md:text-[15px] italic font-medium leading-[1.7] text-[#1e293b] mb-8 flex-1 whitespace-pre-line">
               {testi.text}
            </p>
+           )}
            <div className="flex items-center gap-4 mt-auto">
                {testi.image ? (
                    <div className="w-[44px] h-[44px] rounded-full overflow-hidden flex-shrink-0 bg-slate-100 flex items-center justify-center">
@@ -1061,7 +1079,7 @@ function Home() {
 
          {/* Filtered Courses */}
          <section>
-             <DragScrollContainer ref={coursesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
+             <DragScrollContainer ref={coursesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-proximity -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
                 {(activeCategory 
                     ? tCourses.filter((c: any) => c.categoryId === activeCategory && !c.isUpcoming) 
                     : tCourses.filter(c => !c.isUpcoming && c.category?.name?.toLowerCase() !== 'membership' && c.category?.name?.toLowerCase() !== 'memberships')
@@ -1110,7 +1128,7 @@ function Home() {
                    <button onClick={() => { if(bundlesRef.current) bundlesRef.current.scrollBy({ left: 320, behavior: 'smooth' }); }} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:bg-slate-50 hover:text-primary transition"><ChevronRight size={16} /></button>
                 </div>
              </div>
-             <DragScrollContainer ref={bundlesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+             <DragScrollContainer ref={bundlesRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-proximity -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {getTranslated(courseBundles, language).map((bundle: any) => {
                   return (
                     <Link to={`/bundles/${bundle.id}`} key={bundle.id} className="min-w-[280px] md:min-w-[320px] w-[280px] md:w-[320px] snap-start bg-white rounded-2xl p-5 border border-slate-100 card-hover shadow-sm flex flex-col group">
@@ -1140,7 +1158,7 @@ function Home() {
                 <h2 className="text-2xl md:text-3xl font-serif italic text-primary font-bold flex items-center gap-2"><span className="w-1 h-6 bg-primary inline-block"></span>{t('home.events', 'Events')}</h2>
                 <Link to="/events" className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">{t('home.all_events', 'All Events')}</Link>
              </div>
-             <div className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+             <div className="flex overflow-x-auto pb-6 gap-6 snap-x snap-proximity -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {tEvents.map(evt => {
   const d = new Date(evt.date);
   const month = d.toLocaleString("default", { month: "short" });
@@ -1186,7 +1204,7 @@ function Home() {
                 </div>
              </div>
              
-             <DragScrollContainer ref={comingSoonRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
+             <DragScrollContainer ref={comingSoonRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-proximity -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar scroll-smooth">
                 {tCourses.filter(c => c.isUpcoming).map(course => {
                   const isEnrolled = enrolledItems?.courses.some((c: any) => c.courseId === course.id);
                   return (
@@ -1249,7 +1267,7 @@ function Home() {
                   <button onClick={() => navigate("/blog")} className="text-xs font-bold uppercase tracking-widest text-primary/40 cursor-pointer hover:text-primary transition hidden md:block">{t('home.view_all', 'View All')}</button>
               </div>
            </div>
-           <DragScrollContainer ref={blogRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-mandatory -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
+           <DragScrollContainer ref={blogRef} className="flex overflow-x-auto pb-6 gap-6 snap-x snap-proximity -mx-4 px-4 md:mx-0 md:px-0 hide-scrollbar mt-2 md:mt-4 scroll-smooth">
               {blogs.filter((b: any) => b.published).map((blog: any, i: number) => {
                 const b = getTranslated(blog, language);
                 return (

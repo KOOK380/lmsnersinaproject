@@ -95,6 +95,7 @@ export function CourseManager() {
     labels: [] as string[],
     lessons: [] as any[],
     editions: [] as any[],
+    order: 0,
     isFeatured: false,
     isUpcoming: false,
     isActive: true,
@@ -113,6 +114,19 @@ export function CourseManager() {
     fetch("/api/categories").then(r => r.json()).then(setCategories).catch(()=>{});
     fetch("/api/memberships").then(r => r.json()).then(setMemberships).catch(()=>{});
   }, []);
+
+  const handleQuickUpdateOrder = async (id: string, newOrder: number) => {
+    try {
+      await fetch(`/api/admin/courses/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ order: newOrder })
+      });
+      setCourses(courses.map(c => c.id === id ? { ...c, order: newOrder } : c).sort((a,b) => (a.order||0) - (b.order||0) || new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/admin/courses/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
@@ -647,7 +661,8 @@ export function CourseManager() {
         <table className="w-full text-left">
             <thead className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider">
               <tr>
-                <th className="p-4 rounded-l-xl">Title</th>
+                <th className="p-4 rounded-l-xl">Order</th>
+                <th className="p-4">Title</th>
                 <th className="p-4">Price</th>
                 <th className="p-4">Category</th>
                 <th className="p-4">Instructor</th>
@@ -660,6 +675,14 @@ export function CourseManager() {
                  <tr><td colSpan={6} className="py-12 text-center text-slate-400">No programs found.</td></tr>
               ) : courses.map(course => (
                 <tr key={course.id} className="hover:bg-slate-50 transition">
+                  <td className="p-4">
+                    <input 
+                      type="number" 
+                      defaultValue={course.order || 0} 
+                      onBlur={(e) => handleQuickUpdateOrder(course.id, parseInt(e.target.value) || 0)} 
+                      className="w-16 px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary/20 outline-none font-bold text-center shadow-sm" 
+                    />
+                  </td>
                   <td className="p-4 font-semibold text-slate-800"><div className="flex items-center gap-2">{course.title}{course.isFeatured && <span className="bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded text-[10px] uppercase tracking-widest">Featured</span>}</div></td>
                   <td className="p-4 text-indigo-600 font-bold">{formatCurrency(course.price, currency)}</td>
                   <td className="p-4 text-slate-600">{course.category?.name || 'Uncategorized'}</td>
@@ -4073,7 +4096,7 @@ export function TestimonialManager() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: '', role: '', text: '', image: '' });
+  const [formData, setFormData] = useState({ name: '', role: '', text: '', image: '', videoUrl: '' });
 
   const fetchTestimonials = () => {
     fetch('/api/testimonials').then(r => r.json()).then(setTestimonials).catch(console.error);
@@ -4084,13 +4107,13 @@ export function TestimonialManager() {
   }, []);
 
   const resetForm = () => {
-    setFormData({ name: '', role: '', text: '', image: '' });
+    setFormData({ name: '', role: '', text: '', image: '', videoUrl: '' });
     setEditingId(null);
     setFormOpen(false);
   };
 
   const handleEdit = (t: any) => {
-    setFormData({ name: t.name || '', role: t.role || '', text: t.text || '', image: t.image || '' });
+    setFormData({ name: t.name || '', role: t.role || '', text: t.text || '', image: t.image || '', videoUrl: t.videoUrl || '' });
     setEditingId(t.id);
     setFormOpen(true);
   };
@@ -4145,8 +4168,8 @@ export function TestimonialManager() {
             <input type="text" placeholder="Name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="p-3 border rounded-xl" required />
             <input type="text" placeholder="Role" value={formData.role} onChange={e => setFormData({...formData, role: e.target.value})} className="p-3 border rounded-xl" />
           </div>
-          <MediaInput label="Reviewer Image" type="image" value={formData.image} onChange={(v) => setFormData({...formData, image: v})} />
-          <textarea placeholder="Testimonial text" value={formData.text} onChange={e => setFormData({...formData, text: e.target.value})} className="w-full mt-4 p-3 border rounded-xl h-24" required></textarea>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4"><MediaInput label="Reviewer Image" type="image" value={formData.image} onChange={(v) => setFormData({...formData, image: v})} /><MediaInput label="Video URL" type="video" value={formData.videoUrl} onChange={(v) => setFormData({...formData, videoUrl: v})} /></div>
+          <textarea placeholder="Testimonial text (Optional)" value={formData.text} onChange={e => setFormData({...formData, text: e.target.value})} className="w-full mt-4 p-3 border rounded-xl h-24"></textarea>
           <div className="flex justify-end gap-2 mt-4">
             <button type="button" onClick={resetForm} className="px-4 py-2 border rounded-lg text-sm font-bold bg-white text-slate-600">Cancel</button>
             <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold">Save</button>

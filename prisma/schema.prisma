@@ -71,6 +71,7 @@ model Course {
   language    String?  @default("Arabic")
   level       String?  @default("Beginner Level")
   isFeatured  Boolean  @default(false)
+  order       Int      @default(0)
   isUpcoming  Boolean  @default(false)
   isSubscription Boolean @default(false)
   subscriptionInterval String? @default("month")
@@ -261,6 +262,7 @@ model Testimonial {
   role      String?
   text      String
   image     String?
+  videoUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

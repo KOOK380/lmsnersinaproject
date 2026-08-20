@@ -431,7 +431,7 @@ router.post("/auth/:provider/callback", async (req, res) => {
 router.get("/courses", async (req, res) => {
   try {
     const courses = await prisma.course.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       include: {
         instructor: true,
         category: true,
@@ -451,7 +451,7 @@ router.get("/courses", async (req, res) => {
 router.get("/courses/active", async (req, res) => {
   const courses = await prisma.course.findMany({
     where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
     include: {
       instructor: true,
       category: true,
@@ -652,19 +652,19 @@ router.get("/testimonials", async (req, res) => {
 
 router.post("/admin/testimonials", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { name, role, text, image } = req.body;
+  const { name, role, text, image, videoUrl } = req.body;
   const t = await prisma.testimonial.create({
-    data: { name, role, text, image }
+    data: { name, role, text, image, videoUrl }
   });
   res.json(t);
 });
 
 router.put("/admin/testimonials/:id", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { name, role, text, image } = req.body;
+  const { name, role, text, image, videoUrl } = req.body;
   const t = await prisma.testimonial.update({
     where: { id: req.params.id },
-    data: { name, role, text, image }
+    data: { name, role, text, image, videoUrl }
   });
   res.json(t);
 });
@@ -2170,7 +2170,9 @@ router.post("/admin/course-bundles", authMiddleware, async (req, res) => {
     
     const bundle = await prisma.courseBundle.create({
       data: {
-        title, description, price: parseFloat(price), realPrice: realPrice ? parseFloat(realPrice) : null, imageUrl, bannerVideoUrl, isActive, isFeatured,
+      order: parseInt(order) || 0,
+      title,
+      description, price: parseFloat(price), realPrice: realPrice ? parseFloat(realPrice) : null, imageUrl, bannerVideoUrl, isActive, isFeatured,
         courses: {
           create: (courses || []).map((courseId: string) => ({ courseId }))
         },
@@ -2205,6 +2207,7 @@ router.put("/admin/course-bundles/:id", authMiddleware, async (req, res) => {
     
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
+    if (order !== undefined) updateData.order = parseInt(order) || 0;
 
     const bundle = await prisma.courseBundle.update({ where: { id }, data: updateData });
 
@@ -2250,7 +2253,7 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, 
-      instructorId, categoryId, membershipIds, isFeatured, isUpcoming, isActive, 
+      instructorId, categoryId, membershipIds, isFeatured, order, isUpcoming, isActive, 
       language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, isSubscription, subscriptionInterval, enablePlatformContent, telegramLink, whatsappLink, customExternalLink
     } = req.body;
     
@@ -2260,7 +2263,9 @@ router.post("/admin/courses", authMiddleware, async (req, res) => {
     
     const course = await prisma.course.create({
       data: {
-        title, description, price: parseFloat(price), realPrice: realPrice ? parseFloat(realPrice) : null, imageUrl, bannerVideoUrl,
+      order: parseInt(order) || 0,
+      title,
+      description, price: parseFloat(price), realPrice: realPrice ? parseFloat(realPrice) : null, imageUrl, bannerVideoUrl,
         instructorId: parsedInstructorId,
         categoryId: parsedCategoryId,
         memberships: { connect: membershipConnections },
@@ -2349,7 +2354,7 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
     if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
     const { 
       lessons, translations, editions, labels, title, description, price, realPrice, imageUrl, bannerVideoUrl, instructorId, categoryId, membershipIds,
-      isFeatured, isUpcoming, isActive, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, isSubscription, subscriptionInterval, enablePlatformContent, telegramLink, whatsappLink, customExternalLink
+      isFeatured, isUpcoming, isActive, order, language, level, duration, meetingLink, meetingDate, meetingNotes, expiryDate, notifyEnrolled, isSubscription, subscriptionInterval, enablePlatformContent, telegramLink, whatsappLink, customExternalLink
     } = req.body;
     
     let parsedInstructorId = instructorId === '' ? null : instructorId;
@@ -2370,6 +2375,7 @@ router.put("/admin/courses/:id", authMiddleware, async (req, res) => {
     if (labels !== undefined) updateData.labels = labels;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
+    if (order !== undefined) updateData.order = parseInt(order) || 0;
     if (isUpcoming !== undefined) updateData.isUpcoming = isUpcoming;
     
     if (language !== undefined) updateData.language = language;
@@ -2688,7 +2694,7 @@ router.put("/admin/users/:id", authMiddleware, async (req, res) => {
   
   const updateData: any = { name, email, role, phone };
   if (password) {
-    updateData.password = await bcrypt.hash(password, 10);
+    updateData.passwordHash = await bcrypt.hash(password, 10);
   }
 
   const user = await prisma.user.update({
