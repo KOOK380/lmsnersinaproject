@@ -256,7 +256,7 @@ export function Courses() {
        : (i.itemType === "MEMBERSHIP" && i.itemId === selectedOption)
     );
 
-    const handleBuy = () => {
+    const handleBuy = async () => {
       if (!user) {
         setAuthModalOpen(true);
         return;
@@ -270,16 +270,42 @@ export function Courses() {
         return;
       }
       
+      const localToken = localStorage.getItem("token") || token;
+
       if (selectedOption !== 'course' && courseRaw?.memberships) {
          const membership = courseRaw.memberships.find((m:any) => m.id === selectedOption);
          if (membership) {
+            const memTitle = membership.contents?.find((c:any) => c.language === language)?.title || membership.contents?.[0]?.title || membership.label || membership.type;
+            if (Number(membership.offerPrice) === 0) {
+              setAddingToCart(true);
+              try {
+                const res = await fetch("/api/orders", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${localToken}` },
+                  body: JSON.stringify({
+                    items: [{ itemType: "MEMBERSHIP", itemId: membership.id, title: memTitle, price: 0 }],
+                    total: 0,
+                    paymentMethod: "FREE"
+                  })
+                });
+                setAddingToCart(false);
+                if (res.ok) {
+                  alert("🎉 Successfully enrolled in this free program! Redirecting to your dashboard...");
+                  navigate("/dashboard");
+                  return;
+                }
+              } catch (e) {
+                setAddingToCart(false);
+              }
+            }
+
             setAddingToCart(true);
             setTimeout(() => {
               addToCart({ 
                  id: Math.random().toString(), 
                  itemType: "MEMBERSHIP", 
                  itemId: membership.id, 
-                 title: membership.contents?.find((c:any) => c.language === language)?.title || membership.contents?.[0]?.title || membership.label || membership.type, 
+                 title: memTitle, 
                  price: membership.offerPrice, isSubscription: membership.isSubscription, subscriptionInterval: membership.subscriptionInterval 
               });
               setAddingToCart(false);
@@ -306,6 +332,44 @@ export function Courses() {
              finalTitle += ` (${edition.mode || 'Online'}${edition.date ? ', ' + new Date(edition.date).toLocaleDateString() : ''})`;
           }
       }
+
+      const effectivePrice = edition ? Number(edition.price) : Number(course.price || 0);
+
+      // Direct free enrollment if price is 0!
+      if (effectivePrice === 0) {
+        setAddingToCart(true);
+        try {
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${localToken}` },
+            body: JSON.stringify({
+              items: [{ 
+                itemType: "COURSE", 
+                itemId: course.id, 
+                editionId: selectedEdition || null,
+                title: finalTitle, 
+                price: 0 
+              }],
+              total: 0,
+              paymentMethod: "FREE"
+            })
+          });
+          setAddingToCart(false);
+          if (res.ok) {
+            alert("🎉 Successfully enrolled in this free course! Redirecting to your dashboard...");
+            navigate("/dashboard");
+            return;
+          } else {
+            const err = await res.json();
+            alert(err.error || "Enrollment failed");
+            return;
+          }
+        } catch(e) {
+          setAddingToCart(false);
+          alert("Network error enrolling in course");
+          return;
+        }
+      }
       
       setAddingToCart(true);
       setTimeout(() => {
@@ -315,7 +379,7 @@ export function Courses() {
            itemId: course.id, 
            editionId: selectedEdition || undefined,
            title: finalTitle, 
-           price: course.price, isSubscription: course.isSubscription, subscriptionInterval: course.subscriptionInterval 
+           price: effectivePrice, isSubscription: course.isSubscription, subscriptionInterval: course.subscriptionInterval 
         });
         setAddingToCart(false);
         navigate("/cart");
@@ -868,10 +932,33 @@ export function BundleDetails() {
 
   const inCart = cart.some(c => c.itemId === bundle.id && c.itemType === 'BUNDLE');
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!user || !token) {
       setAuthModalOpen(true);
       return;
+    }
+    const localToken = localStorage.getItem("token") || token;
+    if (Number(bundle.price) === 0) {
+      setAddingToCart(true);
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localToken}` },
+          body: JSON.stringify({
+            items: [{ itemType: "BUNDLE", itemId: bundle.id, title: bundle.title, price: 0 }],
+            total: 0,
+            paymentMethod: "FREE"
+          })
+        });
+        setAddingToCart(false);
+        if (res.ok) {
+          alert("🎉 Successfully enrolled in this free bundle! Redirecting to your dashboard...");
+          navigate("/dashboard");
+          return;
+        }
+      } catch (e) {
+        setAddingToCart(false);
+      }
     }
     setAddingToCart(true);
     addToCart({ id: Math.random().toString(), itemType: 'BUNDLE', itemId: bundle.id, title: bundle.title, price: bundle.price });
@@ -1116,7 +1203,7 @@ export function MembershipDetails() {
   
   const inCart = cart.some((i: any) => i.itemType === "MEMBERSHIP" && i.itemId === membership?.id);
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
@@ -1148,6 +1235,44 @@ export function MembershipDetails() {
         }
     }
 
+    const effectivePrice = edition ? Number(edition.price) : Number(membership.offerPrice || 0);
+
+    if (effectivePrice === 0) {
+      setAddingToCart(true);
+      try {
+        const localToken = localStorage.getItem("token") || token;
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localToken}` },
+          body: JSON.stringify({
+            items: [{
+              itemType: "MEMBERSHIP",
+              itemId: membership.id,
+              editionId: selectedEdition || null,
+              title: title,
+              price: 0
+            }],
+            total: 0,
+            paymentMethod: "FREE"
+          })
+        });
+        setAddingToCart(false);
+        if (res.ok) {
+          alert("🎉 Successfully enrolled in this free program! Redirecting to your dashboard...");
+          navigate("/dashboard");
+          return;
+        } else {
+          const err = await res.json();
+          alert(err.error || "Enrollment failed");
+          return;
+        }
+      } catch (e) {
+        setAddingToCart(false);
+        alert("Network error enrolling");
+        return;
+      }
+    }
+
     setAddingToCart(true);
     setTimeout(() => {
       addToCart({ 
@@ -1156,7 +1281,7 @@ export function MembershipDetails() {
          itemId: membership.id, 
          editionId: selectedEdition || undefined,
          title: title, 
-         price: edition ? edition.price : membership.offerPrice, isSubscription: membership.isSubscription, subscriptionInterval: membership.subscriptionInterval 
+         price: effectivePrice, isSubscription: membership.isSubscription, subscriptionInterval: membership.subscriptionInterval 
       });
       setAddingToCart(false);
       navigate("/cart");
@@ -1653,7 +1778,7 @@ export function EventDetails() {
   
   const inCart = cart.some((i: any) => i.itemType === "EVENT" && i.itemId === event?.id);
 
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
@@ -1666,6 +1791,44 @@ export function EventDetails() {
       navigate("/cart");
       return;
     }
+
+    const localToken = localStorage.getItem("token") || token;
+
+    // Direct Instant Free Booking
+    if (Number(event.price) === 0) {
+      setAddingToCart(true);
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${localToken}` },
+          body: JSON.stringify({
+            items: [{
+              itemType: "EVENT",
+              itemId: event.id,
+              title: `Seat for: ${event.title}`,
+              price: 0
+            }],
+            total: 0,
+            paymentMethod: "FREE"
+          })
+        });
+        setAddingToCart(false);
+        if (res.ok) {
+          alert("🎉 Your seat has been booked successfully! Redirecting to your dashboard...");
+          navigate("/dashboard");
+          return;
+        } else {
+          const err = await res.json();
+          alert(err.error || "Booking failed");
+          return;
+        }
+      } catch (e) {
+        setAddingToCart(false);
+        alert("Network error booking seat");
+        return;
+      }
+    }
+
     setAddingToCart(true);
     setTimeout(() => {
       addToCart({ id: Math.random().toString(), itemType: "EVENT", itemId: event.id, title: `Seat for: ${event.title}`, price: event.price });
@@ -1718,7 +1881,7 @@ export function EventDetails() {
                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                            {t('events.booking', 'Booking...')}
                         </>
-                      ) : enrolled ? t('events.already_booked', 'Already Booked (Go to Dashboard)') : inCart ? t('events.added_to_cart', 'Added to Cart (Go to Cart)') : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
+                      ) : enrolled ? t('events.already_booked', 'Already Booked (Go to Dashboard)') : inCart ? t('events.added_to_cart', 'Added to Cart (Go to Cart)') : (event.availableSeats > 0 ? (event.price === 0 ? 'Book Free Seat' : t('events.book_seat', 'Book your seat')) : t('events.sold_out', 'Sold Out'))}
                     </button>
                     <p className="text-xs text-center text-slate-400 mt-4">{t('events.secure_checkout', 'Secure checkout. Instant confirmation.')}</p>
                  </div>
@@ -1793,7 +1956,7 @@ export function EventDetails() {
             </div>
          </div>
          <button onClick={handleBook} disabled={event.availableSeats <= 0 || addingToCart} className="text-sm font-bold bg-primary text-white px-8 py-3 rounded-full shadow-sm disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-            {addingToCart ? t('events.booking', 'Booking...') : enrolled ? t('events.already_booked_short', 'Booked') : inCart ? t('events.added_to_cart_short', 'In Cart') : (event.availableSeats > 0 ? t('events.book_seat', 'Book your seat') : t('events.sold_out', 'Sold Out'))}
+            {addingToCart ? t('events.booking', 'Booking...') : enrolled ? t('events.already_booked_short', 'Booked') : inCart ? t('events.added_to_cart_short', 'In Cart') : (event.availableSeats > 0 ? (event.price === 0 ? 'Book Free Seat' : t('events.book_seat', 'Book your seat')) : t('events.sold_out', 'Sold Out'))}
          </button>
       </div>
 

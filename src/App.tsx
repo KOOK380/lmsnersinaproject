@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Link, useNavigate, useLocation, useSearch
 import { useTranslation } from "react-i18next";
 import { useStore, getTranslated } from "./store";
 import ReactPlayer from "react-player";
-import { ShoppingCart, BookOpen, Menu, X, Heart, Globe, Instagram, Youtube, Linkedin, Check, ChevronLeft, ChevronRight, MapPin, Phone, Mail } from "lucide-react";
+import { ShoppingCart, BookOpen, Menu, X, Heart, Globe, Instagram, Youtube, Linkedin, Check, ChevronLeft, ChevronRight, MapPin, Phone, Mail, Copy, Sparkles, Tag, Gift } from "lucide-react";
 
 import { Courses, CourseDetails, Memberships, Events, MembershipDetails, EventDetails, BundleDetails, BlogList, BlogDetails } from "./pages/FrontPages";
 import { Cart, Dashboard, CoursePlayer, Wishlist } from "./pages/UserPages";
@@ -480,10 +480,33 @@ function AuthModal() {
   );
 }
 
-function SubscriptionPopupContent({ onClose }: { onClose: () => void }) {
+function SubscriptionPopupContent({ config, onClose }: { config?: any; onClose: () => void }) {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({ name: '', email: '' });
   const [status, setStatus] = useState<null | 'submitting' | 'success' | 'error'>(null);
+  const [copied, setCopied] = useState(false);
+
+  const layout = config?.layout || 'split';
+  const badge = config?.badge || 'Limited Time Offer';
+  const title = config?.title || 'Get 10% Off Your Next Course';
+  const description = config?.description || 'Subscribe to our newsletter for exclusive discounts, masterclasses, and tech industry career roadmaps delivered straight to your inbox.';
+  const imageUrl = config?.imageUrl || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800';
+  const namePlaceholder = config?.namePlaceholder || 'Your full name';
+  const emailPlaceholder = config?.emailPlaceholder || 'Enter your email address';
+  const buttonText = config?.buttonText || 'Claim My 10% Discount';
+  const disclaimer = config?.disclaimer || 'No spam ever. Unsubscribe with 1-click anytime.';
+  const enablePromoCode = config?.enablePromoCode !== false;
+  const promoCode = config?.promoCode || 'WELCOME10';
+  const promoDiscount = config?.promoDiscount || '10% OFF';
+  const successTitle = config?.successTitle || "🎉 You're on the list!";
+  const successMessage = config?.successMessage || "We sent your welcome pack to your inbox. Use the code below at checkout:";
+
+  // Color settings configured from backend
+  const primaryColor = config?.primaryColor || '#4f46e5';
+  const buttonTextColor = config?.buttonTextColor || '#ffffff';
+  const backgroundColor = config?.backgroundColor || '#ffffff';
+  const textColor = config?.textColor || '#0f172a';
+  const secondaryTextColor = config?.secondaryTextColor || '#64748b';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -497,46 +520,254 @@ function SubscriptionPopupContent({ onClose }: { onClose: () => void }) {
       if (!res.ok) throw new Error('Failed');
       setStatus('success');
       setFormData({ name: '', email: '' });
-      setTimeout(() => {
-        onClose();
-      }, 2000);
     } catch (err) {
       setStatus('error');
     }
   };
 
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(promoCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
+
   if (status === 'success') {
     return (
-      <div className="p-12 flex flex-col items-center justify-center text-center">
-        <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-6">
-          <Check className="w-8 h-8" />
+      <div
+        className="p-8 md:p-12 flex flex-col items-center justify-center text-center max-w-lg mx-auto w-full animate-in fade-in zoom-in-95 duration-300 rounded-2xl"
+        style={{ backgroundColor, color: textColor }}
+      >
+        <div
+          className="w-16 h-16 rounded-full flex items-center justify-center mb-5 shadow-sm"
+          style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
+        >
+          <Check className="w-8 h-8 stroke-[2.5]" />
         </div>
-        <h3 className="text-2xl font-bold text-slate-800 mb-2">{t('contact.success_title', 'Thank you!')}</h3>
-        <p className="text-slate-500">{t('promo.success_desc', 'You have been successfully subscribed.')}</p>
+        <h3 className="text-2xl md:text-3xl font-bold mb-2" style={{ color: textColor }}>{successTitle}</h3>
+        <p className="text-sm md:text-base leading-relaxed mb-6" style={{ color: secondaryTextColor }}>{successMessage}</p>
+
+        {enablePromoCode && (
+          <div
+            className="w-full border-2 border-dashed rounded-2xl p-5 mb-6 text-left"
+            style={{ borderColor: `${primaryColor}60`, backgroundColor: `${primaryColor}0d` }}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider flex items-center gap-1.5" style={{ color: primaryColor }}>
+                <Gift className="w-4 h-4" /> Exclusive Coupon
+              </span>
+              {promoDiscount && (
+                <span
+                  className="text-xs font-extrabold px-2.5 py-0.5 rounded-full shadow-sm"
+                  style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+                >
+                  {promoDiscount}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-xl px-4 py-3 shadow-inner">
+              <span className="font-mono text-xl md:text-2xl font-black tracking-wider" style={{ color: primaryColor }}>
+                {promoCode}
+              </span>
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg transition active:scale-95 shadow-sm"
+                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" /> Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" /> Copy Code
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-[11px] mt-2 text-center" style={{ color: secondaryTextColor }}>Applied automatically or enter at checkout.</p>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="w-full font-bold py-3.5 px-6 rounded-xl transition shadow-sm text-sm"
+          style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+        >
+          Start Exploring Courses
+        </button>
       </div>
     );
   }
 
-  return (
-    <div className="p-8 md:p-12 max-w-lg mx-auto w-full">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-3">{t('promo.subscribe_title', 'Subscribe for Updates')}</h2>
-        <p className="text-slate-500 text-sm">{t('promo.subscribe_desc', 'Enter your name and email to get the latest updates and exclusive offers.')}</p>
+  // Common Form Content
+  const formElement = (
+    <form onSubmit={handleSubmit} className="space-y-3.5">
+      <div>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: secondaryTextColor }}>{t('contact.name', 'Your Name')}</label>
+        <input
+          type="text"
+          required
+          value={formData.name}
+          onChange={e => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-4 py-3 border border-slate-200/90 rounded-xl outline-none transition text-sm shadow-sm"
+          style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+          placeholder={namePlaceholder}
+        />
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.name', 'Name')}</label>
-          <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.name_placeholder', 'Your name')} />
+      <div>
+        <label className="block text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: secondaryTextColor }}>{t('contact.email', 'Email Address')}</label>
+        <input
+          type="email"
+          required
+          value={formData.email}
+          onChange={e => setFormData({ ...formData, email: e.target.value })}
+          className="w-full px-4 py-3 border border-slate-200/90 rounded-xl outline-none transition text-sm shadow-sm"
+          style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+          placeholder={emailPlaceholder}
+        />
+      </div>
+      <button
+        disabled={status === 'submitting'}
+        type="submit"
+        className="w-full py-3.5 rounded-xl font-bold transition shadow-md disabled:opacity-70 mt-1 flex items-center justify-center gap-2 text-sm md:text-base active:scale-[0.99]"
+        style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+      >
+        {status === 'submitting' ? (
+          <span className="flex items-center gap-2">
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Subscribing...
+          </span>
+        ) : (
+          <>
+            <Sparkles className="w-4 h-4" />
+            {buttonText}
+          </>
+        )}
+      </button>
+      {disclaimer && (
+        <p className="text-[11px] text-center pt-1" style={{ color: secondaryTextColor }}>{disclaimer}</p>
+      )}
+      {status === 'error' && (
+        <p className="text-red-500 text-xs font-bold text-center mt-2">{t('contact.error', 'Submission failed. Please try again.')}</p>
+      )}
+    </form>
+  );
+
+  // Layout 1: Split Screen (Cover image on left, form on right)
+  if (layout === 'split') {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-12 min-h-[460px]" style={{ backgroundColor, color: textColor }}>
+        <div className="relative md:col-span-5 hidden md:block overflow-hidden bg-slate-900">
+          <img
+            src={imageUrl}
+            alt="Newsletter Cover"
+            className="w-full h-full object-cover object-center absolute inset-0 opacity-80"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20 p-8 flex flex-col justify-end text-white">
+            {badge && (
+              <span
+                className="inline-flex items-center gap-1.5 self-start text-xs font-bold px-3 py-1 rounded-full mb-3 backdrop-blur-sm shadow-sm"
+                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+              >
+                <Tag className="w-3.5 h-3.5" />
+                {badge}
+              </span>
+            )}
+            <h4 className="text-xl font-bold leading-tight drop-shadow-sm mb-1">{title}</h4>
+            {enablePromoCode && (
+              <p className="text-xs text-white/90 flex items-center gap-1 mt-2">
+                <Gift className="w-3.5 h-3.5" /> Welcome voucher included
+              </p>
+            )}
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-bold text-slate-800 mb-1">{t('contact.email', 'Email')}</label>
-          <input type="email" required value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none transition" placeholder={t('contact.email_placeholder', 'example@gmail.com')} />
+
+        <div className="md:col-span-7 p-6 sm:p-8 md:p-10 flex flex-col justify-center" style={{ backgroundColor }}>
+          <div className="mb-5">
+            {badge && (
+              <span
+                className="inline-flex md:hidden items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full mb-2"
+                style={{ backgroundColor: `${primaryColor}20`, color: primaryColor, borderColor: `${primaryColor}40` }}
+              >
+                {badge}
+              </span>
+            )}
+            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-tight mb-2" style={{ color: textColor }}>
+              {title}
+            </h2>
+            <p className="text-xs sm:text-sm leading-relaxed" style={{ color: secondaryTextColor }}>
+              {description}
+            </p>
+          </div>
+          {formElement}
         </div>
-        <button disabled={status === 'submitting'} type="submit" className="w-full bg-primary text-white py-4 rounded-xl font-bold hover:bg-primary-dark transition disabled:opacity-70 mt-2">
-           {status === 'submitting' ? t('contact.sending', 'Sending...') : t('promo.subscribe_btn', 'Subscribe Now')}
-        </button>
-        {status === 'error' && <p className="text-red-500 text-sm font-bold text-center mt-4">{t('contact.error', 'Failed. Please try again.')}</p>}
-      </form>
+      </div>
+    );
+  }
+
+  // Layout 2: Voucher / Ticket Style
+  if (layout === 'voucher') {
+    return (
+      <div className="p-6 sm:p-10 max-w-lg mx-auto w-full relative" style={{ backgroundColor, color: textColor }}>
+        <div
+          className="border-2 border-dashed rounded-2xl p-6 sm:p-8 shadow-sm relative overflow-hidden"
+          style={{ borderColor: primaryColor, backgroundColor: `${primaryColor}08` }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <span
+              className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full shadow-sm"
+              style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+            >
+              <Gift className="w-3.5 h-3.5" /> {badge || 'Special Voucher'}
+            </span>
+            {enablePromoCode && promoDiscount && (
+              <span className="text-lg font-black" style={{ color: primaryColor }}>{promoDiscount}</span>
+            )}
+          </div>
+          <h2 className="text-2xl font-black mb-2 leading-snug" style={{ color: textColor }}>{title}</h2>
+          <p className="text-xs sm:text-sm mb-6 leading-relaxed" style={{ color: secondaryTextColor }}>{description}</p>
+          {formElement}
+        </div>
+      </div>
+    );
+  }
+
+  // Layout 3: Clean Card
+  return (
+    <div className="p-6 sm:p-10 max-w-lg mx-auto w-full" style={{ backgroundColor, color: textColor }}>
+      {imageUrl && (
+        <div className="w-full h-36 rounded-xl overflow-hidden mb-6 relative">
+          <img src={imageUrl} alt="Banner" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-4">
+            {badge && (
+              <span
+                className="text-xs font-extrabold px-3 py-1 rounded-full shadow-sm"
+                style={{ backgroundColor: primaryColor, color: buttonTextColor }}
+              >
+                {badge}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="text-center mb-6">
+        {!imageUrl && badge && (
+          <span
+            className="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3 border"
+            style={{ backgroundColor: `${primaryColor}18`, color: primaryColor, borderColor: `${primaryColor}35` }}
+          >
+            {badge}
+          </span>
+        )}
+        <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2" style={{ color: textColor }}>
+          {title}
+        </h2>
+        <p className="text-xs sm:text-sm leading-relaxed" style={{ color: secondaryTextColor }}>
+          {description}
+        </p>
+      </div>
+      {formElement}
     </div>
   );
 }
@@ -695,8 +926,8 @@ function WebsitePopup() {
                 <React.Fragment key={index}>
                    <div dangerouslySetInnerHTML={{ __html: part }} />
                    {index < parts.length - 1 && (
-                     <div className="not-prose my-6 bg-slate-50 border border-slate-100 rounded-2xl shadow-sm">
-                       <SubscriptionPopupContent onClose={handleClose} />
+                     <div className="not-prose my-6 rounded-2xl shadow-sm overflow-hidden">
+                       <SubscriptionPopupContent config={popupConfig.newsletter} onClose={handleClose} />
                      </div>
                    )}
                 </React.Fragment>
@@ -722,15 +953,21 @@ function WebsitePopup() {
       );
     }
     if (popupConfig.type === 'SUBSCRIPTION') {
-      return <SubscriptionPopupContent onClose={handleClose} />;
+      return <SubscriptionPopupContent config={popupConfig.newsletter} onClose={handleClose} />;
     }
     return null;
   };
 
+  const popupBg = popupConfig?.type === 'SUBSCRIPTION' ? (popupConfig?.newsletter?.backgroundColor || '#ffffff') : '#ffffff';
+  const popupColor = popupConfig?.type === 'SUBSCRIPTION' ? (popupConfig?.newsletter?.textColor || '#0f172a') : undefined;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose}></div>
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-auto overflow-hidden animate-in fade-in zoom-in duration-300">
+      <div
+        className="relative rounded-2xl shadow-2xl max-w-4xl w-full mx-auto overflow-hidden animate-in fade-in zoom-in duration-300"
+        style={{ backgroundColor: popupBg, color: popupColor }}
+      >
         <button onClick={handleClose} className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full hover:bg-black/70 transition">
           <X className="w-4 h-4" />
         </button>

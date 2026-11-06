@@ -26,42 +26,153 @@ export function Cart() {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [paymentProofUrl, setPaymentProofUrl] = useState('');
 
+  const total = getCartTotal();
+  const isFreeOrder = total <= 0;
+
   useEffect(() => {
-    if (!selectedPayment) {
+    if (isFreeOrder) {
+      setSelectedPayment('FREE');
+    } else if (!selectedPayment || selectedPayment === 'FREE') {
       if (isStripeEnabled) {
         setSelectedPayment('STRIPE');
       } else if (isManualEnabled) {
         setSelectedPayment('MANUAL');
       }
     }
-  }, [isStripeEnabled, isManualEnabled, selectedPayment]);
+  }, [isStripeEnabled, isManualEnabled, selectedPayment, isFreeOrder]);
 
   const [showCheckout, setShowCheckout] = useState(false);
-  const [billingDetails, setBillingDetails] = useState({
-    fullName: user?.name || '',
-    address: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: ''
-  });
+
+  // Load saved billing details from localStorage or user defaults
+  const getInitialBillingDetails = () => {
+    try {
+      const saved = localStorage.getItem('saved_billing_details');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return {
+          fullName: parsed.fullName || user?.name || '',
+          address: parsed.address || '',
+          city: parsed.city || '',
+          state: parsed.state || '',
+          zip: parsed.zip || '',
+          country: parsed.country || ''
+        };
+      }
+    } catch (e) {}
+    return {
+      fullName: user?.name || '',
+      address: '',
+      city: '',
+      state: '',
+      zip: '',
+      country: ''
+    };
+  };
+
+  const [billingDetails, setBillingDetails] = useState(getInitialBillingDetails);
+
+  // Fetch last billing details from user's last order if not stored in localStorage yet
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token && user && (!billingDetails.address || !billingDetails.country)) {
+      fetch("/api/user/last-billing", { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(res => {
+          if (res?.billingDetails) {
+            setBillingDetails(prev => {
+              const updated = {
+                fullName: prev.fullName || res.billingDetails.fullName || user.name || '',
+                address: prev.address || res.billingDetails.address || '',
+                city: prev.city || res.billingDetails.city || '',
+                state: prev.state || res.billingDetails.state || '',
+                zip: prev.zip || res.billingDetails.zip || '',
+                country: prev.country || res.billingDetails.country || ''
+              };
+              try {
+                localStorage.setItem("saved_billing_details", JSON.stringify(updated));
+              } catch (e) {}
+              return updated;
+            });
+          }
+        })
+        .catch(() => {});
+    }
+  }, [user]);
+
+  const updateBillingField = (field: string, value: string) => {
+    setBillingDetails(prev => {
+      const updated = { ...prev, [field]: value };
+      try {
+        localStorage.setItem("saved_billing_details", JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Direct Free Order Placement (1 click, no payment method needed)
+  const handleDirectFreeOrder = async () => {
+    if (!user) return alert("Please login to enroll");
+    if (cart.length === 0) return;
+
+    const token = localStorage.getItem("token");
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          items: cart,
+          total: 0,
+          billingDetails: JSON.stringify(billingDetails),
+          paymentMethod: 'FREE'
+        })
+      });
+
+      setIsSubmitting(false);
+      if (res.ok) {
+        clearCart();
+        alert("🎉 Successfully enrolled! Taking you to your dashboard...");
+        navigate("/dashboard");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Enrollment failed.");
+      }
+    } catch (err) {
+      setIsSubmitting(false);
+      alert("Network error placing free order.");
+    }
+  };
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return alert("Please login");
     if (cart.length === 0) return;
 
+    // Save billing details for all future orders
+    try {
+      localStorage.setItem("saved_billing_details", JSON.stringify(billingDetails));
+    } catch (e) {}
+
     const token = localStorage.getItem("token");
-    const total = getCartTotal();
+    const currentTotal = getCartTotal();
     
-    if (total > 0 && selectedPayment === 'MANUAL' && !paymentProofUrl && manualConfig?.instructions) {
+    if (currentTotal <= 0) {
+      return handleDirectFreeOrder();
+    }
+
+    if (currentTotal > 0 && selectedPayment === 'MANUAL' && !paymentProofUrl && manualConfig?.instructions) {
       if(!window.confirm("You have not uploaded a payment receipt. Continue anyway?")) return;
     }
 
     setIsSubmitting(true);
 
-    if (total > 0 && selectedPayment === 'STRIPE') {
+    if (currentTotal > 0 && selectedPayment === 'STRIPE') {
       try {
         const stripeRes = await fetch("/api/stripe/create-checkout-session", {
            method: "POST",
@@ -92,7 +203,7 @@ export function Cart() {
       }
     }
 
-    // Manual or Free Checkout
+    // Manual Checkout
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { 
@@ -101,7 +212,7 @@ export function Cart() {
       },
       body: JSON.stringify({
         items: cart,
-        total: getCartTotal(),
+        total: currentTotal,
         billingDetails: JSON.stringify(billingDetails),
         paymentMethod: selectedPayment,
         paymentProofUrl: selectedPayment === 'MANUAL' ? paymentProofUrl : null
@@ -111,7 +222,7 @@ export function Cart() {
     setIsSubmitting(false);
     if (res.ok) {
       clearCart();
-      alert(selectedPayment === 'MANUAL' && total > 0 ? "Order placed! It is pending admin approval." : "Order placed successfully!");
+      alert(selectedPayment === 'MANUAL' ? "Order placed! It is pending admin approval." : "Order placed successfully!");
       navigate("/dashboard");
     } else {
       const data = await res.json();
@@ -128,38 +239,45 @@ export function Cart() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8 order-2 md:order-1">
-               <h2 className="text-xl font-bold mb-6 text-slate-800">{t('cart.billing_address', 'Billing Address')}</h2>
+               <div className="flex items-center justify-between mb-4">
+                 <h2 className="text-xl font-bold text-slate-800">{t('cart.billing_address', 'Billing Information')}</h2>
+                 <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1">
+                   <CheckCircle2 className="w-3 h-3" /> Auto-saved
+                 </span>
+               </div>
+               <p className="text-xs text-slate-400 mb-6">Your details are saved automatically so you won't need to re-enter them again.</p>
+
                <form id="checkout-form" onSubmit={handleCheckout} className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.full_name', 'Full Name')}</label>
-                  <input required type="text" value={billingDetails.fullName} onChange={e => setBillingDetails({...billingDetails, fullName: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                  <input required type="text" value={billingDetails.fullName} onChange={e => updateBillingField('fullName', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Your Full Name" />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.address', 'Address')}</label>
-                  <input required type="text" value={billingDetails.address} onChange={e => setBillingDetails({...billingDetails, address: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                  <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.address', 'Address')} {!isFreeOrder && <span className="text-xs text-slate-400 font-normal">(Optional)</span>}</label>
+                  <input type="text" value={billingDetails.address} onChange={e => updateBillingField('address', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Street Address" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.city', 'City')}</label>
-                    <input required type="text" value={billingDetails.city} onChange={e => setBillingDetails({...billingDetails, city: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                    <input type="text" value={billingDetails.city} onChange={e => updateBillingField('city', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="City" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.state', 'State')}</label>
-                    <input required type="text" value={billingDetails.state} onChange={e => setBillingDetails({...billingDetails, state: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                    <input type="text" value={billingDetails.state} onChange={e => updateBillingField('state', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="State/Province" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.zip', 'Zip Code')}</label>
-                    <input required type="text" value={billingDetails.zip} onChange={e => setBillingDetails({...billingDetails, zip: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                    <input type="text" value={billingDetails.zip} onChange={e => updateBillingField('zip', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Postal Code" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1">{t('cart.country', 'Country')}</label>
-                    <input required type="text" value={billingDetails.country} onChange={e => setBillingDetails({...billingDetails, country: e.target.value})} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" />
+                    <input type="text" value={billingDetails.country} onChange={e => updateBillingField('country', e.target.value)} className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary outline-none" placeholder="Country" />
                   </div>
                 </div>
                 
-                {getCartTotal() > 0 && (
+                {getCartTotal() > 0 ? (
                   <div className="pt-6 mt-6 border-t border-slate-100">
                     <h3 className="font-bold text-lg mb-4 text-slate-800">{t('cart.payment_method', 'Payment Method')}</h3>
                     <div className="space-y-3">
@@ -204,12 +322,19 @@ export function Cart() {
                        </div>
                     )}
                   </div>
+                ) : (
+                  <div className="pt-6 mt-6 border-t border-slate-100">
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-bold flex items-center gap-2">
+                       <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                       <span>100% Free Order &mdash; No payment or credit card required.</span>
+                    </div>
+                  </div>
                 )}
                 
                 <div className="pt-6 mt-6 flex gap-4">
                    <button type="button" onClick={() => setShowCheckout(false)} className="px-6 py-4 rounded-xl font-bold text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex-1">{t('cart.back_to_cart', 'Back to Cart')}</button>
-                   <button type="submit" disabled={isSubmitting} className="px-6 py-4 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary-dark transition flex-1 disabled:opacity-70">
-                     {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Enrollment') : t('cart.place_order', 'Place Order'))}
+                   <button type="submit" disabled={isSubmitting} className="px-6 py-4 rounded-xl font-bold text-sm text-white bg-primary hover:bg-primary-dark transition flex-1 disabled:opacity-70 flex items-center justify-center gap-2">
+                     {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Free Enrollment') : t('cart.place_order', 'Place Order'))}
                    </button>
                 </div>
              </form>
@@ -221,13 +346,13 @@ export function Cart() {
                {cart.map(item => (
                  <div key={item.id} className="flex justify-between items-center text-sm">
                    <span className="text-slate-600 truncate mr-4">{item.title}</span>
-                   <span className="font-bold shrink-0">{formatCurrency(item.price, currency)}</span>
+                   <span className="font-bold shrink-0">{Number(item.price) === 0 ? <span className="text-emerald-600 font-bold uppercase text-xs">Free</span> : formatCurrency(item.price, currency)}</span>
                  </div>
                ))}
              </div>
              <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
                <span className="font-bold text-lg">{t('cart.total', 'Total')}</span>
-               <span className="font-bold text-2xl text-primary">{formatCurrency(getCartTotal(), currency)}</span>
+               <span className="font-bold text-2xl text-primary">{getCartTotal() === 0 ? <span className="text-emerald-600 font-black">FREE</span> : formatCurrency(getCartTotal(), currency)}</span>
              </div>
           </div>
         </div>
@@ -237,12 +362,12 @@ export function Cart() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
          <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('cart.total', 'Total')}</p>
-            <p className="text-2xl font-black text-gray-900 leading-none">{formatCurrency(getCartTotal(), currency)}</p>
+            <p className="text-2xl font-black text-gray-900 leading-none">{getCartTotal() === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(getCartTotal(), currency)}</p>
          </div>
          <div className="flex items-center gap-2">
            <button type="button" onClick={() => setShowCheckout(false)} className="px-4 py-3 rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">{t('cart.back', 'Back')}</button>
            <button type="submit" form="checkout-form" disabled={isSubmitting} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-              {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Enrollment') : t('cart.place_order', 'Place Order'))}
+              {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Free Enrollment') : t('cart.place_order', 'Place Order'))}
            </button>
          </div>
       </div>
@@ -280,9 +405,19 @@ export function Cart() {
             <div className="font-bold text-2xl">{formatCurrency(getCartTotal(), currency)}</div>
           </div>
           <div className="block">
-            <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="w-full text-xs font-bold uppercase tracking-wider bg-primary text-white py-4 rounded-xl shadow-sm hover:bg-primary-dark transition">
-              {t('cart.checkout')}
-            </button>
+            {getCartTotal() === 0 ? (
+              <button 
+                onClick={handleDirectFreeOrder} 
+                disabled={isSubmitting}
+                className="w-full text-sm font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 disabled:opacity-70"
+              >
+                {isSubmitting ? t('cart.processing', 'Processing...') : '🎉 Complete Free Enrollment (Instant Access)'}
+              </button>
+            ) : (
+              <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="w-full text-xs font-bold uppercase tracking-wider bg-primary text-white py-4 rounded-xl shadow-sm hover:bg-primary-dark transition">
+                {t('cart.checkout')}
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -292,11 +427,17 @@ export function Cart() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
            <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('cart.total')}</p>
-              <p className="text-2xl font-black text-gray-900 leading-none">{formatCurrency(getCartTotal(), currency)}</p>
+              <p className="text-2xl font-black text-gray-900 leading-none">{getCartTotal() === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(getCartTotal(), currency)}</p>
            </div>
-           <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition">
-              {t('cart.checkout')}
-           </button>
+           {getCartTotal() === 0 ? (
+             <button onClick={handleDirectFreeOrder} disabled={isSubmitting} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-emerald-700 transition disabled:opacity-70">
+                {isSubmitting ? t('cart.processing', 'Processing...') : 'Complete Free Enrollment'}
+             </button>
+           ) : (
+             <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition">
+                {t('cart.checkout')}
+             </button>
+           )}
         </div>
       )}
     </div>

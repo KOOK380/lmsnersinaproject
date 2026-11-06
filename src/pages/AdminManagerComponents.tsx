@@ -3,7 +3,7 @@ import { useStore } from "../store";
 import { useTranslation } from "react-i18next";
 import { getDefaultAboutUsHtml } from "./AboutUs";
 import { formatCurrency } from "../lib/utils";
-import { Plus, Settings, Trash2, X, BookOpen, ExternalLink } from "lucide-react";
+import { Plus, Settings, Trash2, X, BookOpen, ExternalLink, Sparkles, Gift, Tag, Layout, Eye, Copy, Check, Palette } from "lucide-react";
 import { Editor } from '@tinymce/tinymce-react';
 import { MediaInput } from "../components/MediaInput";
 
@@ -1853,7 +1853,7 @@ export function EmailTemplatesManager() {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState('');
 
-  const types = ["COURSE_PURCHASE", "MEMBERSHIP_PURCHASE", "EVENT_BOOKING", "FORGOT_PASSWORD", "MEETING_SCHEDULED"];
+  const types = ["COURSE_PURCHASE", "MEMBERSHIP_PURCHASE", "EVENT_BOOKING", "FORGOT_PASSWORD", "MEETING_SCHEDULED", "NEWSLETTER_WELCOME"];
 
   useEffect(() => {
     fetch("/api/admin/email-templates", { headers: { 'Authorization': `Bearer ${token}` } })
@@ -1963,6 +1963,24 @@ export function EmailTemplatesManager() {
     <p>Looking forward to seeing you there.</p>
   </div>
 </div>`);
+        } else if (selectedType === 'NEWSLETTER_WELCOME') {
+          setSubject('Welcome to our Newsletter! Here is your gift 🎁');
+          setContent(`<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 25px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Welcome to our Community!</h2>
+  </div>
+  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background: #ffffff;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>Thank you for subscribing to our newsletter! You are now part of our growing community of learners and professionals.</p>
+    <div style="background-color: #f3f4f6; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px dashed #d1d5db;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #371C3B;">🎁 Your Exclusive Welcome Promo Code:</p>
+      <p style="font-size: 22px; font-weight: bold; margin: 0; color: #4f46e5; letter-spacing: 2px;">WELCOME10</p>
+      <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">Use this code at checkout to get 10% off any course, event, or membership!</p>
+    </div>
+    <p>We'll send you curated updates, educational insights, and special announcements.</p>
+    <p style="margin-top: 30px; font-size: 13px; color: #9ca3af;">If you have any questions or feedback, feel free to reply directly to this email.</p>
+  </div>
+</div>`);
         } else {
           setSubject('');
           setContent('');
@@ -1994,12 +2012,12 @@ export function EmailTemplatesManager() {
   return (
     <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8">
       <h2 className="text-2xl font-serif italic font-bold text-indigo-600 mb-2">Automated Email Templates</h2>
-      <p className="text-sm text-slate-500 mb-8">Manage emails sent automatically upon purchase or booking.</p>
+      <p className="text-sm text-slate-500 mb-8">Manage emails sent automatically upon purchase, booking, or newsletter subscription.</p>
       
-      <div className="flex gap-4 border-b border-slate-200 mb-6">
+      <div className="flex gap-4 border-b border-slate-200 mb-6 overflow-x-auto pb-1">
          {types.map(t => (
-           <button key={t} onClick={() => setSelectedType(t)} className={`pb-2 text-sm font-bold border-b-2 transition ${selectedType === t ? 'border-primary text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
-             {t.replace('_', ' ')}
+           <button key={t} onClick={() => setSelectedType(t)} className={`pb-2 text-sm font-bold border-b-2 transition whitespace-nowrap ${selectedType === t ? 'border-primary text-indigo-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}>
+             {t === 'NEWSLETTER_WELCOME' ? 'Newsletter Welcome' : t.replace(/_/g, ' ')}
            </button>
          ))}
       </div>
@@ -2029,6 +2047,10 @@ export function EmailTemplatesManager() {
                     <span><code>{'{'}{'{'}meetingDate{'}'}{'}'}</code></span>
                     <span><code>{'{'}{'{'}meetingLink{'}'}{'}'}</code></span>
                     <span><code>{'{'}{'{'}meetingNotes{'}'}{'}'}</code></span>
+                  </>}
+                  {selectedType === 'NEWSLETTER_WELCOME' && <>
+                    <span><code>{'{'}{'{'}email{'}'}{'}'}</code> - Subscriber's Email</span>
+                    <span><code>{'{'}{'{'}promoCode{'}'}{'}'}</code> - Welcome Coupon Code</span>
                   </>}
                </p>
             </div>
@@ -3153,9 +3175,10 @@ export function EventManager() {
   }, []);
 
   const fetchEvents = () => {
-    fetch("/api/events")
-      .then(r => r.json())
-      .then(setEvents);
+    fetch("/api/admin/events", { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : fetch("/api/events").then(res => res.json()))
+      .then(data => { if (Array.isArray(data)) setEvents(data); })
+      .catch(console.error);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4580,18 +4603,133 @@ export function PopupManager() {
   const { token, settings, setSettings, languages } = useStore();
   const [status, setStatus] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [previewTab, setPreviewTab] = useState<'form' | 'success'>('form');
+  const [previewCopied, setPreviewCopied] = useState(false);
 
   const settingKey = selectedLanguage === "en" ? 'WEBSITE_POPUP' : `WEBSITE_POPUP_${selectedLanguage}`;
 
-  const [popupConfig, setPopupConfig] = useState({ enabled: false, type: 'IMAGE', content: '', linkUrl: '', displayMode: 'ONCE_PER_SESSION', delayMs: 1500 });
+  const defaultNewsletter = {
+    layout: 'split',
+    badge: 'Limited Time Offer',
+    title: 'Get 10% Off Your Next Course',
+    description: 'Subscribe to our newsletter for exclusive discounts, masterclasses, and tech industry career roadmaps delivered straight to your inbox.',
+    imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800',
+    namePlaceholder: 'Your full name',
+    emailPlaceholder: 'Enter your email address',
+    buttonText: 'Claim My 10% Discount',
+    disclaimer: 'No spam ever. Unsubscribe with 1-click anytime.',
+    enablePromoCode: true,
+    promoCode: 'WELCOME10',
+    promoDiscount: '10% OFF',
+    successTitle: "🎉 You're on the list!",
+    successMessage: 'We sent your welcome pack to your inbox. Use the code below at checkout:',
+    primaryColor: '#4f46e5',
+    buttonTextColor: '#ffffff',
+    backgroundColor: '#ffffff',
+    textColor: '#0f172a',
+    secondaryTextColor: '#64748b'
+  };
+
+  const colorThemes = [
+    { name: 'Royal Purple', primary: '#371C3B', bg: '#ffffff', text: '#1f2937', sub: '#6b7280', btnText: '#ffffff' },
+    { name: 'Modern Indigo', primary: '#4f46e5', bg: '#ffffff', text: '#0f172a', sub: '#64748b', btnText: '#ffffff' },
+    { name: 'Emerald Forest', primary: '#059669', bg: '#ffffff', text: '#064e3b', sub: '#047857', btnText: '#ffffff' },
+    { name: 'Rose Luxury', primary: '#e11d48', bg: '#ffffff', text: '#881337', sub: '#9f1239', btnText: '#ffffff' },
+    { name: 'Warm Amber', primary: '#d97706', bg: '#fffdfa', text: '#78350f', sub: '#92400e', btnText: '#ffffff' },
+    { name: 'Midnight Dark', primary: '#6366f1', bg: '#0f172a', text: '#f8fafc', sub: '#94a3b8', btnText: '#ffffff' }
+  ];
+
+  const [popupConfig, setPopupConfig] = useState<any>({
+    enabled: true,
+    type: 'SUBSCRIPTION',
+    content: '',
+    linkUrl: '',
+    displayMode: 'EVERY_TIME',
+    delayMs: 1500,
+    newsletter: defaultNewsletter
+  });
 
   useEffect(() => {
     const popupSettingStr = settings?.find((s:any) => s.key === settingKey)?.value;
-    const initPopup = popupSettingStr ? JSON.parse(popupSettingStr) : { enabled: false, type: 'IMAGE', content: '', linkUrl: '', displayMode: 'ONCE_PER_SESSION', delayMs: 1500 };
-    if (!initPopup.displayMode) initPopup.displayMode = 'ONCE_PER_SESSION';
-    if (initPopup.delayMs === undefined) initPopup.delayMs = 1500;
-    setPopupConfig(initPopup);
+    if (popupSettingStr) {
+      try {
+        const initPopup = JSON.parse(popupSettingStr);
+        if (!initPopup.displayMode) initPopup.displayMode = 'EVERY_TIME';
+        if (initPopup.delayMs === undefined) initPopup.delayMs = 1500;
+        if (!initPopup.newsletter) initPopup.newsletter = defaultNewsletter;
+        setPopupConfig(initPopup);
+      } catch (e) {
+        console.warn("Failed to parse popup setting:", e);
+      }
+    }
   }, [selectedLanguage, settings, settingKey]);
+
+  const newsletter = popupConfig.newsletter || defaultNewsletter;
+
+  const updateNewsletter = (fields: Partial<typeof defaultNewsletter>) => {
+    setPopupConfig({
+      ...popupConfig,
+      newsletter: {
+        ...newsletter,
+        ...fields
+      }
+    });
+  };
+
+  const applyPreset = (presetName: 'discount' | 'guide' | 'vip') => {
+    if (presetName === 'discount') {
+      updateNewsletter({
+        layout: 'split',
+        badge: 'Limited Time Offer',
+        title: 'Get 10% Off Your Next Course',
+        description: 'Subscribe to our newsletter for exclusive discounts, masterclasses, and tech industry career roadmaps delivered straight to your inbox.',
+        imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800',
+        namePlaceholder: 'Your full name',
+        emailPlaceholder: 'Enter your email address',
+        buttonText: 'Claim My 10% Discount',
+        disclaimer: 'No spam ever. Unsubscribe with 1-click anytime.',
+        enablePromoCode: true,
+        promoCode: 'WELCOME10',
+        promoDiscount: '10% OFF',
+        successTitle: "🎉 You're on the list!",
+        successMessage: 'We sent your welcome pack to your inbox. Use the code below at checkout:'
+      });
+    } else if (presetName === 'guide') {
+      updateNewsletter({
+        layout: 'card',
+        badge: 'Free Download',
+        title: 'Download Free Full-Stack Career Roadmap',
+        description: 'Join 15,000+ engineers receiving our weekly high-yield guides, tech interview preparation kits, and project blueprints.',
+        imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800',
+        namePlaceholder: 'Your full name',
+        emailPlaceholder: 'Enter your email address',
+        buttonText: 'Send Me The Free Guide',
+        disclaimer: '100% free educational resources. No spam ever.',
+        enablePromoCode: false,
+        promoCode: '',
+        promoDiscount: '',
+        successTitle: '🚀 Your Guide Is On The Way!',
+        successMessage: 'Check your email inbox in 2 minutes to download your complete career roadmap.'
+      });
+    } else if (presetName === 'vip') {
+      updateNewsletter({
+        layout: 'voucher',
+        badge: 'VIP Community Club',
+        title: 'Join Our VIP Learning Circle',
+        description: 'Get weekly curated masterclasses, live event recordings, and private discount vouchers sent directly to you.',
+        imageUrl: '',
+        namePlaceholder: 'Your full name',
+        emailPlaceholder: 'Enter your email address',
+        buttonText: 'Unlock VIP Member Access',
+        disclaimer: 'Unsubscribe anytime with 1 click.',
+        enablePromoCode: true,
+        promoCode: 'VIPJOIN',
+        promoDiscount: '15% OFF',
+        successTitle: '⭐ VIP Welcome Access Granted!',
+        successMessage: 'We have reserved your VIP member perks. Use your exclusive coupon code below:'
+      });
+    }
+  };
 
   const saveSettings = async () => {
     setStatus('Saving...');
@@ -4600,7 +4738,7 @@ export function PopupManager() {
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body: JSON.stringify({ key: settingKey, value: JSON.stringify(popupConfig) })
     });
-    if(res.ok) {
+    if (res.ok) {
        setStatus('Saved successfully!');
        const storeSettings = [...settings];
        const i = storeSettings.findIndex((s:any) => s.key === settingKey);
@@ -4616,17 +4754,17 @@ export function PopupManager() {
 
   return (
     <div className="animate-in fade-in duration-500">
-      <div className="mb-8 flex justify-between items-center">
+      <div className="mb-8 flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-serif italic font-bold text-indigo-600">Website Popup settings</h2>
-          <p className="text-slate-500 text-sm mt-2">Manage the universal promotional popup shown to visitors.</p>
+          <h2 className="text-2xl font-serif italic font-bold text-indigo-600">Website Popup & Newsletter Template</h2>
+          <p className="text-slate-500 text-sm mt-1">Configure your universal website popup and customize the subscriber newsletter template.</p>
         </div>
         <div className="flex items-center gap-3">
            <label className="text-sm font-bold text-slate-700">Language:</label>
            <select
              value={selectedLanguage}
              onChange={(e) => setSelectedLanguage(e.target.value)}
-             className="border border-slate-200 rounded p-1.5 text-sm bg-white"
+             className="border border-slate-200 rounded-lg p-2 text-sm bg-white shadow-sm"
            >
               <option value="en">English (Default)</option>
               {languages.filter((l: any) => l.code !== 'en').map((l: any) => (
@@ -4636,47 +4774,691 @@ export function PopupManager() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8 mt-4">
+      <div className="bg-white rounded-2xl border border-slate-200/60 p-6 md:p-8 mt-4 shadow-sm">
         <div className="space-y-6">
            
-           <div className="flex items-center gap-4 bg-slate-50 p-6 rounded-xl border border-slate-100">
-             <input type="checkbox" id="popupEnabled" checked={popupConfig.enabled} onChange={e => setPopupConfig({...popupConfig, enabled: e.target.checked})} className="w-5 h-5 accent-indigo-600 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer" />
+           <div className="flex items-center gap-4 bg-indigo-50/50 p-6 rounded-xl border border-indigo-100">
+             <input
+               type="checkbox"
+               id="popupEnabled"
+               checked={popupConfig.enabled}
+               onChange={e => setPopupConfig({ ...popupConfig, enabled: e.target.checked })}
+               className="w-5 h-5 accent-indigo-600 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+             />
              <div>
                 <label htmlFor="popupEnabled" className="font-bold text-base block text-slate-900 cursor-pointer">Enable Universal Website Popup</label>
-                <p className="text-sm text-slate-500 mt-1">Turn this on to display a promotional popup to your website visitors based on the rules below.</p>
+                <p className="text-sm text-slate-500 mt-1">Displays the promotional newsletter or campaign popup to visitors based on your trigger rules.</p>
              </div>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Display Frequency</label>
-                  <select value={popupConfig.displayMode} onChange={e => setPopupConfig({...popupConfig, displayMode: e.target.value})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition bg-white shadow-sm">
-                     <option value="EVERY_TIME">Every Time (Multiple times per session)</option>
+                  <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Display Frequency</label>
+                  <select
+                    value={popupConfig.displayMode}
+                    onChange={e => setPopupConfig({ ...popupConfig, displayMode: e.target.value })}
+                    className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition bg-white shadow-sm"
+                  >
+                     <option value="EVERY_TIME">Every Time (Show on page reload / navigation)</option>
                      <option value="ONCE_PER_SESSION">Once Per Session (Resets when browser closes)</option>
                      <option value="ONCE_PER_DAY">Once Per Day</option>
                      <option value="SINGLE_TIME">Single Time (Once forever until cleared)</option>
                   </select>
-                  <p className="text-xs text-slate-400 mt-2">Control how often the same user sees this popup.</p>
+                  <p className="text-xs text-slate-400 mt-1.5">Control how often the same visitor encounters this popup.</p>
                </div>
 
                <div>
-                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Delay Before Showing (milliseconds)</label>
-                  <input type="number" step="100" min="0" value={popupConfig.delayMs} onChange={e => setPopupConfig({...popupConfig, delayMs: parseInt(e.target.value) || 0})} className="w-full border border-slate-200 rounded p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm" />
-                  <p className="text-xs text-slate-400 mt-2">1000ms = 1 second. Example: 1500 for 1.5s delay.</p>
+                  <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Delay Before Triggering (milliseconds)</label>
+                  <input
+                    type="number"
+                    step="100"
+                    min="0"
+                    value={popupConfig.delayMs}
+                    onChange={e => setPopupConfig({ ...popupConfig, delayMs: parseInt(e.target.value) || 0 })}
+                    className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:border-indigo-500 focus:ring-indigo-500 outline-none transition shadow-sm"
+                  />
+                  <p className="text-xs text-slate-400 mt-1.5">1000ms = 1 second. Recommended: 1500ms.</p>
                </div>
            </div>
            
            <hr className="border-slate-100 my-6" />
            
            <div>
-             <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Popup Content Type</label>
-             <select value={popupConfig.type} onChange={e => setPopupConfig({...popupConfig, type: e.target.value as any})} className="border border-slate-200 rounded p-3 text-sm max-w-xs w-full focus:border-indigo-500 focus:ring-indigo-500 outline-none shadow-sm bg-white">
-                <option value="IMAGE">Image</option>
-                <option value="VIDEO">Video</option>
-                <option value="HTML">Custom HTML</option>
-                <option value="SUBSCRIPTION">Newsletter Subscription</option>
-             </select>
+             <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">Popup Content Type</label>
+             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
+               {[
+                 { id: 'SUBSCRIPTION', label: 'Newsletter Subscription (Recommended)', icon: Sparkles },
+                 { id: 'IMAGE', label: 'Promotional Banner Image', icon: Tag },
+                 { id: 'VIDEO', label: 'Promotional Video', icon: Eye },
+                 { id: 'HTML', label: 'Custom HTML / Embed', icon: Layout }
+               ].map(opt => (
+                 <button
+                   key={opt.id}
+                   type="button"
+                   onClick={() => setPopupConfig({ ...popupConfig, type: opt.id })}
+                   className={`p-3 rounded-xl border text-left flex flex-col gap-1.5 transition ${
+                     popupConfig.type === opt.id
+                       ? 'border-indigo-600 bg-indigo-50/60 text-indigo-900 font-bold ring-2 ring-indigo-500/20'
+                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
+                   }`}
+                 >
+                   <opt.icon className={`w-4 h-4 ${popupConfig.type === opt.id ? 'text-indigo-600' : 'text-slate-400'}`} />
+                   <span className="text-xs leading-snug">{opt.label}</span>
+                 </button>
+               ))}
+             </div>
            </div>
+
+           {/* --- NEWSLETTER POPUP TEMPLATE CUSTOMIZER --- */}
+           {popupConfig.type === 'SUBSCRIPTION' && (
+             <div className="space-y-8 bg-slate-50/70 p-6 md:p-8 rounded-2xl border border-slate-200 mt-6">
+                
+                {/* Presets Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-6 border-b border-slate-200">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-indigo-600" />
+                      Newsletter Template Presets
+                    </h3>
+                    <p className="text-xs text-slate-500">Pick a high-converting layout or customize each property below.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('discount')}
+                      className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 text-xs font-bold text-slate-700 rounded-lg shadow-sm transition active:scale-95"
+                    >
+                      🎁 Course Discount (10% Off)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('guide')}
+                      className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 text-xs font-bold text-slate-700 rounded-lg shadow-sm transition active:scale-95"
+                    >
+                      📘 Free Career Guide
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyPreset('vip')}
+                      className="px-3 py-1.5 bg-white border border-slate-200 hover:border-indigo-400 text-xs font-bold text-slate-700 rounded-lg shadow-sm transition active:scale-95"
+                    >
+                      ⭐ VIP Club Voucher
+                    </button>
+                  </div>
+                </div>
+
+                {/* Template Layout Picker */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-3 uppercase tracking-wider">Template Layout Style</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {[
+                      {
+                        id: 'split',
+                        title: 'Split Screen Layout',
+                        desc: 'Cover image on the left with title & form on the right (Desktop)'
+                      },
+                      {
+                        id: 'card',
+                        title: 'Centered Clean Card',
+                        desc: 'Single focused card with optional top banner and centered typography'
+                      },
+                      {
+                        id: 'voucher',
+                        title: 'Voucher Ticket Style',
+                        desc: 'Golden ticket/voucher styling with dashed edges & discount coupon callout'
+                      }
+                    ].map(style => (
+                      <div
+                        key={style.id}
+                        onClick={() => updateNewsletter({ layout: style.id as any })}
+                        className={`p-4 rounded-xl border cursor-pointer transition ${
+                          newsletter.layout === style.id
+                            ? 'border-indigo-600 bg-white shadow-md ring-2 ring-indigo-500/20'
+                            : 'border-slate-200 bg-white/70 hover:border-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-bold text-slate-900">{style.title}</span>
+                          {newsletter.layout === style.id && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 leading-relaxed">{style.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Text & Media Customization */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Badge / Tagline</label>
+                      <input
+                        type="text"
+                        value={newsletter.badge || ''}
+                        onChange={e => updateNewsletter({ badge: e.target.value })}
+                        placeholder="e.g. Limited Time Offer"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none shadow-sm"
+                      />
+                   </div>
+
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Headline Title</label>
+                      <input
+                        type="text"
+                        value={newsletter.title || ''}
+                        onChange={e => updateNewsletter({ title: e.target.value })}
+                        placeholder="e.g. Get 10% Off Your Next Course"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none shadow-sm font-bold text-slate-900"
+                      />
+                   </div>
+
+                   <div className="md:col-span-2">
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Description / Body Text</label>
+                      <textarea
+                        rows={2}
+                        value={newsletter.description || ''}
+                        onChange={e => updateNewsletter({ description: e.target.value })}
+                        placeholder="Explain the perks of subscribing..."
+                        className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:border-indigo-500 outline-none shadow-sm text-slate-700"
+                      />
+                   </div>
+
+                   <div className="md:col-span-2">
+                      <MediaInput
+                        label="Cover / Banner Image (URL or Upload)"
+                        type="image"
+                        value={newsletter.imageUrl || ''}
+                        onChange={v => updateNewsletter({ imageUrl: v })}
+                      />
+                   </div>
+                </div>
+
+                {/* Form Fields & CTA */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Name Field Placeholder</label>
+                      <input
+                        type="text"
+                        value={newsletter.namePlaceholder || ''}
+                        onChange={e => updateNewsletter({ namePlaceholder: e.target.value })}
+                        placeholder="Your full name"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none"
+                      />
+                   </div>
+
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Email Field Placeholder</label>
+                      <input
+                        type="text"
+                        value={newsletter.emailPlaceholder || ''}
+                        onChange={e => updateNewsletter({ emailPlaceholder: e.target.value })}
+                        placeholder="Enter your email address"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none"
+                      />
+                   </div>
+
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">CTA Button Text</label>
+                      <input
+                        type="text"
+                        value={newsletter.buttonText || ''}
+                        onChange={e => updateNewsletter({ buttonText: e.target.value })}
+                        placeholder="Claim My 10% Discount"
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none font-bold text-indigo-700"
+                      />
+                   </div>
+
+                   <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">Privacy Disclaimer</label>
+                      <input
+                        type="text"
+                        value={newsletter.disclaimer || ''}
+                        onChange={e => updateNewsletter({ disclaimer: e.target.value })}
+                        placeholder="No spam ever. Unsubscribe anytime."
+                        className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none"
+                      />
+                   </div>
+                </div>
+
+                {/* Promo Code & Reward Section */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                   <div className="flex items-center justify-between">
+                     <div>
+                       <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                         <Gift className="w-4 h-4 text-indigo-600" />
+                         Welcome Discount Voucher Reward
+                       </h4>
+                       <p className="text-xs text-slate-500">Provide new subscribers with an immediate discount voucher code on screen and via welcome email.</p>
+                     </div>
+                     <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newsletter.enablePromoCode !== false}
+                          onChange={e => updateNewsletter({ enablePromoCode: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                     </label>
+                   </div>
+
+                   {newsletter.enablePromoCode !== false && (
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                       <div>
+                         <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Promo Code (e.g. WELCOME10)</label>
+                         <input
+                           type="text"
+                           value={newsletter.promoCode || ''}
+                           onChange={e => updateNewsletter({ promoCode: e.target.value.toUpperCase() })}
+                           className="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-mono font-bold tracking-wider text-indigo-700 focus:border-indigo-500 outline-none uppercase"
+                         />
+                       </div>
+                       <div>
+                         <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Discount Tag / Value</label>
+                         <input
+                           type="text"
+                           value={newsletter.promoDiscount || ''}
+                           onChange={e => updateNewsletter({ promoDiscount: e.target.value })}
+                           placeholder="10% OFF"
+                           className="w-full border border-slate-200 rounded-lg p-2.5 text-sm font-bold focus:border-indigo-500 outline-none"
+                         />
+                       </div>
+                     </div>
+                   )}
+                </div>
+
+                {/* Popup Theme & Colors Section */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-5">
+                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                     <div>
+                       <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                         <Palette className="w-4 h-4 text-indigo-600" />
+                         Popup Theme & Colors
+                       </h4>
+                       <p className="text-xs text-slate-500">Pick a one-click palette or set custom hex colors for background, buttons, and text.</p>
+                     </div>
+                     <div className="flex flex-wrap gap-1.5">
+                       {colorThemes.map(th => (
+                         <button
+                           key={th.name}
+                           type="button"
+                           onClick={() => updateNewsletter({
+                             primaryColor: th.primary,
+                             backgroundColor: th.bg,
+                             textColor: th.text,
+                             secondaryTextColor: th.sub,
+                             buttonTextColor: th.btnText
+                           })}
+                           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-slate-50/60 text-xs font-semibold text-slate-700 shadow-2xs transition active:scale-95"
+                           title={th.name}
+                         >
+                           <span className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: th.primary }}></span>
+                           <span className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0" style={{ backgroundColor: th.bg }}></span>
+                           <span className="text-[11px]">{th.name}</span>
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-1">
+                     <div>
+                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Button / Accent</label>
+                       <div className="flex items-center gap-2">
+                         <input
+                           type="color"
+                           value={newsletter.primaryColor || '#4f46e5'}
+                           onChange={e => updateNewsletter({ primaryColor: e.target.value })}
+                           className="w-9 h-9 p-0.5 rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                         />
+                         <input
+                           type="text"
+                           value={newsletter.primaryColor || '#4f46e5'}
+                           onChange={e => updateNewsletter({ primaryColor: e.target.value })}
+                           className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono uppercase"
+                         />
+                       </div>
+                     </div>
+
+                     <div>
+                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Button Text</label>
+                       <div className="flex items-center gap-2">
+                         <input
+                           type="color"
+                           value={newsletter.buttonTextColor || '#ffffff'}
+                           onChange={e => updateNewsletter({ buttonTextColor: e.target.value })}
+                           className="w-9 h-9 p-0.5 rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                         />
+                         <input
+                           type="text"
+                           value={newsletter.buttonTextColor || '#ffffff'}
+                           onChange={e => updateNewsletter({ buttonTextColor: e.target.value })}
+                           className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono uppercase"
+                         />
+                       </div>
+                     </div>
+
+                     <div>
+                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Popup Background</label>
+                       <div className="flex items-center gap-2">
+                         <input
+                           type="color"
+                           value={newsletter.backgroundColor || '#ffffff'}
+                           onChange={e => updateNewsletter({ backgroundColor: e.target.value })}
+                           className="w-9 h-9 p-0.5 rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                         />
+                         <input
+                           type="text"
+                           value={newsletter.backgroundColor || '#ffffff'}
+                           onChange={e => updateNewsletter({ backgroundColor: e.target.value })}
+                           className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono uppercase"
+                         />
+                       </div>
+                     </div>
+
+                     <div>
+                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Headline / Title</label>
+                       <div className="flex items-center gap-2">
+                         <input
+                           type="color"
+                           value={newsletter.textColor || '#0f172a'}
+                           onChange={e => updateNewsletter({ textColor: e.target.value })}
+                           className="w-9 h-9 p-0.5 rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                         />
+                         <input
+                           type="text"
+                           value={newsletter.textColor || '#0f172a'}
+                           onChange={e => updateNewsletter({ textColor: e.target.value })}
+                           className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono uppercase"
+                         />
+                       </div>
+                     </div>
+
+                     <div>
+                       <label className="block text-[11px] font-bold text-slate-600 mb-1.5 uppercase tracking-wider">Subtitle / Subtext</label>
+                       <div className="flex items-center gap-2">
+                         <input
+                           type="color"
+                           value={newsletter.secondaryTextColor || '#64748b'}
+                           onChange={e => updateNewsletter({ secondaryTextColor: e.target.value })}
+                           className="w-9 h-9 p-0.5 rounded-lg border border-slate-200 cursor-pointer shrink-0"
+                         />
+                         <input
+                           type="text"
+                           value={newsletter.secondaryTextColor || '#64748b'}
+                           onChange={e => updateNewsletter({ secondaryTextColor: e.target.value })}
+                           className="w-full border border-slate-200 rounded-lg p-2 text-xs font-mono uppercase"
+                         />
+                       </div>
+                     </div>
+                   </div>
+                </div>
+
+                {/* Success Screen Customization */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                   <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                     <Check className="w-4 h-4 text-emerald-600" />
+                     Success Confirmation Screen
+                   </h4>
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Success Title</label>
+                       <input
+                         type="text"
+                         value={newsletter.successTitle || ''}
+                         onChange={e => updateNewsletter({ successTitle: e.target.value })}
+                         className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none"
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-xs font-bold text-slate-700 mb-1 uppercase tracking-wider">Success Subtitle / Instructions</label>
+                       <input
+                         type="text"
+                         value={newsletter.successMessage || ''}
+                         onChange={e => updateNewsletter({ successMessage: e.target.value })}
+                         className="w-full border border-slate-200 rounded-lg p-2.5 text-sm focus:border-indigo-500 outline-none"
+                       />
+                     </div>
+                   </div>
+                </div>
+
+                {/* Real-time Interactive Live Preview */}
+                <div className="mt-8 pt-6 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-indigo-600" />
+                      <span className="text-sm font-bold text-slate-900">Live Interactive Template Preview</span>
+                    </div>
+                    <div className="flex items-center bg-slate-200/70 p-1 rounded-lg text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('form')}
+                        className={`px-3 py-1 rounded-md transition ${previewTab === 'form' ? 'bg-white text-indigo-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                      >
+                        Form View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewTab('success')}
+                        className={`px-3 py-1 rounded-md transition ${previewTab === 'success' ? 'bg-white text-indigo-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                      >
+                        Success Screen View
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Rendered Live Replica Card */}
+                  <div className="bg-slate-900/90 p-4 sm:p-8 rounded-2xl flex items-center justify-center">
+                    <div
+                      className="rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden relative transition-all"
+                      style={{
+                        backgroundColor: newsletter.backgroundColor || '#ffffff',
+                        color: newsletter.textColor || '#0f172a'
+                      }}
+                    >
+                       {previewTab === 'success' ? (
+                          <div className="p-8 text-center flex flex-col items-center justify-center">
+                            <div
+                              className="w-14 h-14 rounded-full flex items-center justify-center mb-4"
+                              style={{
+                                backgroundColor: `${newsletter.primaryColor || '#4f46e5'}20`,
+                                color: newsletter.primaryColor || '#4f46e5'
+                              }}
+                            >
+                              <Check className="w-7 h-7 stroke-[2.5]" />
+                            </div>
+                            <h3 className="text-2xl font-bold mb-1" style={{ color: newsletter.textColor || '#0f172a' }}>{newsletter.successTitle || "🎉 You're on the list!"}</h3>
+                            <p className="text-xs sm:text-sm mb-5 max-w-md" style={{ color: newsletter.secondaryTextColor || '#64748b' }}>{newsletter.successMessage || 'We sent your welcome pack to your inbox.'}</p>
+                            
+                            {newsletter.enablePromoCode !== false && (
+                              <div
+                                className="w-full max-w-sm border-2 border-dashed rounded-xl p-4 mb-4 text-left"
+                                style={{
+                                  borderColor: `${newsletter.primaryColor || '#4f46e5'}60`,
+                                  backgroundColor: `${newsletter.primaryColor || '#4f46e5'}0d`
+                                }}
+                              >
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className="text-[11px] font-bold flex items-center gap-1" style={{ color: newsletter.primaryColor || '#4f46e5' }}>
+                                    <Gift className="w-3.5 h-3.5" /> Welcome Coupon
+                                  </span>
+                                  {newsletter.promoDiscount && (
+                                    <span
+                                      className="text-[10px] font-extrabold px-2 py-0.5 rounded-full"
+                                      style={{
+                                        backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                        color: newsletter.buttonTextColor || '#ffffff'
+                                      }}
+                                    >
+                                      {newsletter.promoDiscount}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-lg px-3 py-2 shadow-inner">
+                                  <span className="font-mono text-lg font-black" style={{ color: newsletter.primaryColor || '#4f46e5' }}>{newsletter.promoCode || 'WELCOME10'}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPreviewCopied(true);
+                                      setTimeout(() => setPreviewCopied(false), 2000);
+                                    }}
+                                    className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1.5 rounded transition shadow-xs"
+                                    style={{
+                                      backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                      color: newsletter.buttonTextColor || '#ffffff'
+                                    }}
+                                  >
+                                    {previewCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                                    {previewCopied ? 'Copied' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            <button
+                              type="button"
+                              className="w-full max-w-sm font-bold py-2.5 rounded-xl text-xs transition shadow-sm"
+                              style={{
+                                backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                color: newsletter.buttonTextColor || '#ffffff'
+                              }}
+                            >
+                              Start Exploring Courses
+                            </button>
+                          </div>
+                       ) : (
+                          newsletter.layout === 'split' ? (
+                            <div className="grid grid-cols-1 md:grid-cols-12 min-h-[380px]">
+                              <div className="md:col-span-5 hidden md:block relative overflow-hidden bg-slate-900">
+                                <img src={newsletter.imageUrl || 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800'} alt="Cover" className="w-full h-full object-cover opacity-80" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 flex flex-col justify-end text-white">
+                                  {newsletter.badge && (
+                                    <span
+                                      className="text-[10px] font-bold px-2 py-0.5 rounded-full self-start mb-2 shadow-sm"
+                                      style={{
+                                        backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                        color: newsletter.buttonTextColor || '#ffffff'
+                                      }}
+                                    >
+                                      {newsletter.badge}
+                                    </span>
+                                  )}
+                                  <h4 className="text-base font-bold leading-snug">{newsletter.title}</h4>
+                                </div>
+                              </div>
+                              <div className="md:col-span-7 p-6 flex flex-col justify-center" style={{ backgroundColor: newsletter.backgroundColor || '#ffffff' }}>
+                                <span
+                                  className="text-[10px] font-bold self-start px-2 py-0.5 rounded-full mb-1"
+                                  style={{
+                                    backgroundColor: `${newsletter.primaryColor || '#4f46e5'}20`,
+                                    color: newsletter.primaryColor || '#4f46e5'
+                                  }}
+                                >
+                                  {newsletter.badge || 'Limited Time Offer'}
+                                </span>
+                                <h3 className="text-xl font-extrabold mb-1" style={{ color: newsletter.textColor || '#0f172a' }}>{newsletter.title}</h3>
+                                <p className="text-xs mb-4" style={{ color: newsletter.secondaryTextColor || '#64748b' }}>{newsletter.description}</p>
+                                <div className="space-y-2">
+                                  <input type="text" readOnly placeholder={newsletter.namePlaceholder} className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs bg-white text-slate-400" />
+                                  <input type="email" readOnly placeholder={newsletter.emailPlaceholder} className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs bg-white text-slate-400" />
+                                  <button
+                                    type="button"
+                                    className="w-full py-2.5 rounded-lg font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 transition"
+                                    style={{
+                                      backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                      color: newsletter.buttonTextColor || '#ffffff'
+                                    }}
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    {newsletter.buttonText || 'Subscribe'}
+                                  </button>
+                                  {newsletter.disclaimer && (
+                                    <p className="text-[10px] text-center" style={{ color: newsletter.secondaryTextColor || '#64748b' }}>{newsletter.disclaimer}</p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ) : newsletter.layout === 'voucher' ? (
+                            <div className="p-6">
+                              <div
+                                className="border-2 border-dashed rounded-xl p-5 text-left"
+                                style={{
+                                  borderColor: newsletter.primaryColor || '#4f46e5',
+                                  backgroundColor: `${newsletter.primaryColor || '#4f46e5'}0a`
+                                }}
+                              >
+                                <div className="flex justify-between items-center mb-2">
+                                  <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                    style={{
+                                      backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                      color: newsletter.buttonTextColor || '#ffffff'
+                                    }}
+                                  >
+                                    {newsletter.badge || 'Special Voucher'}
+                                  </span>
+                                  {newsletter.enablePromoCode !== false && (
+                                    <span className="text-xs font-black" style={{ color: newsletter.primaryColor || '#4f46e5' }}>{newsletter.promoDiscount || '10% OFF'}</span>
+                                  )}
+                                </div>
+                                <h3 className="text-lg font-black mb-1" style={{ color: newsletter.textColor || '#0f172a' }}>{newsletter.title}</h3>
+                                <p className="text-xs mb-4" style={{ color: newsletter.secondaryTextColor || '#64748b' }}>{newsletter.description}</p>
+                                <div className="space-y-2">
+                                  <input type="text" readOnly placeholder={newsletter.namePlaceholder} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-400" />
+                                  <input type="email" readOnly placeholder={newsletter.emailPlaceholder} className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white text-slate-400" />
+                                  <button
+                                    type="button"
+                                    className="w-full py-2.5 rounded-lg font-bold text-xs shadow-sm"
+                                    style={{
+                                      backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                      color: newsletter.buttonTextColor || '#ffffff'
+                                    }}
+                                  >
+                                    {newsletter.buttonText || 'Claim Voucher'}
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-6 text-center">
+                              {newsletter.imageUrl && (
+                                <div className="w-full h-28 rounded-lg overflow-hidden mb-4">
+                                  <img src={newsletter.imageUrl} alt="Banner" className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <span
+                                className="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mb-1.5"
+                                style={{
+                                  backgroundColor: `${newsletter.primaryColor || '#4f46e5'}20`,
+                                  color: newsletter.primaryColor || '#4f46e5'
+                                }}
+                              >
+                                {newsletter.badge || 'Community Perk'}
+                              </span>
+                              <h3 className="text-xl font-black mb-1" style={{ color: newsletter.textColor || '#0f172a' }}>{newsletter.title}</h3>
+                              <p className="text-xs mb-4 max-w-md mx-auto" style={{ color: newsletter.secondaryTextColor || '#64748b' }}>{newsletter.description}</p>
+                              <div className="space-y-2 max-w-sm mx-auto">
+                                <input type="text" readOnly placeholder={newsletter.namePlaceholder} className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs bg-white text-slate-400" />
+                                <input type="email" readOnly placeholder={newsletter.emailPlaceholder} className="w-full px-3 py-2 border border-slate-200/90 rounded-lg text-xs bg-white text-slate-400" />
+                                <button
+                                  type="button"
+                                  className="w-full py-2.5 rounded-lg font-bold text-xs shadow-sm"
+                                  style={{
+                                    backgroundColor: newsletter.primaryColor || '#4f46e5',
+                                    color: newsletter.buttonTextColor || '#ffffff'
+                                  }}
+                                >
+                                  {newsletter.buttonText || 'Subscribe'}
+                                </button>
+                              </div>
+                            </div>
+                          )
+                       )}
+                    </div>
+                  </div>
+                </div>
+
+             </div>
+           )}
 
            {(popupConfig.type === 'IMAGE' || popupConfig.type === 'VIDEO') && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50 p-6 rounded-xl border border-slate-100 mt-4">
@@ -4708,15 +5490,13 @@ export function PopupManager() {
            
            <div className="pt-4 flex items-center justify-end border-t border-slate-100 mt-8 gap-4">
               {status && <span className="text-indigo-600 font-bold text-sm animate-pulse">{status}</span>}
-              <button onClick={saveSettings} className="bg-primary text-white px-8 py-3 rounded text-sm font-bold shadow-md hover:bg-opacity-90 transition-all active:scale-95">Save Popup Configuration</button>
+              <button onClick={saveSettings} className="bg-primary text-white px-8 py-3 rounded-lg text-sm font-bold shadow-md hover:bg-opacity-90 transition-all active:scale-95">Save Popup Configuration</button>
            </div>
         </div>
       </div>
     </div>
   );
 }
-
-
 
 export function PaymentSetupManager() {
   const { token } = useStore();

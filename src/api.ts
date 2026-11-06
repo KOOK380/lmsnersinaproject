@@ -15,7 +15,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100
 
 import { sendEmail } from "./email.js";
 
-async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE' | 'MEETING_SCHEDULED', data: Record<string, string>) {
+async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE' | 'MEETING_SCHEDULED' | 'NEWSLETTER_WELCOME', data: Record<string, string>) {
   try {
      let template = await prisma.emailTemplate.findUnique({ where: { type } });
      if (!template) {
@@ -93,6 +93,24 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
     <p>Looking forward to seeing you there.</p>
   </div>
 </div>`;
+        } else if (type === 'NEWSLETTER_WELCOME') {
+          defaultSubject = "Welcome to our Newsletter! Here is your gift 🎁";
+          defaultContent = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 25px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Welcome to our Community!</h2>
+  </div>
+  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background: #ffffff;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>Thank you for subscribing to our newsletter! You are now part of our growing community of learners and professionals.</p>
+    <div style="background-color: #f3f4f6; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px dashed #d1d5db;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #371C3B;">🎁 Your Exclusive Welcome Promo Code:</p>
+      <p style="font-size: 22px; font-weight: bold; margin: 0; color: #4f46e5; letter-spacing: 2px;">WELCOME10</p>
+      <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">Use this code at checkout to get 10% off any course, event, or membership!</p>
+    </div>
+    <p>We'll send you curated updates, educational insights, and special announcements.</p>
+    <p style="margin-top: 30px; font-size: 13px; color: #9ca3af;">If you have any questions or feedback, feel free to reply directly to this email.</p>
+  </div>
+</div>`;
         }
 
         template = {
@@ -108,11 +126,29 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
      let content = template.content;
      let subject = template.subject;
      
-     const user = await prisma.user.findUnique({ where: { id: userId } });
-     if(user) {
-        content = content.replace(/\{\{name\}\}/g, user.name);
-        subject = subject.replace(/\{\{name\}\}/g, user.name);
+     let recipientEmail: string | null = null;
+     let recipientName = data.name || "Subscriber";
+
+     if (userId.includes('@')) {
+       recipientEmail = userId;
+       const userByEmail = await prisma.user.findUnique({ where: { email: userId } });
+       if (userByEmail) {
+         recipientName = userByEmail.name;
+       }
+     } else {
+       const user = await prisma.user.findUnique({ where: { id: userId } });
+       if (user) {
+         recipientEmail = user.email;
+         recipientName = user.name;
+       }
      }
+
+     if (!recipientEmail && data.email) {
+       recipientEmail = data.email;
+     }
+
+     content = content.replace(/\{\{name\}\}/g, recipientName);
+     subject = subject.replace(/\{\{name\}\}/g, recipientName);
 
      // Simple replacement
      for (const [key, val] of Object.entries(data)) {
@@ -120,18 +156,22 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
         subject = subject.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(val));
      }
      
-     console.log(`[Email System] Sending automated email to ${user?.email}: ${subject}`);
-     
-     if (user?.email) {
-       await sendEmail(user.email, subject, content);
+     if (recipientEmail) {
+       console.log(`[Email System] Sending automated email to ${recipientEmail}: ${subject}`);
+       await sendEmail(recipientEmail, subject, content);
      }
      
-     await prisma.emailLog.create({
-        data: {
-           userId,
-           status: 'SENT' // Could refine
-        }
-     });
+     if (!userId.includes('@')) {
+       const userExists = await prisma.user.findUnique({ where: { id: userId } });
+       if (userExists) {
+         await prisma.emailLog.create({
+            data: {
+               userId,
+               status: 'SENT'
+            }
+         });
+       }
+     }
   } catch(e) {
      console.error("[Email System] Error:", e);
   }
@@ -548,98 +588,146 @@ router.get("/events/:id", async (req, res) => {
   res.json(event);
 });
 
-router.post("/admin/events", authMiddleware, async (req, res) => {
-  if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isSubscription, subscriptionInterval } = req.body;
-  const event = await prisma.event.create({
-    data: {
-      isActive: isActive !== undefined ? isActive : true,
-      title, description, date: new Date(date), 
-      endDate: endDate ? new Date(endDate) : null,
-      expiryDate: expiryDate ? new Date(expiryDate) : null,
-      totalSeats: totalSeats ? parseInt(totalSeats) : 0,
-      availableSeats: availableSeats !== undefined ? parseInt(availableSeats) : (totalSeats ? parseInt(totalSeats) : 0), price: parseFloat(price), 
-      realPrice: realPrice !== undefined && realPrice !== null ? parseFloat(realPrice) : null, 
-      location, imageUrl,
-      meetingLink, meetingDate: meetingDate ? new Date(meetingDate) : null, meetingNotes
-    }
-  });
-
-  if (translations && translations.length) {
-    await prisma.eventTranslation.createMany({
-      data: translations.map((t: any) => ({ ...t, eventId: event.id }))
+router.get("/admin/events", authMiddleware, async (req, res) => {
+  try {
+    if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
+    const events = await prisma.event.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { translations: true }
     });
+    res.json(events);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
-  
-  if (notifyEnrolled && meetingLink) {
-     const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
-     for (const b of bookings) {
-        await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
-           item_name: event.title,
-           meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
-           meetingLink: event.meetingLink || '',
-           meetingNotes: event.meetingNotes || ''
-        });
-     }
-  }
+});
 
-  res.json(event);
+router.post("/admin/events", authMiddleware, async (req, res) => {
+  try {
+    if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
+    const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isActive } = req.body;
+    
+    const event = await prisma.event.create({
+      data: {
+        isActive: isActive !== undefined ? Boolean(isActive) : true,
+        title: title || 'Untitled Event',
+        description: description || '',
+        date: date ? new Date(date) : new Date(), 
+        endDate: endDate ? new Date(endDate) : null,
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
+        totalSeats: totalSeats !== undefined && totalSeats !== null ? parseInt(totalSeats) : 0,
+        availableSeats: availableSeats !== undefined && availableSeats !== null ? parseInt(availableSeats) : (totalSeats ? parseInt(totalSeats) : 0),
+        price: price !== undefined && price !== null ? parseFloat(price) : 0, 
+        realPrice: realPrice !== undefined && realPrice !== null && realPrice !== '' ? parseFloat(realPrice) : null, 
+        location: location || '',
+        imageUrl: imageUrl || null,
+        meetingLink: meetingLink || null,
+        meetingDate: meetingDate ? new Date(meetingDate) : null,
+        meetingNotes: meetingNotes || null
+      }
+    });
+
+    if (translations && Array.isArray(translations) && translations.length) {
+      const validTranslations = translations.filter((t: any) => t.title || t.description);
+      if (validTranslations.length) {
+        await prisma.eventTranslation.createMany({
+          data: validTranslations.map((t: any) => ({
+            eventId: event.id,
+            languageCode: t.languageCode,
+            title: t.title || '',
+            description: t.description || ''
+          }))
+        });
+      }
+    }
+    
+    if (notifyEnrolled && meetingLink) {
+       const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
+       for (const b of bookings) {
+          await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
+             item_name: event.title,
+             meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
+             meetingLink: event.meetingLink || '',
+             meetingNotes: event.meetingNotes || ''
+          });
+       }
+    }
+
+    res.json(event);
+  } catch (err: any) {
+    console.error("Error creating event:", err);
+    res.status(500).json({ error: err.message || "Failed to create event" });
+  }
 });
 
 router.put("/admin/events/:id", authMiddleware, async (req, res) => {
-  if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isActive } = req.body;
-  const updateData: any = {};
-  if (isActive !== undefined) updateData.isActive = isActive;
-  
-  if (title !== undefined) updateData.title = title;
-  if (description !== undefined) updateData.description = description;
-  if (date !== undefined) updateData.date = new Date(date);
-  if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
-  if (expiryDate !== undefined) updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
-  if (totalSeats !== undefined) updateData.totalSeats = parseInt(totalSeats);
-  if (availableSeats !== undefined) updateData.availableSeats = parseInt(availableSeats);
-  if (price !== undefined) updateData.price = parseFloat(price);
-  if (realPrice !== undefined) updateData.realPrice = realPrice !== null ? parseFloat(realPrice) : null;
-  if (location !== undefined) updateData.location = location;
-  if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-  if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
-  if (meetingDate !== undefined) updateData.meetingDate = meetingDate ? new Date(meetingDate) : null;
-  if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
-  
-  const event = await prisma.event.update({
-    where: { id: req.params.id },
-    data: updateData
-  });
+  try {
+    if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
+    const { title, description, date, endDate, expiryDate, totalSeats, availableSeats, price, realPrice, location, imageUrl, translations, meetingLink, meetingDate, meetingNotes, notifyEnrolled, isActive } = req.body;
+    const updateData: any = {};
+    if (isActive !== undefined) updateData.isActive = Boolean(isActive);
+    
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (date !== undefined) updateData.date = date ? new Date(date) : new Date();
+    if (endDate !== undefined) updateData.endDate = endDate ? new Date(endDate) : null;
+    if (expiryDate !== undefined) updateData.expiryDate = expiryDate ? new Date(expiryDate) : null;
+    if (totalSeats !== undefined) updateData.totalSeats = parseInt(totalSeats) || 0;
+    if (availableSeats !== undefined) updateData.availableSeats = parseInt(availableSeats) || 0;
+    if (price !== undefined) updateData.price = parseFloat(price) || 0;
+    if (realPrice !== undefined) updateData.realPrice = (realPrice !== null && realPrice !== '') ? parseFloat(realPrice) : null;
+    if (location !== undefined) updateData.location = location;
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    if (meetingLink !== undefined) updateData.meetingLink = meetingLink;
+    if (meetingDate !== undefined) updateData.meetingDate = meetingDate ? new Date(meetingDate) : null;
+    if (meetingNotes !== undefined) updateData.meetingNotes = meetingNotes;
+    
+    const event = await prisma.event.update({
+      where: { id: req.params.id },
+      data: updateData
+    });
 
-  if (translations !== undefined) {
-    await prisma.eventTranslation.deleteMany({ where: { eventId: event.id } });
-    if (translations.length) {
-      await prisma.eventTranslation.createMany({
-        data: translations.map((t: any) => ({ ...t, eventId: event.id }))
-      });
-    }
-  }
-
-  if (notifyEnrolled && meetingLink) {
-     const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
-     for (const b of bookings) {
-        await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
-           item_name: event.title,
-           meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
-           meetingLink: event.meetingLink || '',
-           meetingNotes: event.meetingNotes || ''
+    if (translations !== undefined && Array.isArray(translations)) {
+      await prisma.eventTranslation.deleteMany({ where: { eventId: event.id } });
+      const validTranslations = translations.filter((t: any) => t.title || t.description);
+      if (validTranslations.length) {
+        await prisma.eventTranslation.createMany({
+          data: validTranslations.map((t: any) => ({
+            eventId: event.id,
+            languageCode: t.languageCode,
+            title: t.title || '',
+            description: t.description || ''
+          }))
         });
-     }
-  }
+      }
+    }
 
-  res.json(event);
+    if (notifyEnrolled && meetingLink) {
+       const bookings = await prisma.booking.findMany({ where: { eventId: event.id } });
+       for (const b of bookings) {
+          await sendAutomatedEmail(b.userId, 'MEETING_SCHEDULED', {
+             item_name: event.title,
+             meetingDate: event.meetingDate ? new Date(event.meetingDate).toLocaleString() : '',
+             meetingLink: event.meetingLink || '',
+             meetingNotes: event.meetingNotes || ''
+          });
+       }
+    }
+
+    res.json(event);
+  } catch (err: any) {
+    console.error("Error updating event:", err);
+    res.status(500).json({ error: err.message || "Failed to update event" });
+  }
 });
 
 router.delete("/admin/events/:id", authMiddleware, async (req, res) => {
-  if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
-  await prisma.event.delete({ where: { id: req.params.id } });
-  res.json({ success: true });
+  try {
+    if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
+    await prisma.event.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // --- TESTIMONIALS ---
@@ -1158,13 +1246,36 @@ router.post("/stripe/cancel-subscription", authMiddleware, async (req, res) => {
 });
 
 
+router.get("/user/last-billing", authMiddleware, async (req, res) => {
+  try {
+    const userId = (req as any).user.userId;
+    const lastOrder = await prisma.order.findFirst({
+      where: { userId, billingDetails: { not: null } },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (lastOrder && lastOrder.billingDetails) {
+      try {
+        const parsed = JSON.parse(lastOrder.billingDetails);
+        return res.json({ billingDetails: parsed });
+      } catch (e) {}
+    }
+    res.json({ billingDetails: null });
+  } catch (err: any) {
+    res.json({ billingDetails: null });
+  }
+});
+
 // --- ORDERS (PURCHASE) ---
 router.post("/orders", authMiddleware, async (req, res) => {
   const userId = (req as any).user.userId;
   const { items, total, sessionId, billingDetails, paymentMethod, paymentProofUrl } = req.body; 
   
   try {
-    if (total > 0 && paymentMethod !== 'MANUAL') {
+    const numericTotal = Number(total) || 0;
+    const isFree = numericTotal <= 0;
+    const finalPaymentMethod = isFree ? "FREE" : (paymentMethod || "STRIPE");
+
+    if (!isFree && finalPaymentMethod !== 'MANUAL') {
       const stripeSetting = await prisma.setting.findUnique({ where: { key: 'STRIPE_CONFIG' } });
       if (stripeSetting) {
         const stripeConfig = JSON.parse(stripeSetting.value);
@@ -1181,22 +1292,22 @@ router.post("/orders", authMiddleware, async (req, res) => {
       }
     }
 
-    const isPending = total > 0 && paymentMethod === 'MANUAL';
+    const isPending = !isFree && finalPaymentMethod === 'MANUAL';
 
     const order = await prisma.order.create({
       data: {
         userId,
-        total,
+        total: numericTotal,
         status: isPending ? "PENDING" : "COMPLETED",
-        paymentMethod: paymentMethod || "STRIPE",
-        billingDetails,
-        paymentProofUrl,
+        paymentMethod: finalPaymentMethod,
+        billingDetails: billingDetails ? (typeof billingDetails === 'string' ? billingDetails : JSON.stringify(billingDetails)) : null,
+        paymentProofUrl: isPending ? paymentProofUrl : null,
         items: {
           create: items.map((it: any) => ({
             itemType: it.itemType,
             itemId: it.itemId,
             editionId: it.editionId || null,
-            price: it.price
+            price: Number(it.price) || 0
           }))
         }
       },
@@ -2170,7 +2281,6 @@ router.post("/admin/course-bundles", authMiddleware, async (req, res) => {
     
     const bundle = await prisma.courseBundle.create({
       data: {
-      order: parseInt(order) || 0,
       title,
       description, price: parseFloat(price), realPrice: realPrice ? parseFloat(realPrice) : null, imageUrl, bannerVideoUrl, isActive, isFeatured,
         courses: {
@@ -2207,7 +2317,6 @@ router.put("/admin/course-bundles/:id", authMiddleware, async (req, res) => {
     
     if (isActive !== undefined) updateData.isActive = isActive;
     if (isFeatured !== undefined) updateData.isFeatured = isFeatured;
-    if (order !== undefined) updateData.order = parseInt(order) || 0;
 
     const bundle = await prisma.courseBundle.update({ where: { id }, data: updateData });
 
@@ -3013,6 +3122,96 @@ export async function seedDummyData() {
       }
     });
   }
+
+  // Ensure Newsletter Popup is set and upgraded from legacy video popup
+  const defaultNewsletterPopup = {
+    enabled: true,
+    type: 'SUBSCRIPTION',
+    displayMode: 'EVERY_TIME',
+    delayMs: 1500,
+    newsletter: {
+      layout: 'split',
+      badge: 'Limited Time Offer',
+      title: 'Get 10% Off Your Next Course',
+      description: 'Subscribe to our newsletter for exclusive discounts, masterclasses, and tech industry career roadmaps delivered straight to your inbox.',
+      imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800',
+      namePlaceholder: 'Your full name',
+      emailPlaceholder: 'Enter your email address',
+      buttonText: 'Claim My 10% Discount',
+      disclaimer: 'No spam ever. Unsubscribe with 1-click anytime.',
+      enablePromoCode: true,
+      promoCode: 'WELCOME10',
+      promoDiscount: '10% OFF',
+      successTitle: "🎉 You're on the list!",
+      successMessage: 'We sent your welcome pack to your inbox. Use the code below at checkout:',
+      primaryColor: '#4f46e5',
+      buttonTextColor: '#ffffff',
+      backgroundColor: '#ffffff',
+      textColor: '#0f172a',
+      secondaryTextColor: '#64748b'
+    }
+  };
+
+  const websitePopupSetting = await prisma.setting.findUnique({ where: { key: 'WEBSITE_POPUP' } });
+  if (!websitePopupSetting) {
+    await prisma.setting.create({
+      data: {
+        key: 'WEBSITE_POPUP',
+        value: JSON.stringify(defaultNewsletterPopup)
+      }
+    });
+  } else {
+    try {
+      const parsed = JSON.parse(websitePopupSetting.value);
+      if (parsed.type === 'VIDEO' || !parsed.newsletter) {
+        parsed.type = 'SUBSCRIPTION';
+        parsed.newsletter = defaultNewsletterPopup.newsletter;
+        await prisma.setting.update({
+          where: { key: 'WEBSITE_POPUP' },
+          data: { value: JSON.stringify(parsed) }
+        });
+      } else if (parsed.newsletter && !parsed.newsletter.primaryColor) {
+        parsed.newsletter.primaryColor = '#4f46e5';
+        parsed.newsletter.buttonTextColor = '#ffffff';
+        parsed.newsletter.backgroundColor = '#ffffff';
+        parsed.newsletter.textColor = '#0f172a';
+        parsed.newsletter.secondaryTextColor = '#64748b';
+        await prisma.setting.update({
+          where: { key: 'WEBSITE_POPUP' },
+          data: { value: JSON.stringify(parsed) }
+        });
+      }
+    } catch (e) {
+      console.warn("Could not check WEBSITE_POPUP setting:", e);
+    }
+  }
+
+  // Seed default NEWSLETTER_WELCOME email template
+  const welcomeTemplate = await prisma.emailTemplate.findUnique({ where: { type: 'NEWSLETTER_WELCOME' } });
+  if (!welcomeTemplate) {
+    await prisma.emailTemplate.create({
+      data: {
+        type: 'NEWSLETTER_WELCOME',
+        subject: 'Welcome to our Newsletter! Here is your gift 🎁',
+        content: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 25px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Welcome to our Community!</h2>
+  </div>
+  <div style="padding: 24px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px; background: #ffffff;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>Thank you for subscribing to our newsletter! You are now part of our growing community of learners and professionals.</p>
+    <div style="background-color: #f3f4f6; padding: 18px; border-radius: 8px; margin: 20px 0; border: 1px dashed #d1d5db;">
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #371C3B;">🎁 Your Exclusive Welcome Promo Code:</p>
+      <p style="font-size: 22px; font-weight: bold; margin: 0; color: #4f46e5; letter-spacing: 2px;">WELCOME10</p>
+      <p style="font-size: 12px; color: #6b7280; margin: 6px 0 0 0;">Use this code at checkout to get 10% off any course, event, or membership!</p>
+    </div>
+    <p>We'll send you curated updates, educational insights, and special announcements.</p>
+    <p style="margin-top: 30px; font-size: 13px; color: #9ca3af;">If you have any questions or feedback, feel free to reply directly to this email.</p>
+  </div>
+</div>`
+      }
+    });
+  }
 }
 
 
@@ -3203,31 +3402,50 @@ router.post("/admin/orders/:id/status", authMiddleware, async (req, res) => {
 // --- LEADS / CONTACT US ---
 router.post("/leads", async (req, res) => {
   const { name, email, message, source } = req.body;
+  const leadSource = source || "CONTACT_FORM";
+  const finalMessage = message || (leadSource === 'NEWSLETTER' ? "Subscription from Website Popup" : "");
   
-  if (!name || !email || !message) {
+  if (!email || (!name && leadSource !== 'NEWSLETTER') || (!finalMessage && leadSource !== 'NEWSLETTER')) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
     const lead = await prisma.lead.create({
-      data: { name, email, message, source: source || "CONTACT_FORM" }
+      data: {
+        name: name || "Subscriber",
+        email,
+        message: finalMessage || "Subscription from Website Popup",
+        source: leadSource
+      }
     });
 
-    try {
-      const emailConfig = await prisma.setting.findUnique({ where: { key: 'SMTP_CONFIG' } });
-      const adminEmail = req.body.adminEmail || (emailConfig ? JSON.parse(emailConfig.value).user : "no-reply@example.com"); // Fallback
+    if (leadSource === 'NEWSLETTER') {
+      try {
+        await sendAutomatedEmail(email, 'NEWSLETTER_WELCOME', {
+          name: name || "Subscriber",
+          email,
+          promoCode: "WELCOME10"
+        });
+      } catch (welcomeErr) {
+        console.error("Failed to send welcome newsletter email:", welcomeErr);
+      }
+    } else {
+      try {
+        const emailConfig = await prisma.setting.findUnique({ where: { key: 'SMTP_CONFIG' } });
+        const adminEmail = req.body.adminEmail || (emailConfig ? JSON.parse(emailConfig.value).user : "no-reply@example.com");
 
-      await sendEmail(
-        adminEmail, // Send the lead to the admin's email
-        `New Contact Us Message from ${name}`,
-        `<h3>New Message Received</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br/>')}</p>`
-      );
-    } catch (emailErr) {
-      console.error("Failed to send lead email:", emailErr);
+        await sendEmail(
+          adminEmail,
+          `New Contact Us Message from ${name}`,
+          `<h3>New Message Received</h3>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong></p>
+          <p>${(message || '').replace(/\n/g, '<br/>')}</p>`
+        );
+      } catch (emailErr) {
+        console.error("Failed to send lead email:", emailErr);
+      }
     }
 
     res.json(lead);
