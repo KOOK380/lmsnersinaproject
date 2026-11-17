@@ -1,4 +1,4 @@
-import { BookOpen, Video, Users, CheckCircle2, XCircle, ArrowRight, PlayCircle, ExternalLink, CalendarDays, Download } from "lucide-react";
+import { BookOpen, Video, Users, CheckCircle2, XCircle, ArrowRight, PlayCircle, ExternalLink, CalendarDays, Download, Tag } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -10,7 +10,7 @@ import { MediaInput } from "../components/MediaInput";
 import { AlertTriangle } from "lucide-react";
 
 export function Cart() {
-  const { cart, removeFromCart, clearCart, getCartTotal, user, currency, settings } = useStore();
+  const { cart, removeFromCart, clearCart, getCartTotal, user, currency, settings, appliedCoupon, setAppliedCoupon, clearAppliedCoupon, getDiscountAmount, getFinalTotal, language } = useStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
   
@@ -26,8 +26,47 @@ export function Cart() {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [paymentProofUrl, setPaymentProofUrl] = useState('');
 
+  const [cartCouponInput, setCartCouponInput] = useState('');
+  const [cartCouponError, setCartCouponError] = useState('');
+  const [isValidatingCartCoupon, setIsValidatingCartCoupon] = useState(false);
+
   const total = getCartTotal();
-  const isFreeOrder = total <= 0;
+  const discount = getDiscountAmount ? getDiscountAmount() : 0;
+  const finalTotal = getFinalTotal ? getFinalTotal() : total;
+  const isFreeOrder = finalTotal <= 0;
+
+  const handleApplyCartCoupon = async (codeOverride?: string) => {
+    const code = (codeOverride || cartCouponInput).trim().toUpperCase();
+    if (!code) return;
+    setCartCouponError('');
+    setIsValidatingCartCoupon(true);
+
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          items: cart
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.valid) {
+        setAppliedCoupon({
+          ...data.coupon,
+          discountAmount: data.discountAmount
+        });
+        setCartCouponInput('');
+        setCartCouponError('');
+      } else {
+        setCartCouponError(data.error || 'Invalid coupon code');
+      }
+    } catch (err) {
+      setCartCouponError('Network error validating coupon');
+    } finally {
+      setIsValidatingCartCoupon(false);
+    }
+  };
 
   useEffect(() => {
     if (isFreeOrder) {
@@ -130,7 +169,9 @@ export function Cart() {
           items: cart,
           total: 0,
           billingDetails: JSON.stringify(billingDetails),
-          paymentMethod: 'FREE'
+          paymentMethod: 'FREE',
+          couponCode: appliedCoupon?.code,
+          language
         })
       });
 
@@ -160,7 +201,7 @@ export function Cart() {
     } catch (e) {}
 
     const token = localStorage.getItem("token");
-    const currentTotal = getCartTotal();
+    const currentTotal = finalTotal;
     
     if (currentTotal <= 0) {
       return handleDirectFreeOrder();
@@ -179,6 +220,8 @@ export function Cart() {
            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
            body: JSON.stringify({
               items: cart,
+              couponCode: appliedCoupon?.code,
+              language,
               successUrl: `${window.location.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
               cancelUrl: `${window.location.origin}/cart`
            })
@@ -215,7 +258,9 @@ export function Cart() {
         total: currentTotal,
         billingDetails: JSON.stringify(billingDetails),
         paymentMethod: selectedPayment,
-        paymentProofUrl: selectedPayment === 'MANUAL' ? paymentProofUrl : null
+        paymentProofUrl: selectedPayment === 'MANUAL' ? paymentProofUrl : null,
+        couponCode: appliedCoupon?.code,
+        language
       })
     });
 
@@ -340,9 +385,9 @@ export function Cart() {
              </form>
           </div>
           
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 h-fit order-1 md:order-2">
-             <h3 className="font-bold text-lg mb-4 text-slate-800">{t('cart.order_summary', 'Order Summary')}</h3>
-             <div className="space-y-3 mb-6">
+          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 h-fit order-1 md:order-2 space-y-4">
+             <h3 className="font-bold text-lg text-slate-800">{t('cart.order_summary', 'Order Summary')}</h3>
+             <div className="space-y-3">
                {cart.map(item => (
                  <div key={item.id} className="flex justify-between items-center text-sm">
                    <span className="text-slate-600 truncate mr-4">{item.title}</span>
@@ -350,9 +395,67 @@ export function Cart() {
                  </div>
                ))}
              </div>
-             <div className="pt-4 border-t border-slate-200 flex justify-between items-center">
-               <span className="font-bold text-lg">{t('cart.total', 'Total')}</span>
-               <span className="font-bold text-2xl text-primary">{getCartTotal() === 0 ? <span className="text-emerald-600 font-black">FREE</span> : formatCurrency(getCartTotal(), currency)}</span>
+
+             {/* Coupon Code Section */}
+             <div className="pt-4 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-2">
+                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                     <Tag className="w-3.5 h-3.5 text-primary" /> Coupon Code
+                   </span>
+                </div>
+                {appliedCoupon ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                     <div>
+                       <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{appliedCoupon.code}</span>
+                          <span className="font-bold text-emerald-700">{appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}% OFF` : `-${formatCurrency(appliedCoupon.discountValue, currency)}`}</span>
+                       </div>
+                       <p className="text-[11px] text-emerald-600 mt-0.5">Discount: -{formatCurrency(discount, currency)}</p>
+                     </div>
+                     <button type="button" onClick={() => clearAppliedCoupon()} className="text-xs font-bold text-red-500 hover:text-red-700 cursor-pointer">Remove</button>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                       <input
+                         type="text"
+                         placeholder="e.g. WELCOME10"
+                         value={cartCouponInput}
+                         onChange={e => setCartCouponInput(e.target.value.toUpperCase())}
+                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCartCoupon(); } }}
+                         className="flex-1 px-3 py-2 text-xs font-mono font-bold border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-primary uppercase bg-white"
+                       />
+                       <button
+                         type="button"
+                         disabled={!cartCouponInput.trim() || isValidatingCartCoupon}
+                         onClick={() => handleApplyCartCoupon()}
+                         className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-dark transition disabled:opacity-50 cursor-pointer"
+                       >
+                         {isValidatingCartCoupon ? "..." : "Apply"}
+                       </button>
+                    </div>
+                    {cartCouponError && <p className="text-[11px] text-red-500 font-bold mt-1.5 pl-1">{cartCouponError}</p>}
+                  </div>
+                )}
+             </div>
+
+             <div className="pt-4 border-t border-slate-200 space-y-2">
+                {discount > 0 && (
+                  <>
+                    <div className="flex justify-between items-center text-sm text-slate-500">
+                      <span>Subtotal</span>
+                      <span>{formatCurrency(total, currency)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-emerald-600 font-bold">
+                      <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Coupon Discount</span>
+                      <span>-{formatCurrency(discount, currency)}</span>
+                    </div>
+                  </>
+                )}
+                <div className="flex justify-between items-center pt-2">
+                  <span className="font-bold text-lg">{t('cart.total', 'Total')}</span>
+                  <span className="font-bold text-2xl text-primary">{finalTotal === 0 ? <span className="text-emerald-600 font-black">FREE</span> : formatCurrency(finalTotal, currency)}</span>
+                </div>
              </div>
           </div>
         </div>
@@ -362,12 +465,12 @@ export function Cart() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
          <div>
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('cart.total', 'Total')}</p>
-            <p className="text-2xl font-black text-gray-900 leading-none">{getCartTotal() === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(getCartTotal(), currency)}</p>
+            <p className="text-2xl font-black text-gray-900 leading-none">{finalTotal === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(finalTotal, currency)}</p>
          </div>
          <div className="flex items-center gap-2">
            <button type="button" onClick={() => setShowCheckout(false)} className="px-4 py-3 rounded-xl font-bold text-xs text-slate-600 bg-slate-100 hover:bg-slate-200 transition">{t('cart.back', 'Back')}</button>
            <button type="submit" form="checkout-form" disabled={isSubmitting} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition disabled:opacity-70 flex items-center justify-center min-w-[120px]">
-              {isSubmitting ? t('cart.processing', 'Processing...') : (getCartTotal() === 0 ? t('cart.complete_enrollment', 'Complete Free Enrollment') : t('cart.place_order', 'Place Order'))}
+              {isSubmitting ? t('cart.processing', 'Processing...') : (finalTotal === 0 ? t('cart.complete_enrollment', 'Complete Free Enrollment') : t('cart.place_order', 'Place Order'))}
            </button>
          </div>
       </div>
@@ -400,21 +503,78 @@ export function Cart() {
               </div>
             ))}
           </div>
-          <div className="flex justify-between items-center pt-4 mb-8 text-xl border-t-2 border-primary">
-            <div className="font-serif italic text-primary font-bold">{t('cart.total')}</div>
-            <div className="font-bold text-2xl">{formatCurrency(getCartTotal(), currency)}</div>
+          {/* Coupon Code Section in Cart */}
+          <div className="pt-4 pb-2 border-t border-slate-100">
+             <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-primary" /> Promo / Coupon Code
+                </span>
+             </div>
+             {appliedCoupon ? (
+               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs mb-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                       <span className="font-mono font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{appliedCoupon.code}</span>
+                       <span className="font-bold text-emerald-700">{appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}% OFF` : `-${formatCurrency(appliedCoupon.discountValue, currency)}`}</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-600 mt-0.5">Discount: -{formatCurrency(discount, currency)}</p>
+                  </div>
+                  <button type="button" onClick={() => clearAppliedCoupon()} className="text-xs font-bold text-red-500 hover:text-red-700 cursor-pointer">Remove</button>
+               </div>
+             ) : (
+               <div className="mb-4 max-w-sm">
+                 <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. WELCOME10"
+                      value={cartCouponInput}
+                      onChange={e => setCartCouponInput(e.target.value.toUpperCase())}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCartCoupon(); } }}
+                      className="flex-1 px-3 py-2 text-xs font-mono font-bold border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-primary uppercase bg-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={!cartCouponInput.trim() || isValidatingCartCoupon}
+                      onClick={() => handleApplyCartCoupon()}
+                      className="px-4 py-2 bg-primary text-white text-xs font-bold rounded-xl hover:bg-primary-dark transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isValidatingCartCoupon ? "..." : "Apply"}
+                    </button>
+                 </div>
+                 {cartCouponError && <p className="text-[11px] text-red-500 font-bold mt-1.5 pl-1">{cartCouponError}</p>}
+               </div>
+             )}
+          </div>
+
+          <div className="pt-4 mb-8 border-t-2 border-primary space-y-2">
+            {discount > 0 && (
+              <>
+                <div className="flex justify-between items-center text-sm text-slate-500">
+                  <span>Subtotal</span>
+                  <span>{formatCurrency(total, currency)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-emerald-600 font-bold">
+                  <span className="flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" /> Coupon Discount</span>
+                  <span>-{formatCurrency(discount, currency)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between items-center pt-2 text-xl">
+              <div className="font-serif italic text-primary font-bold">{t('cart.total')}</div>
+              <div className="font-bold text-2xl">{finalTotal === 0 ? <span className="text-emerald-600 font-black">FREE</span> : formatCurrency(finalTotal, currency)}</div>
+            </div>
           </div>
           <div className="block">
-            {getCartTotal() === 0 ? (
+            {finalTotal === 0 ? (
               <button 
                 onClick={handleDirectFreeOrder} 
                 disabled={isSubmitting}
-                className="w-full text-sm font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 disabled:opacity-70"
+                className="w-full text-sm font-bold uppercase tracking-wider bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
               >
                 {isSubmitting ? t('cart.processing', 'Processing...') : '🎉 Complete Free Enrollment (Instant Access)'}
               </button>
             ) : (
-              <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="w-full text-xs font-bold uppercase tracking-wider bg-primary text-white py-4 rounded-xl shadow-sm hover:bg-primary-dark transition">
+              <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="w-full text-xs font-bold uppercase tracking-wider bg-primary text-white py-4 rounded-xl shadow-sm hover:bg-primary-dark transition cursor-pointer">
                 {t('cart.checkout')}
               </button>
             )}
@@ -427,14 +587,14 @@ export function Cart() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between">
            <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">{t('cart.total')}</p>
-              <p className="text-2xl font-black text-gray-900 leading-none">{getCartTotal() === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(getCartTotal(), currency)}</p>
+              <p className="text-2xl font-black text-gray-900 leading-none">{finalTotal === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(finalTotal, currency)}</p>
            </div>
-           {getCartTotal() === 0 ? (
-             <button onClick={handleDirectFreeOrder} disabled={isSubmitting} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-emerald-700 transition disabled:opacity-70">
+           {finalTotal === 0 ? (
+             <button onClick={handleDirectFreeOrder} disabled={isSubmitting} className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-emerald-700 transition disabled:opacity-70 cursor-pointer">
                 {isSubmitting ? t('cart.processing', 'Processing...') : 'Complete Free Enrollment'}
              </button>
            ) : (
-             <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition">
+             <button onClick={() => { if(!user) { return alert("Please login to checkout"); }; setShowCheckout(true); }} className="bg-primary text-white px-6 py-3 rounded-xl font-bold tracking-wide shadow-sm hover:bg-primary-dark transition cursor-pointer">
                 {t('cart.checkout')}
              </button>
            )}
@@ -471,7 +631,7 @@ export function Dashboard() {
       fetch("/api/stripe/verify-session", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ sessionId })
+        body: JSON.stringify({ sessionId, language })
       })
       .then(r => r.json())
       .then(res => {

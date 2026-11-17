@@ -1,19 +1,11 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import cors from "cors";
 import apiRoutes, { seedDummyData } from "./src/api.ts";
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  try {
-    await seedDummyData();
-  } catch (e) {
-    console.error("Failed to seed dummy data at startup. You may need to provide a valid DATABASE_URL in your environment variables.", e);
-  }
   const app = express();
   const PORT = 3000;
 
@@ -55,7 +47,14 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
+    // Run seeding asynchronously after port 3000 is listening so startup never times out
+    seedDummyData().catch((e) => {
+      console.error("Failed to seed dummy data at startup. You may need to provide a valid DATABASE_URL in your environment variables.", e);
+    });
   });
 }
 
-startServer();
+startServer().catch((err) => {
+  console.error("Fatal error starting server:", err);
+  process.exit(1);
+});

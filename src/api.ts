@@ -15,7 +15,188 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100
 
 import { sendEmail } from "./email.js";
 
-async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE' | 'MEETING_SCHEDULED' | 'NEWSLETTER_WELCOME', data: Record<string, string>) {
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function getRequestBaseUrl(req?: express.Request): string {
+  if (req) {
+    const origin = req.headers.origin;
+    if (origin && typeof origin === 'string' && origin.startsWith('http')) {
+      return origin.replace(/\/$/, '');
+    }
+    const host = req.get('x-forwarded-host') || req.get('host');
+    const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+    if (host) {
+      return `${proto}://${host}`.replace(/\/$/, '');
+    }
+  }
+  return (process.env.APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+}
+
+function normalizeEmailLang(lang?: any): 'ar' | 'en' {
+  if (typeof lang === 'string' && lang.trim().toLowerCase().startsWith('ar')) {
+    return 'ar';
+  }
+  return 'en';
+}
+
+const DEFAULT_COURSE_PURCHASE_EN_SUBJECT = "Thank you for enrolling in {{course_name}}!";
+const DEFAULT_COURSE_PURCHASE_EN_CONTENT = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+  <div style="background-color: #371C3B; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Thank you for your purchase!</h2>
+  </div>
+  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <p>Hi <strong>{{name}}</strong>,</p>
+    <p>Thank you for enrolling in <strong>{{course_name}}</strong>! We are excited to have you.</p>
+    {{join_links_section}}
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>Order Details:</strong></p>
+      <p style="margin: 5px 0;">Amount Paid: <strong>{{price}}</strong></p>
+      <p style="margin: 5px 0;">Date: <strong>{{date}}</strong></p>
+    </div>
+    <p>Enjoy your course and happy learning!</p>
+  </div>
+</div>`;
+
+const DEFAULT_COURSE_PURCHASE_AR_SUBJECT = "شكراً لاشتراكك في {{course_name}}!";
+const DEFAULT_COURSE_PURCHASE_AR_CONTENT = `<div dir="rtl" style="font-family: Tahoma, Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333; text-align: right; direction: rtl;">
+  <div style="background-color: #371C3B; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">شكراً لك على شرائك!</h2>
+  </div>
+  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <p>مرحباً <strong>{{name}}</strong>،</p>
+    <p>شكراً لانضمامك إلى دورة <strong>{{course_name}}</strong>! يسعدنا جداً تواجدك معنا.</p>
+    {{join_links_section}}
+    <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
+      <p style="margin: 0 0 10px 0;"><strong>تفاصيل الطلب:</strong></p>
+      <p style="margin: 5px 0;">المبلغ المدفوع: <strong>{{price}}</strong></p>
+      <p style="margin: 5px 0;">التاريخ: <strong>{{date}}</strong></p>
+    </div>
+    <p>نتمنى لك تجربة تعليمية ممتعة ومفيدة!</p>
+  </div>
+</div>`;
+
+async function buildCourseJoinData(course: any, baseUrl: string, lang: 'ar' | 'en' = 'en') {
+  const telegramLink = course.telegramLink?.trim() || '';
+  const whatsappLink = course.whatsappLink?.trim() || '';
+  const meetingLink = course.meetingLink?.trim() || '';
+  const customExternalLink = course.customExternalLink?.trim() || '';
+
+  const primaryJoinLink =
+    telegramLink ||
+    whatsappLink ||
+    customExternalLink ||
+    meetingLink ||
+    '';
+
+  // If no joining link is available for the course, do not display the joining link section
+  if (!primaryJoinLink) {
+    return {
+      join_link: '',
+      telegram_link: '',
+      whatsapp_link: '',
+      meeting_link: '',
+      custom_link: '',
+      course_url: `${baseUrl}/courses/${course.id}`,
+      join_links_section: ''
+    };
+  }
+
+  const isAr = lang === 'ar';
+  const buttons: string[] = [];
+  const seenUrls = new Set<string>();
+
+  const addButton = (url: string, label: string, bg: string) => {
+    if (!url || seenUrls.has(url)) return;
+    seenUrls.add(url);
+    const safeUrl = escapeHtml(url);
+    const marginStyle = isAr ? 'margin: 4px 0 4px 6px;' : 'margin: 4px 6px 4px 0;';
+    buttons.push(
+      `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; background-color: ${bg}; color: #ffffff; padding: 11px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; ${marginStyle}">${escapeHtml(label)}</a>`
+    );
+  };
+
+  if (telegramLink) addButton(telegramLink, isAr ? 'الانضمام إلى مجموعة تيليجرام' : 'Join Telegram Group', '#2AABEE');
+  if (whatsappLink) addButton(whatsappLink, isAr ? 'الانضمام إلى مجموعة واتساب' : 'Join WhatsApp Group', '#25D366');
+  if (meetingLink) addButton(meetingLink, isAr ? 'الانضمام إلى الجلسة المباشرة' : 'Join Live / Course Session', '#371C3B');
+  if (customExternalLink) addButton(customExternalLink, isAr ? 'رابط الانضمام إلى الدورة' : 'Join Course Link', '#2563EB');
+
+  const meetingMeta: string[] = [];
+  if (course.meetingDate) {
+    const formattedMeetingDate = new Date(course.meetingDate).toLocaleString(isAr ? 'ar-EG' : 'en-US');
+    meetingMeta.push(
+      `<p style="margin: 6px 0 0 0; font-size: 13px; color: #4b5563;"><strong>${isAr ? 'موعد الجلسة:' : 'Session Date:'}</strong> ${escapeHtml(formattedMeetingDate)}</p>`
+    );
+  }
+  if (course.meetingNotes) {
+    meetingMeta.push(
+      `<p style="margin: 4px 0 0 0; font-size: 13px; color: #4b5563;"><strong>${isAr ? 'ملاحظات:' : 'Notes:'}</strong> ${escapeHtml(course.meetingNotes)}</p>`
+    );
+  }
+
+  const safePrimary = escapeHtml(primaryJoinLink);
+  const headingText = isAr ? 'رابط الانضمام إلى الدورة:' : 'Your Course Join Link:';
+  const directLabel = isAr ? 'الرابط المباشر:' : 'Direct Link:';
+  const boxDir = isAr ? 'dir="rtl" ' : '';
+  const boxAlign = isAr ? ' direction: rtl; text-align: right;' : '';
+
+  const joinLinksSection = `<div ${boxDir}style="background-color: #f5f3ff; border: 1px solid #ddd6fe; padding: 18px; border-radius: 8px; margin: 20px 0;${boxAlign}">
+  <p style="margin: 0 0 12px 0; font-weight: bold; color: #371C3B; font-size: 15px;">${headingText}</p>
+  <div style="margin-bottom: 10px;">
+    ${buttons.join('\n    ')}
+  </div>
+  <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280; word-break: break-all;">${directLabel} <a href="${safePrimary}" style="color: #371C3B; font-weight: bold;">${safePrimary}</a></p>
+  ${meetingMeta.join('\n  ')}
+</div>`;
+
+  return {
+    join_link: primaryJoinLink,
+    telegram_link: telegramLink,
+    whatsapp_link: whatsappLink,
+    meeting_link: meetingLink,
+    custom_link: customExternalLink,
+    course_url: `${baseUrl}/courses/${course.id}`,
+    join_links_section: joinLinksSection
+  };
+}
+
+async function buildBundleJoinData(bundle: any, baseUrl: string, lang: 'ar' | 'en' = 'en') {
+  const courseSections: string[] = [];
+  let firstJoinLink = '';
+  const isAr = lang === 'ar';
+
+  for (let i = 0; i < (bundle.courses || []).length; i++) {
+    const c = bundle.courses[i]?.course;
+    if (!c) continue;
+    const details = await buildCourseJoinData(c, baseUrl, lang);
+    if (!details.join_links_section) continue;
+    if (!firstJoinLink && details.join_link) {
+      firstJoinLink = details.join_link;
+    }
+    const localizedCourseTitle = c.translations?.find((t: any) => t.languageCode === lang)?.title || c.title;
+    courseSections.push(`<div ${isAr ? 'dir="rtl" ' : ''}style="margin-bottom: 14px;${isAr ? ' direction: rtl; text-align: right;' : ''}">
+  <p style="margin: 0 0 6px 0; font-weight: bold; color: #1f2937; font-size: 14px;">${escapeHtml(localizedCourseTitle)}</p>
+  ${details.join_links_section}
+</div>`);
+  }
+
+  return {
+    join_link: firstJoinLink,
+    telegram_link: '',
+    whatsapp_link: '',
+    meeting_link: '',
+    custom_link: '',
+    course_url: `${baseUrl}/dashboard`,
+    join_links_section: courseSections.join('\n')
+  };
+}
+
+async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'COURSE_PURCHASE_AR' | 'MEMBERSHIP_PURCHASE' | 'EVENT_BOOKING' | 'USER_UPDATE' | 'MEETING_SCHEDULED' | 'NEWSLETTER_WELCOME', data: Record<string, string>) {
   try {
      let template = await prisma.emailTemplate.findUnique({ where: { type } });
      if (!template) {
@@ -25,22 +206,11 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
         let defaultContent = "Hi {{name}},\n\nThank you for your purchase!\n\nDetails:\n{{price}}\n{{date}}";
         
         if (type === 'COURSE_PURCHASE') {
-          defaultSubject = "Thank you for enrolling in {{course_name}}!";
-          defaultContent = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-  <div style="background-color: #371C3B; padding: 20px; border-radius: 8px 8px 0 0; text-align: center;">
-    <h2 style="color: #ffffff; margin: 0;">Thank you for your purchase!</h2>
-  </div>
-  <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-    <p>Hi <strong>{{name}}</strong>,</p>
-    <p>Thank you for enrolling in <strong>{{course_name}}</strong>! We are excited to have you.</p>
-    <div style="background-color: #f9fafb; padding: 15px; border-radius: 6px; margin: 20px 0;">
-      <p style="margin: 0 0 10px 0;"><strong>Order Details:</strong></p>
-      <p style="margin: 5px 0;">Amount Paid: <strong>{{price}}</strong></p>
-      <p style="margin: 5px 0;">Date: <strong>{{date}}</strong></p>
-    </div>
-    <p>Enjoy your course and happy learning!</p>
-  </div>
-</div>`;
+          defaultSubject = DEFAULT_COURSE_PURCHASE_EN_SUBJECT;
+          defaultContent = DEFAULT_COURSE_PURCHASE_EN_CONTENT;
+        } else if (type === 'COURSE_PURCHASE_AR') {
+          defaultSubject = DEFAULT_COURSE_PURCHASE_AR_SUBJECT;
+          defaultContent = DEFAULT_COURSE_PURCHASE_AR_CONTENT;
         } else if (type === 'MEMBERSHIP_PURCHASE') {
           defaultSubject = "Welcome to {{membership_name}}!";
           defaultContent = `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
@@ -147,13 +317,27 @@ async function sendAutomatedEmail(userId: string, type: 'COURSE_PURCHASE' | 'MEM
        recipientEmail = data.email;
      }
 
-     content = content.replace(/\{\{name\}\}/g, recipientName);
-     subject = subject.replace(/\{\{name\}\}/g, recipientName);
+     // Ensure course join links are included in course purchase emails ONLY when a joining link exists
+     if ((type === 'COURSE_PURCHASE' || type === 'COURSE_PURCHASE_AR') && data.join_links_section) {
+       const hasJoinPlaceholder = /\{\{(join_link|join_links_section|telegram_link|whatsapp_link|meeting_link|custom_link)\}\}/.test(content);
+       if (!hasJoinPlaceholder) {
+         const lastDivIdx = content.lastIndexOf('</div>');
+         if (lastDivIdx !== -1) {
+           content = content.slice(0, lastDivIdx) + '\n' + data.join_links_section + '\n' + content.slice(lastDivIdx);
+         } else {
+           content = `${content}\n${data.join_links_section}`;
+         }
+       }
+     }
+
+     content = content.replace(/\{\{name\}\}/g, () => recipientName);
+     subject = subject.replace(/\{\{name\}\}/g, () => recipientName);
 
      // Simple replacement
      for (const [key, val] of Object.entries(data)) {
-        content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(val));
-        subject = subject.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), String(val));
+        const strVal = String(val ?? '');
+        content = content.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => strVal);
+        subject = subject.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), () => strVal);
      }
      
      if (recipientEmail) {
@@ -763,8 +947,6 @@ router.delete("/admin/testimonials/:id", authMiddleware, async (req, res) => {
   res.json({ success: true });
 });
 
-import { google } from "googleapis";
-
 // --- EXTERNAL INTEGRATIONS ---
 router.post("/admin/generate-meet", authMiddleware, async (req, res) => {
   if ((req as any).user.role !== 'ADMIN') return res.status(403).json({ error: "Forbidden" });
@@ -796,6 +978,7 @@ router.post("/admin/generate-meet", authMiddleware, async (req, res) => {
         throw new Error("Google Meet Integration missing Service Account JSON. Please configure it in your environment settings or the Admin Panel.");
      }
 
+     const { google } = await import("googleapis");
      const auth = new google.auth.GoogleAuth({
         credentials: credentialsObj,
         scopes: ['https://www.googleapis.com/auth/calendar.events'],
@@ -1054,7 +1237,7 @@ router.get("/dashboard", authMiddleware, async (req, res) => {
 // --- STRIPE CHECKOUT ---
 router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) => {
   const userId = (req as any).user.userId;
-  const { items, successUrl, cancelUrl } = req.body;
+  const { items, successUrl, cancelUrl, couponCode, language } = req.body;
 
   const stripeSetting = await prisma.setting.findUnique({ where: { key: 'STRIPE_CONFIG' } });
   if (!stripeSetting) return res.status(400).json({ error: 'Stripe is not configured' });
@@ -1070,13 +1253,31 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
   const currency = currencySetting ? JSON.parse(currencySetting.value) : 'USD';
 
   try {
+    let couponDiscount = 0;
+    let appliedCouponObj: any = null;
+    if (couponCode && typeof couponCode === 'string') {
+      const cleanCode = couponCode.trim().toUpperCase();
+      const coupons = await getCouponsFromDB();
+      const foundCoupon = coupons.find((c: any) => c.code?.toUpperCase() === cleanCode);
+      if (foundCoupon) {
+        const evalResult = evaluateCouponLogic(foundCoupon, { items });
+        if (evalResult.valid) {
+          couponDiscount = evalResult.discountAmount;
+          appliedCouponObj = evalResult.coupon;
+        }
+      }
+    }
+
+    const origSum = items.reduce((sum: number, it: any) => sum + Number(it.price || 0), 0);
+    const discountFactor = origSum > 0 && couponDiscount > 0 ? Math.max(0, 1 - (couponDiscount / origSum)) : 1;
+
     const line_items = items.map((it: any) => ({
       price_data: {
         currency: currency.toLowerCase(),
         product_data: {
           name: it.title || 'Item',
         },
-        unit_amount: Math.round(it.price * 100),
+        unit_amount: Math.round(Number(it.price || 0) * discountFactor * 100),
         ...(it.isSubscription ? {
            recurring: {
              interval: it.subscriptionInterval || 'month'
@@ -1086,6 +1287,8 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
       quantity: 1,
     }));
 
+    const finalTotal = Math.max(0, origSum - couponDiscount);
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items,
@@ -1094,8 +1297,11 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
       cancel_url: cancelUrl,
       metadata: {
         userId,
+        couponCode: appliedCouponObj ? appliedCouponObj.code : '',
+        discountAmount: String(couponDiscount),
+        language: normalizeEmailLang(language),
         items: JSON.stringify(items.map((i:any) => ({ itemType: i.itemType, itemId: i.itemId, editionId: i.editionId, price: i.price }))),
-        total: items.reduce((sum: number, it: any) => sum + Number(it.price), 0)
+        total: finalTotal
       }
     });
 
@@ -1107,7 +1313,7 @@ router.post("/stripe/create-checkout-session", authMiddleware, async (req, res) 
 
 router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
   const userId = (req as any).user.userId;
-  const { sessionId } = req.body;
+  const { sessionId, language } = req.body;
 
   try {
     const stripeSetting = await prisma.setting.findUnique({ where: { key: 'STRIPE_CONFIG' } });
@@ -1163,31 +1369,54 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
       include: { items: true }
     });
 
+    const baseUrl = getRequestBaseUrl(req);
+    const emailLang = normalizeEmailLang(session.metadata?.language || language);
+    const courseTemplateType = emailLang === 'ar' ? 'COURSE_PURCHASE_AR' : 'COURSE_PURCHASE';
+    const todayDate = new Date().toLocaleDateString(emailLang === 'ar' ? 'ar-EG' : 'en-US');
+
     for (const item of order.items) {
-      const todayDate = new Date().toLocaleDateString();
+      const paidPrice = order.items.length === 1 ? order.total : item.price;
       if (item.itemType === "COURSE") {
         const existing = await prisma.userCourse.findUnique({
           where: { userId_courseId: { userId, courseId: item.itemId } }
         });
         if (!existing) {
-          const c = await prisma.course.findUnique({ where: { id: item.itemId } });
+          const c = await prisma.course.findUnique({
+            where: { id: item.itemId },
+            include: { translations: true }
+          });
           await prisma.userCourse.create({ data: { userId, courseId: item.itemId, expiresAt: c?.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
-          if (c) sendAutomatedEmail(userId, 'COURSE_PURCHASE', { course_name: c.title, price: String(item.price), date: todayDate });
+          if (c) {
+            const joinData = await buildCourseJoinData(c, baseUrl, emailLang);
+            const localizedCourseTitle = c.translations?.find((t: any) => t.languageCode === emailLang)?.title || c.title;
+            await sendAutomatedEmail(userId, courseTemplateType, {
+              course_name: localizedCourseTitle,
+              price: String(paidPrice),
+              date: todayDate,
+              ...joinData
+            });
+          }
         }
       } else if (item.itemType === "MEMBERSHIP") {
         const membership = await prisma.membership.findUnique({ where: { id: item.itemId } });
         if (membership) {
           await prisma.membershipOrder.create({ data: { userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt: membership.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
           if (item.editionId) await prisma.membershipEdition.update({ where: { id: item.editionId }, data: { availableSeats: { decrement: 1 } } });
-          sendAutomatedEmail(userId, 'MEMBERSHIP_PURCHASE', { membership_name: membership.label || membership.type, price: String(item.price), date: todayDate });
+          await sendAutomatedEmail(userId, 'MEMBERSHIP_PURCHASE', { membership_name: membership.label || membership.type, price: String(paidPrice), date: todayDate });
         }
       } else if (item.itemType === "EVENT") {
         await prisma.booking.create({ data: { userId, eventId: item.itemId } });
         await prisma.event.update({ where: { id: item.itemId }, data: { availableSeats: { decrement: 1 } } });
         const evt = await prisma.event.findUnique({ where: { id: item.itemId } });
-        if (evt) sendAutomatedEmail(userId, 'EVENT_BOOKING', { event_name: evt.title, date: todayDate });
+        if (evt) await sendAutomatedEmail(userId, 'EVENT_BOOKING', { event_name: evt.title, price: String(paidPrice), date: todayDate });
       } else if (item.itemType === "BUNDLE") {
-        const bundle = await prisma.courseBundle.findUnique({ where: { id: item.itemId }, include: { courses: { include: { course: true } } } });
+        const bundle = await prisma.courseBundle.findUnique({
+          where: { id: item.itemId },
+          include: {
+            translations: true,
+            courses: { include: { course: { include: { translations: true } } } }
+          }
+        });
         if (bundle) {
           for (const bundleItem of bundle.courses) {
             const existing = await prisma.userCourse.findUnique({ where: { userId_courseId: { userId, courseId: bundleItem.courseId } } });
@@ -1195,6 +1424,14 @@ router.post("/stripe/verify-session", authMiddleware, async (req, res) => {
               await prisma.userCourse.create({ data: { userId, courseId: bundleItem.courseId, expiresAt: bundleItem.course?.expiryDate || null, stripeSubscriptionId: typeof session.subscription === 'string' ? session.subscription : null } });
             }
           }
+          const joinData = await buildBundleJoinData(bundle, baseUrl, emailLang);
+          const localizedBundleTitle = bundle.translations?.find((t: any) => t.languageCode === emailLang)?.title || bundle.title;
+          await sendAutomatedEmail(userId, courseTemplateType, {
+            course_name: localizedBundleTitle + (emailLang === 'ar' ? ' (باقة)' : ' (Bundle)'),
+            price: String(paidPrice),
+            date: todayDate,
+            ...joinData
+          });
         }
       }
     }
@@ -1268,10 +1505,33 @@ router.get("/user/last-billing", authMiddleware, async (req, res) => {
 // --- ORDERS (PURCHASE) ---
 router.post("/orders", authMiddleware, async (req, res) => {
   const userId = (req as any).user.userId;
-  const { items, total, sessionId, billingDetails, paymentMethod, paymentProofUrl } = req.body; 
+  const { items, total, sessionId, billingDetails, paymentMethod, paymentProofUrl, couponCode, language } = req.body; 
   
   try {
-    const numericTotal = Number(total) || 0;
+    let numericTotal = Number(total) || 0;
+    let couponDiscount = 0;
+    let appliedCouponObj: any = null;
+
+    if (couponCode && typeof couponCode === 'string') {
+      const cleanCode = couponCode.trim().toUpperCase();
+      const coupons = await getCouponsFromDB();
+      const foundCoupon = coupons.find((c: any) => c.code?.toUpperCase() === cleanCode);
+      if (foundCoupon) {
+        const evalResult = evaluateCouponLogic(foundCoupon, { items });
+        if (evalResult.valid) {
+          couponDiscount = evalResult.discountAmount;
+          appliedCouponObj = evalResult.coupon;
+          foundCoupon.usedCount = (foundCoupon.usedCount || 0) + 1;
+          await saveCouponsToDB(coupons);
+        }
+      }
+    }
+
+    const itemsSum = Array.isArray(items) ? items.reduce((s: number, it: any) => s + Number(it.price || 0), 0) : 0;
+    if (couponDiscount > 0 && Math.abs(numericTotal - itemsSum) < 0.01) {
+      numericTotal = Math.max(0, itemsSum - couponDiscount);
+    }
+
     const isFree = numericTotal <= 0;
     const finalPaymentMethod = isFree ? "FREE" : (paymentMethod || "STRIPE");
 
@@ -1294,13 +1554,32 @@ router.post("/orders", authMiddleware, async (req, res) => {
 
     const isPending = !isFree && finalPaymentMethod === 'MANUAL';
 
+    let parsedBilling: any = {};
+    if (billingDetails) {
+      try {
+        parsedBilling = typeof billingDetails === 'string' ? JSON.parse(billingDetails) : billingDetails;
+      } catch (e) {
+        parsedBilling = { raw: billingDetails };
+      }
+    }
+    const orderLang = normalizeEmailLang(language || parsedBilling?.language);
+    parsedBilling.language = orderLang;
+    if (appliedCouponObj) {
+      parsedBilling.coupon = {
+        code: appliedCouponObj.code,
+        discountAmount: couponDiscount,
+        discountType: appliedCouponObj.discountType,
+        discountValue: appliedCouponObj.discountValue
+      };
+    }
+
     const order = await prisma.order.create({
       data: {
         userId,
         total: numericTotal,
         status: isPending ? "PENDING" : "COMPLETED",
         paymentMethod: finalPaymentMethod,
-        billingDetails: billingDetails ? (typeof billingDetails === 'string' ? billingDetails : JSON.stringify(billingDetails)) : null,
+        billingDetails: JSON.stringify(parsedBilling),
         paymentProofUrl: isPending ? paymentProofUrl : null,
         items: {
           create: items.map((it: any) => ({
@@ -1329,8 +1608,12 @@ router.post("/orders", authMiddleware, async (req, res) => {
              if (session.subscription) stripeSubscriptionId = session.subscription;
         }
     }
+    const baseUrl = getRequestBaseUrl(req);
+    const courseTemplateType = orderLang === 'ar' ? 'COURSE_PURCHASE_AR' : 'COURSE_PURCHASE';
+    const todayDate = new Date().toLocaleDateString(orderLang === 'ar' ? 'ar-EG' : 'en-US');
+
     for (const item of order.items) {
-      const todayDate = new Date().toLocaleDateString();
+      const paidPrice = order.items.length === 1 ? order.total : item.price;
       if (item.itemType === "COURSE") {
         const existing = await prisma.userCourse.findUnique({
           where: {
@@ -1341,7 +1624,10 @@ router.post("/orders", authMiddleware, async (req, res) => {
           }
         });
         if (!existing) {
-          const c = await prisma.course.findUnique({ where: { id: item.itemId } });
+          const c = await prisma.course.findUnique({
+            where: { id: item.itemId },
+            include: { translations: true }
+          });
           let expiresAt: Date | null = null;
           if (c && c.expiryDate) {
             expiresAt = c.expiryDate;
@@ -1350,10 +1636,13 @@ router.post("/orders", authMiddleware, async (req, res) => {
             data: { userId, courseId: item.itemId, expiresAt, stripeSubscriptionId }
           });
           if (c) {
-             sendAutomatedEmail(userId, 'COURSE_PURCHASE', {
-                course_name: c.title,
-                price: String(item.price),
-                date: todayDate
+             const joinData = await buildCourseJoinData(c, baseUrl, orderLang);
+             const localizedCourseTitle = c.translations?.find((t: any) => t.languageCode === orderLang)?.title || c.title;
+             await sendAutomatedEmail(userId, courseTemplateType, {
+                course_name: localizedCourseTitle,
+                price: String(paidPrice),
+                date: todayDate,
+                ...joinData
              });
           }
         }
@@ -1373,9 +1662,9 @@ router.post("/orders", authMiddleware, async (req, res) => {
                data: { availableSeats: { decrement: 1 } }
              });
           }
-          sendAutomatedEmail(userId, 'MEMBERSHIP_PURCHASE', {
+          await sendAutomatedEmail(userId, 'MEMBERSHIP_PURCHASE', {
              membership_name: membership.label || membership.type,
-             price: String(item.price),
+             price: String(paidPrice),
              date: todayDate
           });
         }
@@ -1387,15 +1676,18 @@ router.post("/orders", authMiddleware, async (req, res) => {
           where: { id: item.itemId },
           data: { availableSeats: { decrement: 1 } }
         });
-        sendAutomatedEmail(userId, 'EVENT_BOOKING', {
+        await sendAutomatedEmail(userId, 'EVENT_BOOKING', {
            event_name: evt.title,
-           price: String(item.price),
+           price: String(paidPrice),
            date: todayDate
         });
       } else if (item.itemType === "BUNDLE") {
         const bundle = await prisma.courseBundle.findUnique({
           where: { id: item.itemId },
-          include: { courses: { include: { course: true } } }
+          include: {
+            translations: true,
+            courses: { include: { course: { include: { translations: true } } } }
+          }
         });
         if (bundle) {
           for (const bundleItem of bundle.courses) {
@@ -1413,10 +1705,13 @@ router.post("/orders", authMiddleware, async (req, res) => {
               });
             }
           }
-          sendAutomatedEmail(userId, 'COURSE_PURCHASE', {
-            course_name: bundle.title + ' (Bundle)',
-            price: String(item.price),
-            date: todayDate
+          const joinData = await buildBundleJoinData(bundle, baseUrl, orderLang);
+          const localizedBundleTitle = bundle.translations?.find((t: any) => t.languageCode === orderLang)?.title || bundle.title;
+          await sendAutomatedEmail(userId, courseTemplateType, {
+            course_name: localizedBundleTitle + (orderLang === 'ar' ? ' (باقة)' : ' (Bundle)'),
+            price: String(paidPrice),
+            date: todayDate,
+            ...joinData
           });
         }
       }
@@ -3212,6 +3507,102 @@ export async function seedDummyData() {
       }
     });
   }
+
+  // Seed default COURSE_PURCHASE (English) & COURSE_PURCHASE_AR (Arabic) templates if not present
+  const existingCourseEnTemplate = await prisma.emailTemplate.findUnique({ where: { type: 'COURSE_PURCHASE' } });
+  if (!existingCourseEnTemplate) {
+    await prisma.emailTemplate.create({
+      data: {
+        type: 'COURSE_PURCHASE',
+        subject: DEFAULT_COURSE_PURCHASE_EN_SUBJECT,
+        content: DEFAULT_COURSE_PURCHASE_EN_CONTENT
+      }
+    });
+  }
+
+  const existingCourseArTemplate = await prisma.emailTemplate.findUnique({ where: { type: 'COURSE_PURCHASE_AR' } });
+  if (!existingCourseArTemplate) {
+    await prisma.emailTemplate.create({
+      data: {
+        type: 'COURSE_PURCHASE_AR',
+        subject: DEFAULT_COURSE_PURCHASE_AR_SUBJECT,
+        content: DEFAULT_COURSE_PURCHASE_AR_CONTENT
+      }
+    });
+  }
+
+  // Seed default COUPONS_LIST if not present
+  const couponsSetting = await prisma.setting.findUnique({ where: { key: 'COUPONS_LIST' } });
+  if (!couponsSetting) {
+    const defaultCoupons = [
+      {
+        id: "coupon-welcome10",
+        code: "WELCOME10",
+        discountType: "PERCENTAGE",
+        discountValue: 10,
+        appliesTo: "ALL",
+        courseIds: [],
+        minOrderValue: 0,
+        maxDiscount: null,
+        usageLimit: 500,
+        usedCount: 0,
+        expiryDate: null,
+        isActive: true,
+        description: "Welcome 10% discount for newsletter subscribers and new students"
+      },
+      {
+        id: "coupon-learn20",
+        code: "LEARN20",
+        discountType: "PERCENTAGE",
+        discountValue: 20,
+        appliesTo: "ALL",
+        courseIds: [],
+        minOrderValue: 50,
+        maxDiscount: 100,
+        usageLimit: 200,
+        usedCount: 0,
+        expiryDate: null,
+        isActive: true,
+        description: "20% off all courses on orders over $50"
+      },
+      {
+        id: "coupon-save50",
+        code: "SAVE50",
+        discountType: "FIXED",
+        discountValue: 50,
+        appliesTo: "ALL",
+        courseIds: [],
+        minOrderValue: 150,
+        maxDiscount: null,
+        usageLimit: 100,
+        usedCount: 0,
+        expiryDate: null,
+        isActive: true,
+        description: "Flat $50 off on orders over $150"
+      },
+      {
+        id: "coupon-free100",
+        code: "FREE100",
+        discountType: "PERCENTAGE",
+        discountValue: 100,
+        appliesTo: "ALL",
+        courseIds: [],
+        minOrderValue: 0,
+        maxDiscount: null,
+        usageLimit: 50,
+        usedCount: 0,
+        expiryDate: null,
+        isActive: true,
+        description: "100% off full scholarship / free coupon for demo & promotional access"
+      }
+    ];
+    await prisma.setting.create({
+      data: {
+        key: 'COUPONS_LIST',
+        value: JSON.stringify(defaultCoupons)
+      }
+    });
+  }
 }
 
 
@@ -3354,31 +3745,59 @@ router.post("/admin/orders/:id/status", authMiddleware, async (req, res) => {
     
     // If approved, provision the items
     if (status === 'COMPLETED' && order.status !== 'COMPLETED') {
-      const todayDate = new Date().toLocaleDateString();
+      let orderLang: 'ar' | 'en' = 'en';
+      if (order.billingDetails) {
+        try {
+          const parsedOrderBilling = JSON.parse(order.billingDetails);
+          orderLang = normalizeEmailLang(parsedOrderBilling?.language);
+        } catch (e) {}
+      }
+      const courseTemplateType = orderLang === 'ar' ? 'COURSE_PURCHASE_AR' : 'COURSE_PURCHASE';
+      const todayDate = new Date().toLocaleDateString(orderLang === 'ar' ? 'ar-EG' : 'en-US');
+      const baseUrl = getRequestBaseUrl(req);
       for (const item of order.items) {
+        const paidPrice = order.items.length === 1 ? order.total : item.price;
         if (item.itemType === "COURSE") {
           const existing = await prisma.userCourse.findUnique({
             where: { userId_courseId: { userId: order.userId, courseId: item.itemId } }
           });
           if (!existing) {
-            const c = await prisma.course.findUnique({ where: { id: item.itemId } });
+            const c = await prisma.course.findUnique({
+              where: { id: item.itemId },
+              include: { translations: true }
+            });
             await prisma.userCourse.create({ data: { userId: order.userId, courseId: item.itemId, expiresAt: c?.expiryDate || null } });
-            if (c) sendAutomatedEmail(order.userId, 'COURSE_PURCHASE', { course_name: c.title, price: String(item.price), date: todayDate });
+            if (c) {
+              const joinData = await buildCourseJoinData(c, baseUrl, orderLang);
+              const localizedCourseTitle = c.translations?.find((t: any) => t.languageCode === orderLang)?.title || c.title;
+              await sendAutomatedEmail(order.userId, courseTemplateType, {
+                course_name: localizedCourseTitle,
+                price: String(paidPrice),
+                date: todayDate,
+                ...joinData
+              });
+            }
           }
         } else if (item.itemType === "MEMBERSHIP") {
           const membership = await prisma.membership.findUnique({ where: { id: item.itemId } });
           if (membership) {
             await prisma.membershipOrder.create({ data: { userId: order.userId, membershipId: membership.id, editionId: item.editionId || null, expiresAt: membership.expiryDate || null } });
             if (item.editionId) await prisma.membershipEdition.update({ where: { id: item.editionId }, data: { availableSeats: { decrement: 1 } } });
-            sendAutomatedEmail(order.userId, 'MEMBERSHIP_PURCHASE', { membership_name: membership.label || membership.type, price: String(item.price), date: todayDate });
+            await sendAutomatedEmail(order.userId, 'MEMBERSHIP_PURCHASE', { membership_name: membership.label || membership.type, price: String(paidPrice), date: todayDate });
           }
         } else if (item.itemType === "EVENT") {
           await prisma.booking.create({ data: { userId: order.userId, eventId: item.itemId } });
           await prisma.event.update({ where: { id: item.itemId }, data: { availableSeats: { decrement: 1 } } });
           const evt = await prisma.event.findUnique({ where: { id: item.itemId } });
-          if (evt) sendAutomatedEmail(order.userId, 'EVENT_BOOKING', { event_name: evt.title, date: todayDate });
+          if (evt) await sendAutomatedEmail(order.userId, 'EVENT_BOOKING', { event_name: evt.title, price: String(paidPrice), date: todayDate });
         } else if (item.itemType === "BUNDLE") {
-          const bundle = await prisma.courseBundle.findUnique({ where: { id: item.itemId }, include: { courses: { include: { course: true } } } });
+          const bundle = await prisma.courseBundle.findUnique({
+            where: { id: item.itemId },
+            include: {
+              translations: true,
+              courses: { include: { course: { include: { translations: true } } } }
+            }
+          });
           if (bundle) {
             for (const bundleItem of bundle.courses) {
               const existing = await prisma.userCourse.findUnique({ where: { userId_courseId: { userId: order.userId, courseId: bundleItem.courseId } } });
@@ -3386,6 +3805,14 @@ router.post("/admin/orders/:id/status", authMiddleware, async (req, res) => {
                 await prisma.userCourse.create({ data: { userId: order.userId, courseId: bundleItem.courseId, expiresAt: bundleItem.course?.expiryDate || null } });
               }
             }
+            const joinData = await buildBundleJoinData(bundle, baseUrl, orderLang);
+            const localizedBundleTitle = bundle.translations?.find((t: any) => t.languageCode === orderLang)?.title || bundle.title;
+            await sendAutomatedEmail(order.userId, courseTemplateType, {
+              course_name: localizedBundleTitle + (orderLang === 'ar' ? ' (باقة)' : ' (Bundle)'),
+              price: String(paidPrice),
+              date: todayDate,
+              ...joinData
+            });
           }
         }
       }
@@ -3467,8 +3894,6 @@ router.get("/admin/leads", authMiddleware, async (req, res) => {
   }
 });
 
-import admin from 'firebase-admin';
-
 // Simple global log to store recent notifications for client polling/fallback
 if (!(global as any).notificationLog) {
   (global as any).notificationLog = [];
@@ -3516,6 +3941,8 @@ router.post("/admin/notifications/send", authMiddleware, async (req, res) => {
      let failureCount = 0;
 
      if (genuineTokens.length > 0 && config.serviceAccountJson) {
+        const adminModule = await import('firebase-admin');
+        const admin = adminModule.default || adminModule;
         const actualAdmin = admin.apps ? admin : (admin as any).default;
 
         if (!actualAdmin.apps.length) {
@@ -3587,6 +4014,237 @@ router.post("/notifications/subscribe", async (req, res) => {
      console.error(error);
      res.status(500).json({ error: "Failed to save token" });
   }
+});
+
+// --- COUPONS MANAGEMENT & VALIDATION ---
+async function getCouponsFromDB() {
+  try {
+    const setting = await prisma.setting.findUnique({ where: { key: 'COUPONS_LIST' } });
+    if (!setting) return [];
+    const list = JSON.parse(setting.value);
+    return Array.isArray(list) ? list : [];
+  } catch (e) {
+    console.error("Error reading coupons from DB:", e);
+    return [];
+  }
+}
+
+async function saveCouponsToDB(coupons: any[]) {
+  await prisma.setting.upsert({
+    where: { key: 'COUPONS_LIST' },
+    update: { value: JSON.stringify(coupons) },
+    create: { key: 'COUPONS_LIST', value: JSON.stringify(coupons) }
+  });
+}
+
+function evaluateCouponLogic(coupon: any, { courseId, price, items }: { courseId?: string, price?: number, items?: any[] }) {
+  if (!coupon || coupon.isActive === false) {
+    return { valid: false, error: "Coupon is not active or invalid" };
+  }
+
+  // Check expiry date
+  if (coupon.expiryDate) {
+    const expiry = new Date(coupon.expiryDate);
+    if (!isNaN(expiry.getTime()) && new Date() > expiry) {
+      return { valid: false, error: "Coupon has expired" };
+    }
+  }
+
+  // Check usage limit
+  if (coupon.usageLimit && typeof coupon.usageLimit === 'number' && coupon.usageLimit > 0) {
+    const used = Number(coupon.usedCount || 0);
+    if (used >= coupon.usageLimit) {
+      return { valid: false, error: "Coupon usage limit has been reached" };
+    }
+  }
+
+  // Determine eligible items and eligible base amount
+  let eligibleAmount = 0;
+  let totalOrderAmount = 0;
+
+  if (Array.isArray(items) && items.length > 0) {
+    totalOrderAmount = items.reduce((sum, it) => sum + Number(it.price || 0), 0);
+    if (coupon.appliesTo === 'SPECIFIC_COURSES' && Array.isArray(coupon.courseIds) && coupon.courseIds.length > 0) {
+      const matchingItems = items.filter(it => it.itemType === 'COURSE' && coupon.courseIds.includes(it.itemId));
+      if (matchingItems.length === 0) {
+        return { valid: false, error: "Coupon is not valid for the items in your cart" };
+      }
+      eligibleAmount = matchingItems.reduce((sum, it) => sum + Number(it.price || 0), 0);
+    } else {
+      eligibleAmount = totalOrderAmount;
+    }
+  } else if (courseId || price !== undefined) {
+    const singlePrice = Number(price || 0);
+    totalOrderAmount = singlePrice;
+    if (coupon.appliesTo === 'SPECIFIC_COURSES' && Array.isArray(coupon.courseIds) && coupon.courseIds.length > 0) {
+      if (!courseId || !coupon.courseIds.includes(courseId)) {
+        return { valid: false, error: "Coupon is not valid for this specific course" };
+      }
+    }
+    eligibleAmount = singlePrice;
+  }
+
+  if (eligibleAmount <= 0) {
+    return { valid: false, error: "No eligible paid items for this coupon" };
+  }
+
+  // Check minimum order value
+  if (coupon.minOrderValue && Number(coupon.minOrderValue) > 0) {
+    if (totalOrderAmount < Number(coupon.minOrderValue)) {
+      return { valid: false, error: `Minimum order value of $${coupon.minOrderValue} required for this coupon` };
+    }
+  }
+
+  // Calculate discount
+  let discountAmount = 0;
+  if (coupon.discountType === 'PERCENTAGE') {
+    discountAmount = (eligibleAmount * Number(coupon.discountValue || 0)) / 100;
+    if (coupon.maxDiscount && Number(coupon.maxDiscount) > 0 && discountAmount > Number(coupon.maxDiscount)) {
+      discountAmount = Number(coupon.maxDiscount);
+    }
+  } else {
+    discountAmount = Math.min(Number(coupon.discountValue || 0), eligibleAmount);
+  }
+
+  discountAmount = Math.round(discountAmount * 100) / 100;
+  const finalPrice = Math.max(0, Math.round((totalOrderAmount - discountAmount) * 100) / 100);
+
+  return {
+    valid: true,
+    coupon: {
+      id: coupon.id,
+      code: coupon.code,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue,
+      appliesTo: coupon.appliesTo,
+      courseIds: coupon.courseIds,
+      description: coupon.description,
+      minOrderValue: coupon.minOrderValue,
+      maxDiscount: coupon.maxDiscount
+    },
+    discountAmount,
+    originalPrice: totalOrderAmount,
+    finalPrice
+  };
+}
+
+// Public Validate Coupon Endpoint
+router.post("/coupons/validate", async (req, res) => {
+  try {
+    const { code, courseId, price, items } = req.body;
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ valid: false, error: "Coupon code is required" });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+    const coupons = await getCouponsFromDB();
+    const coupon = coupons.find((c: any) => c.code?.toUpperCase() === cleanCode);
+
+    if (!coupon) {
+      return res.status(404).json({ valid: false, error: `Coupon code "${cleanCode}" is invalid` });
+    }
+
+    const result = evaluateCouponLogic(coupon, { courseId, price, items });
+    if (!result.valid) {
+      return res.status(400).json(result);
+    }
+
+    res.json(result);
+  } catch (err: any) {
+    console.error("Validate coupon error:", err);
+    res.status(500).json({ valid: false, error: "Failed to validate coupon" });
+  }
+});
+
+// Admin List Coupons
+router.get("/admin/coupons", authMiddleware, async (req, res) => {
+  if ((req as any).user.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+  const coupons = await getCouponsFromDB();
+  res.json(coupons);
+});
+
+// Admin Create Coupon
+router.post("/admin/coupons", authMiddleware, async (req, res) => {
+  if ((req as any).user.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+  const { code, discountType, discountValue, appliesTo, courseIds, minOrderValue, maxDiscount, usageLimit, expiryDate, isActive, description } = req.body;
+
+  if (!code || !code.trim()) {
+    return res.status(400).json({ error: "Coupon code is required" });
+  }
+  const cleanCode = code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  if (!cleanCode) {
+    return res.status(400).json({ error: "Invalid coupon code format" });
+  }
+
+  const coupons = await getCouponsFromDB();
+  if (coupons.some((c: any) => c.code?.toUpperCase() === cleanCode)) {
+    return res.status(400).json({ error: `Coupon code "${cleanCode}" already exists` });
+  }
+
+  const newCoupon = {
+    id: "coupon-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
+    code: cleanCode,
+    discountType: discountType === 'FIXED' ? 'FIXED' : 'PERCENTAGE',
+    discountValue: Number(discountValue) || 0,
+    appliesTo: appliesTo === 'SPECIFIC_COURSES' ? 'SPECIFIC_COURSES' : 'ALL',
+    courseIds: Array.isArray(courseIds) ? courseIds : [],
+    minOrderValue: Number(minOrderValue) || 0,
+    maxDiscount: maxDiscount ? Number(maxDiscount) : null,
+    usageLimit: usageLimit ? Number(usageLimit) : null,
+    usedCount: 0,
+    expiryDate: expiryDate || null,
+    isActive: isActive !== false,
+    description: description || '',
+    createdAt: new Date().toISOString()
+  };
+
+  coupons.unshift(newCoupon);
+  await saveCouponsToDB(coupons);
+  res.json({ success: true, coupon: newCoupon });
+});
+
+// Admin Update Coupon
+router.put("/admin/coupons/:id", authMiddleware, async (req, res) => {
+  if ((req as any).user.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+  const { id } = req.params;
+  const updates = req.body;
+
+  const coupons = await getCouponsFromDB();
+  const index = coupons.findIndex((c: any) => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ error: "Coupon not found" });
+  }
+
+  if (updates.code) {
+    const cleanCode = updates.code.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    if (coupons.some((c: any) => c.id !== id && c.code?.toUpperCase() === cleanCode)) {
+      return res.status(400).json({ error: `Coupon code "${cleanCode}" already exists` });
+    }
+    updates.code = cleanCode;
+  }
+
+  coupons[index] = {
+    ...coupons[index],
+    ...updates,
+    discountValue: updates.discountValue !== undefined ? Number(updates.discountValue) : coupons[index].discountValue,
+    minOrderValue: updates.minOrderValue !== undefined ? Number(updates.minOrderValue) : coupons[index].minOrderValue,
+    maxDiscount: updates.maxDiscount !== undefined ? (updates.maxDiscount ? Number(updates.maxDiscount) : null) : coupons[index].maxDiscount,
+    usageLimit: updates.usageLimit !== undefined ? (updates.usageLimit ? Number(updates.usageLimit) : null) : coupons[index].usageLimit,
+    updatedAt: new Date().toISOString()
+  };
+
+  await saveCouponsToDB(coupons);
+  res.json({ success: true, coupon: coupons[index] });
+});
+
+// Admin Delete Coupon
+router.delete("/admin/coupons/:id", authMiddleware, async (req, res) => {
+  if ((req as any).user.role !== "ADMIN") return res.status(403).json({ error: "Forbidden" });
+  const { id } = req.params;
+  let coupons = await getCouponsFromDB();
+  coupons = coupons.filter((c: any) => c.id !== id);
+  await saveCouponsToDB(coupons);
+  res.json({ success: true });
 });
 
 // --- CATCH ALL FOR MISSING API ROUTES ---

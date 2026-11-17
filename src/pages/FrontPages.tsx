@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useStore, getTranslated } from "../store";
 import { formatCurrency, stripHtml } from "../lib/utils";
-import { Check, Calendar, MapPin, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Check, Calendar, MapPin, AlertCircle, ChevronLeft, ChevronRight, Tag } from "lucide-react";
 import ReactPlayer from "react-player";
 import { UniversalVideo } from "../components/UniversalVideo";
 
@@ -158,7 +158,7 @@ export function Courses() {
   export function CourseDetails() {
     const { id } = useParams();
     const [courseRaw, setCourse] = useState<any>(null);
-    const { user, token, addToCart, cart, setAuthModalOpen, currency, favorites, toggleFavorite, language, categories } = useStore();
+    const { user, token, addToCart, cart, setAuthModalOpen, currency, favorites, toggleFavorite, language, categories, appliedCoupon, setAppliedCoupon, clearAppliedCoupon } = useStore();
     const navigate = useNavigate();
     const { t } = useTranslation();
     const [addingToCart, setAddingToCart] = useState(false);
@@ -168,6 +168,10 @@ export function Courses() {
     const [editionError, setEditionError] = useState<boolean>(false);
     const [isMobileBottomSheetOpen, setIsMobileBottomSheetOpen] = useState(false);
     
+    const [couponInput, setCouponInput] = useState('');
+    const [couponError, setCouponError] = useState('');
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+
     const [dashboardData, setDashboardData] = useState<any>(null);
 
     const enrolled = React.useMemo(() => {
@@ -199,6 +203,77 @@ export function Courses() {
             bannerVideoUrl: '', 
         };
     }, [baseCourse, courseRaw?.memberships, selectedOption, language]);
+
+    const effectiveBasePrice = React.useMemo(() => {
+      if (!course) return 0;
+      if (selectedOption === 'course') {
+        const edition = course.editions?.find((e: any) => e.id === selectedEdition);
+        return edition?.price != null ? Number(edition.price) : Number(course.price || 0);
+      } else {
+        const mem = courseRaw?.memberships?.find((m: any) => m.id === selectedOption);
+        return Number(mem?.offerPrice || 0);
+      }
+    }, [course, selectedOption, selectedEdition, courseRaw]);
+
+    const courseDiscount = React.useMemo(() => {
+      if (!appliedCoupon || effectiveBasePrice <= 0) return 0;
+      if (appliedCoupon.appliesTo === 'SPECIFIC_COURSES' && Array.isArray(appliedCoupon.courseIds) && appliedCoupon.courseIds.length > 0) {
+        if (!appliedCoupon.courseIds.includes(courseRaw?.id)) return 0;
+      }
+      if (appliedCoupon.minOrderValue && effectiveBasePrice < appliedCoupon.minOrderValue) return 0;
+
+      let discount = 0;
+      if (appliedCoupon.discountType === 'PERCENTAGE') {
+        discount = (effectiveBasePrice * Number(appliedCoupon.discountValue || 0)) / 100;
+        if (appliedCoupon.maxDiscount && discount > appliedCoupon.maxDiscount) {
+          discount = appliedCoupon.maxDiscount;
+        }
+      } else {
+        discount = Math.min(Number(appliedCoupon.discountValue || 0), effectiveBasePrice);
+      }
+      return Math.round(discount * 100) / 100;
+    }, [appliedCoupon, effectiveBasePrice, courseRaw?.id]);
+
+    const finalCoursePrice = Math.max(0, Math.round((effectiveBasePrice - courseDiscount) * 100) / 100);
+
+    const handleApplyCoupon = async (codeOverride?: string) => {
+      const code = (codeOverride || couponInput).trim().toUpperCase();
+      if (!code) return;
+      setCouponError('');
+      setIsValidatingCoupon(true);
+
+      try {
+        const res = await fetch('/api/coupons/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            courseId: courseRaw?.id,
+            price: effectiveBasePrice
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.valid) {
+          setAppliedCoupon({
+            ...data.coupon,
+            discountAmount: data.discountAmount
+          });
+          setCouponInput('');
+          setCouponError('');
+        } else {
+          setCouponError(data.error || 'Invalid coupon code');
+        }
+      } catch (err) {
+        setCouponError('Network error validating coupon');
+      } finally {
+        setIsValidatingCoupon(false);
+      }
+    };
+
+    const handleRemoveCoupon = () => {
+      clearAppliedCoupon();
+      setCouponError('');
+    };
     
     const [reviews, setReviews] = useState<any[]>([]);
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
@@ -333,10 +408,11 @@ export function Courses() {
           }
       }
 
-      const effectivePrice = edition ? Number(edition.price) : Number(course.price || 0);
+      const effectivePrice = edition?.price != null ? Number(edition.price) : Number(course.price || 0);
+      const isZeroPrice = effectivePrice === 0 || (appliedCoupon && finalCoursePrice === 0);
 
-      // Direct free enrollment if price is 0!
-      if (effectivePrice === 0) {
+      // Direct free enrollment if price is 0 or if coupon makes it 0!
+      if (isZeroPrice) {
         setAddingToCart(true);
         try {
           const res = await fetch("/api/orders", {
@@ -351,12 +427,15 @@ export function Courses() {
                 price: 0 
               }],
               total: 0,
-              paymentMethod: "FREE"
+              paymentMethod: "FREE",
+              couponCode: appliedCoupon?.code,
+              language
             })
           });
           setAddingToCart(false);
           if (res.ok) {
-            alert("🎉 Successfully enrolled in this free course! Redirecting to your dashboard...");
+            clearAppliedCoupon();
+            alert("🎉 Successfully enrolled in this course! Redirecting to your dashboard...");
             navigate("/dashboard");
             return;
           } else {
@@ -379,7 +458,9 @@ export function Courses() {
            itemId: course.id, 
            editionId: selectedEdition || undefined,
            title: finalTitle, 
-           price: effectivePrice, isSubscription: course.isSubscription, subscriptionInterval: course.subscriptionInterval 
+           price: effectivePrice,
+           isSubscription: course.isSubscription, 
+           subscriptionInterval: course.subscriptionInterval 
         });
         setAddingToCart(false);
         navigate("/cart");
@@ -495,7 +576,12 @@ export function Courses() {
                <div>
                   <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{t('courses.price', 'Price')}</p>
                   <p className="text-3xl font-black text-gray-950 mt-1">
-                     {selectedOption === 'course' ? (
+                     {courseDiscount > 0 ? (
+                       <>
+                         <span className="text-sm text-slate-400 line-through mr-2 font-medium">{formatCurrency(effectiveBasePrice, currency)}</span>
+                         {finalCoursePrice === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(finalCoursePrice, currency)}
+                       </>
+                     ) : selectedOption === 'course' ? (
                        <>
                          {course.realPrice && course.realPrice > course.price && (
                              <span className="text-sm text-slate-400 line-through mr-2 font-medium">{formatCurrency(course.realPrice, currency)}</span>
@@ -515,6 +601,43 @@ export function Courses() {
                   <p className="text-emerald-600 font-bold mt-1">✓ {t('courses.instant_access', 'Instant Access')}</p>
                </div>
              </div>
+
+             {effectiveBasePrice > 0 && !enrolled && (
+               <div className="mb-4 pt-3 border-t border-slate-100">
+                 {appliedCoupon ? (
+                   <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                     <div className="flex items-center gap-2">
+                       <Tag className="w-3.5 h-3.5 text-emerald-600" />
+                       <span className="font-mono font-bold text-emerald-900">{appliedCoupon.code}</span>
+                       <span className="font-bold text-emerald-700">(-{formatCurrency(courseDiscount, currency)})</span>
+                     </div>
+                     <button type="button" onClick={handleRemoveCoupon} className="text-red-500 font-bold hover:underline">Remove</button>
+                   </div>
+                 ) : (
+                   <div>
+                     <div className="flex gap-2">
+                       <input
+                         type="text"
+                         placeholder="Have a coupon code?"
+                         value={couponInput}
+                         onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                         onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                         className="flex-1 px-3 py-2 text-xs font-mono font-bold border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-primary uppercase"
+                       />
+                       <button
+                         type="button"
+                         disabled={!couponInput.trim() || isValidatingCoupon}
+                         onClick={() => handleApplyCoupon()}
+                         className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50"
+                       >
+                         {isValidatingCoupon ? "..." : "Apply"}
+                       </button>
+                     </div>
+                     {couponError && <p className="text-[11px] text-red-500 font-bold mt-1.5">{couponError}</p>}
+                   </div>
+                 )}
+               </div>
+             )}
 
 
 
@@ -643,7 +766,12 @@ export function Courses() {
            <div className="sticky top-24 border border-slate-200 rounded-3xl bg-white shadow-sm overflow-hidden flex flex-col">
               <div className="p-8 bg-primary text-white">
                  <div className="text-4xl font-black">
-                   {selectedOption === 'course' ? (
+                   {courseDiscount > 0 ? (
+                     <>
+                       <span className="text-xl text-white/50 line-through mr-3 font-medium">{formatCurrency(effectiveBasePrice, currency)}</span>
+                       {finalCoursePrice === 0 ? <span className="text-emerald-300">FREE</span> : formatCurrency(finalCoursePrice, currency)}
+                     </>
+                   ) : selectedOption === 'course' ? (
                      <>
                        {course.realPrice && course.realPrice > course.price && (
                            <span className="text-xl text-white/50 line-through mr-3 font-medium">{formatCurrency(course.realPrice, currency)}</span>
@@ -656,6 +784,11 @@ export function Courses() {
                      </>
                    )}
                  </div>
+                 {courseDiscount > 0 && appliedCoupon && (
+                   <div className="mt-2 inline-flex items-center gap-1.5 bg-white/15 px-2.5 py-1 rounded-full text-xs font-bold text-emerald-200">
+                     <Tag className="w-3 h-3" /> {appliedCoupon.code} applied (-{formatCurrency(courseDiscount, currency)})
+                   </div>
+                 )}
               </div>
               <div className="p-8 flex-1 flex flex-col space-y-4">
                  {courseRaw?.memberships && courseRaw.memberships.length > 0 && (
@@ -683,6 +816,48 @@ export function Courses() {
                            </div>
                         </label>
                      ))}
+                   </div>
+                 )}
+
+                 {effectiveBasePrice > 0 && !enrolled && (
+                   <div className="pt-1 pb-2">
+                     <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                       <Tag className="w-3.5 h-3.5 text-primary" /> Promo / Coupon Code
+                     </label>
+                     {appliedCoupon ? (
+                       <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+                         <div>
+                           <div className="flex items-center gap-1.5">
+                             <span className="font-mono font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">{appliedCoupon.code}</span>
+                             <span className="font-bold text-emerald-700">{appliedCoupon.discountType === 'PERCENTAGE' ? `${appliedCoupon.discountValue}% OFF` : `-${formatCurrency(appliedCoupon.discountValue, currency)}`}</span>
+                           </div>
+                           <p className="text-[11px] text-emerald-600 mt-0.5">You save {formatCurrency(courseDiscount, currency)}</p>
+                         </div>
+                         <button type="button" onClick={handleRemoveCoupon} className="text-xs font-bold text-red-500 hover:text-red-700 cursor-pointer">Remove</button>
+                       </div>
+                     ) : (
+                       <div>
+                         <div className="flex gap-2">
+                           <input
+                             type="text"
+                             placeholder="Enter code (e.g. WELCOME10)"
+                             value={couponInput}
+                             onChange={e => setCouponInput(e.target.value.toUpperCase())}
+                             onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                             className="flex-1 px-3 py-2 text-xs font-mono font-bold border border-slate-200 rounded-xl outline-none focus:ring-1 focus:ring-primary uppercase"
+                           />
+                           <button
+                             type="button"
+                             disabled={!couponInput.trim() || isValidatingCoupon}
+                             onClick={() => handleApplyCoupon()}
+                             className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition disabled:opacity-50 cursor-pointer"
+                           >
+                             {isValidatingCoupon ? "..." : "Apply"}
+                           </button>
+                         </div>
+                         {couponError && <p className="text-[11px] text-red-500 font-bold mt-1.5">{couponError}</p>}
+                       </div>
+                     )}
                    </div>
                  )}
 
@@ -828,7 +1003,12 @@ export function Courses() {
            <div>
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 leading-none mb-1">Total</p>
               <p className="text-2xl font-black text-gray-900 leading-none">
-                {selectedOption === 'course' ? (
+                {courseDiscount > 0 ? (
+                  <>
+                    <span className="text-base text-slate-400 line-through mr-2 font-medium">{formatCurrency(effectiveBasePrice, currency)}</span>
+                    {finalCoursePrice === 0 ? <span className="text-emerald-600">FREE</span> : formatCurrency(finalCoursePrice, currency)}
+                  </>
+                ) : selectedOption === 'course' ? (
                   <>
                     {course.realPrice && course.realPrice > course.price && (
                         <span className="text-base text-slate-400 line-through mr-2 font-medium">{formatCurrency(course.realPrice, currency)}</span>
@@ -947,7 +1127,8 @@ export function BundleDetails() {
           body: JSON.stringify({
             items: [{ itemType: "BUNDLE", itemId: bundle.id, title: bundle.title, price: 0 }],
             total: 0,
-            paymentMethod: "FREE"
+            paymentMethod: "FREE",
+            language
           })
         });
         setAddingToCart(false);

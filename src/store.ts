@@ -17,6 +17,20 @@ interface CartItem {
   price: number;
   isSubscription?: boolean;
   subscriptionInterval?: string;
+  originalPrice?: number;
+}
+
+export interface AppliedCoupon {
+  id: string;
+  code: string;
+  discountType: 'PERCENTAGE' | 'FIXED';
+  discountValue: number;
+  discountAmount?: number;
+  description?: string;
+  appliesTo?: string;
+  courseIds?: string[];
+  maxDiscount?: number | null;
+  minOrderValue?: number;
 }
 
 interface AppState {
@@ -29,6 +43,12 @@ interface AppState {
   removeFromCart: (id: string) => void;
   clearCart: () => void;
   getCartTotal: () => number;
+  
+  appliedCoupon: AppliedCoupon | null;
+  setAppliedCoupon: (coupon: AppliedCoupon | null) => void;
+  clearAppliedCoupon: () => void;
+  getDiscountAmount: () => number;
+  getFinalTotal: () => number;
   
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
@@ -94,8 +114,45 @@ export const useStore = create<AppState>((set, get) => ({
   cart: [],
   addToCart: (item) => set((state) => ({ cart: [...state.cart, item] })),
   removeFromCart: (id) => set((state) => ({ cart: state.cart.filter((i) => i.id !== id) })),
-  clearCart: () => set({ cart: [] }),
+  clearCart: () => set({ cart: [], appliedCoupon: null }),
   getCartTotal: () => get().cart.reduce((sum, item) => sum + item.price, 0),
+
+  appliedCoupon: null,
+  setAppliedCoupon: (coupon) => set({ appliedCoupon: coupon }),
+  clearAppliedCoupon: () => set({ appliedCoupon: null }),
+  getDiscountAmount: () => {
+    const { appliedCoupon, cart } = get();
+    if (!appliedCoupon) return 0;
+    
+    let eligibleTotal = 0;
+    if (appliedCoupon.appliesTo === 'SPECIFIC_COURSES' && Array.isArray(appliedCoupon.courseIds) && appliedCoupon.courseIds.length > 0) {
+      eligibleTotal = cart
+        .filter(it => it.itemType === 'COURSE' && appliedCoupon.courseIds?.includes(it.itemId))
+        .reduce((sum, it) => sum + Number(it.price || 0), 0);
+    } else {
+      eligibleTotal = cart.reduce((sum, it) => sum + Number(it.price || 0), 0);
+    }
+
+    if (eligibleTotal <= 0) return 0;
+    if (appliedCoupon.minOrderValue && eligibleTotal < appliedCoupon.minOrderValue) return 0;
+
+    let discount = 0;
+    if (appliedCoupon.discountType === 'PERCENTAGE') {
+      discount = (eligibleTotal * Number(appliedCoupon.discountValue || 0)) / 100;
+      if (appliedCoupon.maxDiscount && discount > appliedCoupon.maxDiscount) {
+        discount = appliedCoupon.maxDiscount;
+      }
+    } else {
+      discount = Math.min(Number(appliedCoupon.discountValue || 0), eligibleTotal);
+    }
+
+    return Math.round(discount * 100) / 100;
+  },
+  getFinalTotal: () => {
+    const total = get().getCartTotal();
+    const discount = get().getDiscountAmount();
+    return Math.max(0, Math.round((total - discount) * 100) / 100);
+  },
 
   isAuthModalOpen: false,
   setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),

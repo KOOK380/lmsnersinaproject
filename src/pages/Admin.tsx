@@ -4,12 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formatCurrency } from "../lib/utils";
 import { 
-  LayoutDashboard, List, BookOpen, User, BookOpenText, CalendarDays, Star, Users, Mail, Languages, FileText, Settings, Image as ImageIcon, ShoppingCart, Activity, ShieldCheck, ExternalLink
+  LayoutDashboard, List, BookOpen, User, BookOpenText, CalendarDays, Star, Users, Mail, Languages, FileText, Settings, Image as ImageIcon, ShoppingCart, Activity, ShieldCheck, ExternalLink, Tag
 } from "lucide-react";
 import { 
   CourseManager, CourseBundlesManager, InstructorManager, EmailCampaignManager, EmailTemplatesManager, 
   SettingsManager, MembershipManager, LanguageManager, CategoryManager, PagesManager, PopupManager,
-  SliderManager, EventManager, UserManager, ReviewManager, OrdersManager, TestimonialManager, BlogManager, LeadsManager, ReportManager, SeoManager, PaymentSetupManager, ManualPaymentApprovalManager, PushNotificationManager, PromoBadgeManager
+  SliderManager, EventManager, UserManager, ReviewManager, OrdersManager, TestimonialManager, BlogManager, LeadsManager, ReportManager, SeoManager, PaymentSetupManager, ManualPaymentApprovalManager, PushNotificationManager, PromoBadgeManager,
+  CouponManager
 } from "./AdminManagerComponents";
 import { MaintenanceManager } from "./MaintenanceManager";
 
@@ -54,6 +55,7 @@ const menuGroups = [
       { name: "SLIDERS", icon: ImageIcon },
       { name: "POPUP", icon: ImageIcon },
       { name: "PROMO BADGE", icon: Star },
+      { name: "COUPONS", icon: Tag },
     ]
   },
   {
@@ -264,6 +266,7 @@ export function Admin() {
         {activeTab === "SLIDERS" && <SliderManager />}
         {activeTab === "POPUP" && <PopupManager />}
         {activeTab === "PROMO BADGE" && <PromoBadgeManager />}
+        {activeTab === "COUPONS" && <CouponManager />}
         {activeTab === "PAYMENTS" && <PaymentSetupManager />}
         {activeTab === "APPROVALS" && <ManualPaymentApprovalManager />}
          {activeTab === "SETTINGS" && <SettingsManager />}
